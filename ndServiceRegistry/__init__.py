@@ -257,7 +257,7 @@ class KazooServiceRegistry(ServiceRegistry):
         self._initialized = True
         self.log.info('Initialization Done!')
 
-    def register_node(self, node, data=None):
+    def register_node(self, node, data=None, state=True):
         """Registers a supplied node (full path and nodename).
 
         Registers the supplied node-name with ZooKeeper and converts the
@@ -267,6 +267,8 @@ class KazooServiceRegistry(ServiceRegistry):
             node: A string representing the node name and service port
                   (/services/foo/host:port)
             data: A dict with any additional data you wish to register.
+            state: True/False whether or not the node is actively listed
+                   in Zookeeper
 
         Returns:
             True: registration was sucessfull"""
@@ -283,12 +285,13 @@ class KazooServiceRegistry(ServiceRegistry):
         self.log.debug('Registering [%s] with [%s].' % (node, data))
         if node in self._registrations:
             self.log.debug('[%s] already has Registration object.' % node)
+            self._registrations[node].set_state(state)
             return self._registrations[node]
 
         # Create a new registration object
         self.log.info('Creating Registration object for [%s]' % node)
         self._registrations[node] = EphemeralNode(zk=self._zk, path=node,
-                                                  data=data)
+                                                  data=data, state=state)
 
     def _connect(self, lazy):
         """Connect to Zookeeper.

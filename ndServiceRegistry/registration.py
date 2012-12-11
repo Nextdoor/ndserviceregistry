@@ -198,7 +198,7 @@ class EphemeralNode(Registration):
 
     LOGGING = 'ndServiceRegistry.Registration.EphemeralNode'
 
-    def __init__(self, zk, path, data):
+    def __init__(self, zk, path, data, state=True):
         """Sets the ZooKeeper registration up to be ephemeral.
 
         Sets ephemeral=True when we register the Zookeeper node, and
