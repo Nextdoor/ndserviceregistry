@@ -182,7 +182,7 @@ class Registration(threading.Thread):
             self.log.debug('Node %s exists, updating data.' % self._path)
             self._zk.retry(self._zk.set, self._path, value=self._data)
         except kazoo.exceptions.NoAuthError, e:
-            raise Exception('No authorization to create/set node [%s].' % node)
+            raise Exception('No authorization to create/set node [%s].' % self._path)
 
         self.log.debug('Node %s registered with data: %s' %
                       (self._path, self._data))
