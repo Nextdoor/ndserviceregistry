@@ -51,7 +51,6 @@ class Registration(threading.Thread):
 
         # Create our logger
         self.log = logging.getLogger(self.LOGGING)
-        self.log.setLevel(logging.DEBUG)
 
         # Set our local variables
         self._zk = zk

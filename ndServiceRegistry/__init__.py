@@ -218,7 +218,6 @@ class KazooServiceRegistry(ServiceRegistry):
 
         # Create our logger
         self.log = logging.getLogger(self.LOGGER)
-        self.log.setLevel(logging.DEBUG)
         self.log.info('Initializing ServiceRegistry object')
 
         # Quiet down the Kazoo connection logger no matter what
