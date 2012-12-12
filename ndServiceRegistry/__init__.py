@@ -406,7 +406,7 @@ class KazooServiceRegistry(ServiceRegistry):
             return self._registrations[node]
 
         # Create a new registration object
-        self.log.info('Creating Registration object for [%s]' % node)
+        self.log.debug('Creating Registration object for [%s]' % node)
         self._registrations[node] = EphemeralNode(zk=self._zk, path=node,
                                                   data=data, state=state)
 

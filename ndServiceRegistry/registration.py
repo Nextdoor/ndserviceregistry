@@ -146,7 +146,7 @@ class Registration(threading.Thread):
         # Check if we are de-registering a path. If so, give it a best effort
         # brute force attempt
         if self._state is False:
-            self.log.warning('Making sure that node is de-registered.')
+            self.log.debug('Making sure that node is de-registered.')
             try:
                 self._zk.retry(self._zk.delete, self._path)
             except:
