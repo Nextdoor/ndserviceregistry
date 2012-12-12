@@ -24,6 +24,7 @@ import json
 import os
 import time
 import logging
+import tempfile
 import cPickle as pickle
 
 # logger name
