@@ -581,6 +581,10 @@ class KazooServiceRegistry(ServiceRegistry):
                 if not directory in self._cache:
                     self._cache[directory] = dict()
 
+                # If the node has been deleted, just get out of this function
+                if not data and not stat:
+                    return 
+
                 # Take in our updated data and decode it
                 decoded = funcs.decode(data)
 
