@@ -16,14 +16,77 @@
 
 """Simple service registration class for managing lists of servers.
 
-Example usage:
+The ServiceRegistry model at Nextdoor is geared around simplicity and
+reliability. This model provides a few core features that allow you to
+register and unregister nodes that provide certain services, and to monitor
+particular service paths for lists of nodes.
 
-from ndServiceRegistry import KazooServiceRegistry
-nd = KazooServiceRegistry(server='localhost:2182', readonly=False,
-                          cachefile='/tmp/cache', username='test',
-                          password='test')
-nd.get_nodes('/services/ssh')
-nd.register_node('/services/ssh/FOOBAR:123', data={'foo': 'bar'})
+Although the service structure is up to you, the ServiceRegistry model is
+largely geared towards this model:
+
+  /production
+    /ssh
+      /server1.cloud.mydomain.com:22
+        pid = 12345
+      /server2.cloud.mydomain.com:22
+        pid = 12345
+      /server3.cloud.mydomain.com:22
+        pid = 12345
+    /web
+      /server1.cloud.mydomain.com:80
+        pid = 12345
+        type = u'apache'
+
+Example usage to provide the above service list:
+
+>>> from ndServiceRegistry import KazooServiceRegistry
+>>> nd = KazooServiceRegistry(readonly=False,
+                              cachefile='/tmp/cache')
+>>> nd.register_node('/production/ssh/server1.cloud.mydomain.com:22')
+>>> nd.register_node('/production/ssh/server2.cloud.mydomain.com:22')
+>>> nd.register_node('/production/ssh/server3.cloud.mydomain.com:22')
+>>> nd.register_node('/production/web/server2.cloud.mydomain.com:22',
+                     data={'type': 'apache'})
+
+Example of getting a static list of nodes from /production/ssh. The first time
+this get_nodes() function is called, it reaches out to the backend data service
+and grabs the data. After that, each time you ask for the same path it is
+returned from a local cache object. This local cache object is updated thoug
+any time the server list changes, automatically, so you do not need to worry
+about it staying up to date.
+
+>>> nd.get_nodes('/production/ssh')
+{
+  u'server1.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+  u'server2.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+  u'server3.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+}
+
+Example usage to watch '/production/ssh' for servers. In this case, you define
+a function that operates on the supplied list of nodes in some way. You then
+tell the ServiceRegistry object to notify your function any time the list is
+changed in any way.
+
+We do **not** call your function right away. It is up to you whether you want
+your callback function executed immediately, or only in the future based on a
+change.
+
+>>> def list(nodes):
+...     pprint.pprint(nodes)
+...
+>>> nd.add_callback(list)
+>>> list(nd.get_nodes('/production/ssh')
+{
+  u'server1.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+  u'server2.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+  u'server3.cloud.mydomain.com:22': {u'pid': 12345,
+                                     u'created': u'2012-12-12 15:26:24'}
+}
 
 Copyright 2012 Nextdoor Inc.
 """
@@ -76,10 +139,6 @@ class NoAuthException(ServiceRegistryException):
     """Thrown when we have no authorization to perform an action."""
 
 
-class BackendUnavailableException(ServiceRegistryException):
-    """Thrown when the backend is unavilable for some reason."""
-
-
 class ReadOnlyException(ServiceRegistryException):
     """Thrown when a Write operation is attempted while in Read Only mode."""
 
@@ -87,13 +146,13 @@ class ReadOnlyException(ServiceRegistryException):
 class ServiceRegistry(object):
     """Main Service Registry object.
 
-    This object provides answers to the question:
-      'What servers offer XYZ service?'
+    The ServiceRegistry object is a framework object, not meant to be
+    instantiated on its own. The object provides a list of functions that an
+    object of this type must respond to, and provides the formatting for
+    those responses.
 
-    We use a Singleton object within this class to make sure that
-    we only open up a single connectino to our data backend. Additionally
-    the data is cached locally and only updated when the data changes,
-    so having the object re-created would waste this cache.
+    Additionally, common functions are defined in this module when they
+    are not unique to a particular service backend (ie, Kazoo vs zc.zk).
     """
 
     def __init__(self):
@@ -125,8 +184,16 @@ class ServiceRegistry(object):
 
         Args:
             path: A string reprsenting the path to watch for changes.
-            callback: Reference to the method to callback to.
+            callback: Reference to the functino to callback to.
         """
+
+        # Check if the supplied path has ever been requested before. If not
+        # then we do not have a 'watch' in place to keep an eye on that path,
+        # so adding a local callback wouldn't do much good.
+        if not path in self._cache:
+            # Path has never been retrieved before, so go get it and establish
+            # a watch on that path so that we're notified of any changes.
+            self.get_nodes(path)
 
         if not path in self._callbacks:
             self._callbacks[path] = []
@@ -225,7 +292,7 @@ class KazooServiceRegistry(ServiceRegistry):
         self._kz_log.setLevel(logging.INFO)
 
         # Record our supplied settings from the user, in the event that we
-        # re-run this init() from the reset() method.
+        # re-run this init() from the reset() function.
         self._timeout = timeout
         self._username = username
         self._password = password
@@ -233,6 +300,9 @@ class KazooServiceRegistry(ServiceRegistry):
         self._acl = acl
         self._server = server
         self._pid = os.getpid()
+
+        # Keep a local dict of all of our DataWatch objects
+        self._data_watches = []
 
         # Create a callback registry so that other objects can be notified
         # when our server lists change.
@@ -274,8 +344,7 @@ class KazooServiceRegistry(ServiceRegistry):
 
         # Check if we're in read-only mode
         if self._readonly:
-            raise ReadOnlyException('In read-only mode, this operation cannot '
-                                    'be completed.')
+            raise ReadOnlyException('In read-only mode, no writes allowed')
 
         # Check if the node is already there or not. If it is, we have to
         # figure out if we were the ones who registered it or not. If we are,
@@ -295,9 +364,9 @@ class KazooServiceRegistry(ServiceRegistry):
     def _connect(self, lazy):
         """Connect to Zookeeper.
 
-        This method starts the connection to Zookeeper using the Kazoo
-        start_async() method. By using start_async(), we can continue to re-try
-        the connection if it fails either on the initial __init__ of the
+        This function starts the connection to Zookeeper using the Kazoo
+        start_async() function. By using start_async(), we can continue to
+        re-try the connection if it fails either on the initial __init__ of the
         module, or if it fails after the object has been running for a while.
 
         Args:
@@ -338,8 +407,8 @@ class KazooServiceRegistry(ServiceRegistry):
                     try:
                         self._cache = funcs.load_dict(self._cache_file)
                     except Exception, e:
-                        # If we get an IOError, there's no dict file at all to pull
-                        # from, so we start up with an empty dict.
+                        # If we get an IOError, there's no dict file at all to
+                        # pull from, so we start up with an empty dict.
                         self.log.warning(
                             'Could not load up local cache object (%s). '
                             'Starting with no local data. Error: %s' %
@@ -439,30 +508,119 @@ class KazooServiceRegistry(ServiceRegistry):
         self.log.debug('Registering a kazoo.ChildrenWatch object for '
                        'path [%s].' % path)
 
-        # Create a function that updates our local cache
+        # Establish a watch on the entire path for any updates
         @self._zk.ChildrenWatch(path)
-        def update(nodes):
-            self._cache[path] = dict()
+        def _update_node_list(nodes):
+            self.log.info('%s path node list has changed.' % path)
+            # Create a temporary local dict and fill it with all of our
+            # new node data
+            temp_cache = dict()
             for node in sorted(nodes):
-                self._cache[path][node] = self._get_node_from_provider(
-                    str(path + '/' + node))
-            self.log.info('%s path has updated nodes: %s' %
-                         (path, str(self._cache[path])))
+                # Get the data and the full path name
+                fullpath = str(path + '/' + node)
+                temp_cache[node] = funcs.decode(
+                    self._zk.retry(self._zk.get, fullpath)[0])
+
+                # Now, call _create_data_watch to create a new DataWatch
+                # object for this path.
+                self._create_datawatch(fullpath)
+
+            # Swap in our new dict data to the local self._cache object
+            self._cache[path] = temp_cache
+
+            # Now we have a full new node list
+            self.log.info('%s path new node list: %s' %
+                         (path, self._cache[path]))
+
+            # If we are saving our caches to a local file, do it
             if self._cache_file:
                 funcs.save_dict(self._cache, self._cache_file)
+
+            # Execute any callbacks
             self._execute_callbacks(path)
+
+        # Establish a watch on each individual server listed in the
+        # supplied path. Any time that the parent update() function is
+        # called, which will walk through and establish new watches
+        # on any new nodes.
+
         return self._cache[path]
+
+    @_health_check
+    def _create_datawatch(self, node):
+        """Creates a new DataWatch object for 'node'.
+
+        This method checks if an existing DataWatch has already been created
+        for a particular path. If it has, it just exits out because that
+        DataWatch should take care of updating the local cache and triggering
+        callbacks.
+
+        If the DataWatch does not exist, we create one and save it in our lcoal
+        dict so that we know not to do it again. If no existing data for the
+        supplied node exists, we assume were being called by _update_node_list
+        and that it will handle running the callback function. Otherwise, we
+        check if the data has indeed changed, and if so we trigger the
+        callback function.
+
+        Args:
+            node: String representing the full node-path to watch
+        """
+
+        if not node in self._data_watches:
+            # Make sure that we only create this callback once for this node
+            self._data_watches.append(node)
+
+            # This is the first time we've asked for data about this node,
+            # so we will register a watcher on it that handles updating the
+            # local cache if the node data changes.
+            @self._zk.DataWatch(node)
+            def _update_node_data(data, stat):
+                # Make sure that self._cache[directory] exists before we try
+                # to add some node data to it.
+                directory, nodename = split(node)
+                if not directory in self._cache:
+                    self._cache[directory] = dict()
+
+                # Take in our updated data and decode it
+                decoded = funcs.decode(data)
+
+                # See if our data changed, or if its the exact same
+                if not nodename in self._cache[directory]:
+                    # Assume this is the first time we're being run, and
+                    # therefore we will not trigger the callbacks. They should
+                    # get triggered by the _update_node_list() function that
+                    # initiated us.
+                    self._cache[directory][nodename] = decoded
+                    trigger_callback = False
+                else:
+                    if self._cache[directory][nodename] == decoded:
+                        self.log.debug('Node data for %s is the same as what '
+                                       'we already had registered. Not '
+                                       'executing callbacks.' % node)
+                        return
+                    else:
+                        # Update our local cache data
+                        self._cache[directory][nodename] = decoded
+                        trigger_callback = True
+
+                if trigger_callback:
+                    # Execute any callbacks on the path that this node is in
+                    self.log.debug('New node data for %s (%s) has triggered '
+                                   'the callbacks.' % (node, decoded))
+                    self._execute_callbacks(directory)
 
     @_health_check
     def _get_node_from_provider(self, node):
         """Returns the data from the node registered at path"""
-        try:
-            d = self._zk.retry(self._zk.get, node)
-            return funcs.decode(d[0])
-        except:
-            # If this fails, the node likely does not exist.
-            # Return False in this case.
-            return False
+
+        # Check whether we've got an existing DataWatch on this path
+        self._create_datawatch(node)
+
+        # The DataWatch callback only runs after data has been changed, not
+        # on the initial registration. We need to manually fetch the data
+        # once here.
+        directory, nodename = split(node)
+        return self._cache[directory][nodename]
 
     def _state_listener(self, state):
         """Listens for state changes about our connection.
