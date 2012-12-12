@@ -299,6 +299,7 @@ class KazooServiceRegistry(ServiceRegistry):
         self._readonly = readonly
         self._acl = acl
         self._server = server
+        self._lazy = lazy
         self._pid = os.getpid()
 
         # Keep a local dict of all of our DataWatch objects
@@ -318,6 +319,18 @@ class KazooServiceRegistry(ServiceRegistry):
         self._cache = {}
         self._cache_file = cachefile
 
+        # Define our zookeeper client here so that it never gets overwritten
+        self._zk = KazooClient(hosts=self._server,
+                               timeout=self._timeout,
+                               read_only=self._readonly,
+                               handler=EventHandler(),
+                               retry_delay=0.1,
+                               retry_backoff=2,
+                               retry_max_delay=10)
+
+        # Watch for any connection state changes
+        self._zk.add_listener(self._state_listener)
+
         # Connect (once we're connected, our state listener will handle setting
         # up things like authentication)
         self._connect(lazy)
@@ -325,6 +338,42 @@ class KazooServiceRegistry(ServiceRegistry):
         # Mark us as initialized
         self._initialized = True
         self.log.info('Initialization Done!')
+
+    def _health_check(func):
+        """Decorator used to heathcheck the ZooKeeper connection.
+
+        If this healthcheck fails, we raise a ServiceUnavailable exception.
+        If we detect that we've been forked, then we re-create our connection
+        to the ZooKeeper backend and move on with our health check."""
+
+        def _health_check_decorator(self, *args, **kwargs):
+            self.log.debug('Running healthcheck...')
+            pid = os.getpid()
+            if pid != self._pid:
+                self.log.info('Fork detected!')
+                self._pid = pid
+                self.reset()
+
+            # check if our connection is up or not
+            if not self.CONNECTED:
+                return False
+
+            # Nope, we're good
+            return func(self, *args, **kwargs)
+        return _health_check_decorator
+
+    @_health_check
+    def stop(self):
+        """Walks through our object and stops everything.
+
+        Terminates our ZK connection gracefully."""
+        self._zk.stop()
+
+    def start(self):
+        """Starts up our ZK connection again.
+
+        All existing watches/registrations/etc will be re-established."""
+        self._connect(self._lazy)
 
     def register_node(self, node, data=None, state=True):
         """Registers a supplied node (full path and nodename).
@@ -375,16 +424,6 @@ class KazooServiceRegistry(ServiceRegistry):
         """
 
         self.log.info('Connecting to Zookeeper Service (%s)' % self._server)
-        self._zk = KazooClient(hosts=self._server,
-                               timeout=self._timeout,
-                               read_only=self._readonly,
-                               handler=EventHandler(),
-                               retry_delay=0.1,
-                               retry_backoff=2,
-                               retry_max_delay=10)
-
-        # Watch for any connection state changes
-        self._zk.add_listener(self._state_listener)
 
         # Start our connection asynchronously
         self.event = self._zk.start_async()
@@ -466,29 +505,6 @@ class KazooServiceRegistry(ServiceRegistry):
         # username/password, then set it.
         if self._acl:
             self._zk.default_acl = (ACL, READONLY_ACL)
-
-    def _health_check(func):
-        """Decorator used to heathcheck the ZooKeeper connection.
-
-        If this healthcheck fails, we raise a ServiceUnavailable exception.
-        If we detect that we've been forked, then we re-create our connection
-        to the ZooKeeper backend and move on with our health check."""
-
-        def _health_check_decorator(self, *args, **kwargs):
-            self.log.debug('Running healthcheck...')
-            pid = os.getpid()
-            if pid != self._pid:
-                self.log.info('Fork detected!')
-                self._pid = pid
-                self.reset()
-
-            # check if our connection is up or not
-            if not self.CONNECTED:
-                return False
-
-            # Nope, we're good
-            return func(self, *args, **kwargs)
-        return _health_check_decorator
 
     @_health_check
     def _get_nodes_from_provider(self, path):
