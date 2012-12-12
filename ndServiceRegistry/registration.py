@@ -205,7 +205,7 @@ class EphemeralNode(Registration):
         registration has been lost. If it has, it re-registers it."""
 
         self._ephemeral = True
-        Registration.__init__(self, zk, path, data, state=True)
+        Registration.__init__(self, zk, path, data, state=state)
 
     def stop(self):
         """De-registers from Zookeeper, then calls SuperClass stop() method."""
