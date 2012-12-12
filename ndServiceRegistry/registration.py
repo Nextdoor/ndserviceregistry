@@ -147,10 +147,11 @@ class Registration(threading.Thread):
         # brute force attempt
         if self._state is False:
             self.log.debug('Making sure that node is de-registered.')
-            try:
-                self._zk.retry(self._zk.delete, self._path)
-            except:
-                pass
+            if self._zk.exists(self._path):
+                try:
+                    self._zk.retry(self._zk.delete, self._path)
+                except:
+                    pass
             return True
 
         # Check if this node has already been registered...
