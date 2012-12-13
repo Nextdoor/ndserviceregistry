@@ -42,10 +42,10 @@ Example usage to provide the above service list:
 >>> from ndServiceRegistry import KazooServiceRegistry
 >>> nd = KazooServiceRegistry(readonly=False,
                               cachefile='/tmp/cache')
->>> nd.register_node('/production/ssh/server1.cloud.mydomain.com:22')
->>> nd.register_node('/production/ssh/server2.cloud.mydomain.com:22')
->>> nd.register_node('/production/ssh/server3.cloud.mydomain.com:22')
->>> nd.register_node('/production/web/server2.cloud.mydomain.com:22',
+>>> nd.set('/production/ssh/server1.cloud.mydomain.com:22')
+>>> nd.set('/production/ssh/server2.cloud.mydomain.com:22')
+>>> nd.set('/production/ssh/server3.cloud.mydomain.com:22')
+>>> nd.set('/production/web/server2.cloud.mydomain.com:22',
                      data={'type': 'apache'})
 
 Example of getting a static list of nodes from /production/ssh. The first time
@@ -102,6 +102,7 @@ from os.path import split
 # Our own classes
 from ndServiceRegistry.registration import EphemeralNode
 from ndServiceRegistry import funcs
+from ndServiceRegistry import exceptions
 
 # For KazooServiceRegistry Class
 import kazoo.security
@@ -123,24 +124,6 @@ from version import __version__ as VERSION
 TIMEOUT = 5  # seconds
 SERVER = 'localhost:2181'
 
-
-class ServiceRegistryException(Exception):
-
-    """ServiceParty Exception Object"""
-
-    def __init__(self, e):
-        self.value = e
-
-    def __str__(self):
-        return self.value
-
-
-class NoAuthException(ServiceRegistryException):
-    """Thrown when we have no authorization to perform an action."""
-
-
-class ReadOnlyException(ServiceRegistryException):
-    """Thrown when a Write operation is attempted while in Read Only mode."""
 
 
 class ServiceRegistry(object):
@@ -375,7 +358,7 @@ class KazooServiceRegistry(ServiceRegistry):
         All existing watches/registrations/etc will be re-established."""
         self._connect(self._lazy)
 
-    def register_node(self, node, data=None, state=True):
+    def set(self, node, data=None, state=True):
         """Registers a supplied node (full path and nodename).
 
         Registers the supplied node-name with ZooKeeper and converts the
