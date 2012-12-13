@@ -358,7 +358,7 @@ class KazooServiceRegistry(ServiceRegistry):
         All existing watches/registrations/etc will be re-established."""
         self._connect(self._lazy)
 
-    def set(self, node, data=None, state=True):
+    def set(self, node, data=None, state=None):
         """Registers a supplied node (full path and nodename).
 
         Registers the supplied node-name with ZooKeeper and converts the
@@ -382,16 +382,25 @@ class KazooServiceRegistry(ServiceRegistry):
         # figure out if we were the ones who registered it or not. If we are,
         # we leave it alone. If not, we attempt to delete it and register our
         # own. If we cannot do that, we throw an error.
-        self.log.debug('Registering [%s] with [%s].' % (node, data))
+        self.log.debug('Looking for Registration object for [%s] with [%s].'
+                       % (node, data))
         if node in self._registrations:
+            # The Registration objects can stop themselves in the event of
+            # a failure. If they do, lets throw a message, toss the object,
+            # and then let a new one be created.
             self.log.debug('[%s] already has Registration object.' % node)
-            self._registrations[node].set_state(state)
-            return self._registrations[node]
+            if self._registrations[node].is_alive():
+                self._registrations[node].update(data=data, state=state)
+                return True
+            else:
+                self.log.debug('[%s] Registration object is dead.' % node)
+                del self._registrations[node]
 
         # Create a new registration object
         self.log.debug('Creating Registration object for [%s]' % node)
         self._registrations[node] = EphemeralNode(zk=self._zk, path=node,
                                                   data=data, state=state)
+        return True
 
     def _connect(self, lazy):
         """Connect to Zookeeper.
