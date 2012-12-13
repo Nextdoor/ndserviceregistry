@@ -244,6 +244,38 @@ class ServiceRegistry(object):
         self.log.debug('Checking for [%s] in data provider.' % node)
         return self._get_node_from_provider(node)
 
+    def username(self):
+        """Returns self._username"""
+        return self._username
+
+    def set_username(self, username):
+        """Updates self._username and reconfigures connection.
+
+        Args:
+            username: String representing the username"""
+        if username == self._username:
+            return
+
+        self._username = username
+        self.log.debug('Triggering setup_auth')
+        self._setup_auth()
+
+    def password(self):
+        """Returns self._password"""
+        return self._password
+
+    def set_password(self, password):
+        """Updates self._password and reconfigures connection.
+
+        Args:
+            password: String representing the password"""
+        if password == self._password:
+            return
+
+        self._password = password
+        self.log.debug('Triggering setup_auth')
+        self._setup_auth()
+
 
 class KazooServiceRegistry(ServiceRegistry):
 
