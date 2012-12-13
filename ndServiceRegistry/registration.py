@@ -227,6 +227,9 @@ class Registration(threading.Thread):
             self.log.error(('No authorization to delete node [%s]. '
                             'Will retry on next loop.' % self._path))
             return False
+        except kazoo.exceptions.ConnectionLoss:
+            self.log.warning('Zookeeper connection is down. Will retry later.')
+            return False
         except:
             # Raise any completely unknown exceptions.
             self.log.error('Stopping run loop, unexpected exception raised: %s'
@@ -259,7 +262,10 @@ class Registration(threading.Thread):
                           (self._path, self.data()))
         except kazoo.exceptions.NoAuthError, e:
             self.log.error(('No authorization to create/set node [%s]. '
-                            'Will retry on next loop.' % self._path))
+                            'Will retry later.' % self._path))
+            return False
+        except kazoo.exceptions.ConnectionLoss:
+            self.log.warning('Zookeeper connection is down. Will retry later.')
             return False
         except:
             # Raise any completely unknown exceptions.
