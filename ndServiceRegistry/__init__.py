@@ -42,10 +42,10 @@ Example usage to provide the above service list:
 >>> from ndServiceRegistry import KazooServiceRegistry
 >>> nd = KazooServiceRegistry(readonly=False,
                               cachefile='/tmp/cache')
->>> nd.set('/production/ssh/server1.cloud.mydomain.com:22')
->>> nd.set('/production/ssh/server2.cloud.mydomain.com:22')
->>> nd.set('/production/ssh/server3.cloud.mydomain.com:22')
->>> nd.set('/production/web/server2.cloud.mydomain.com:22',
+>>> nd.set_node('/production/ssh/server1.cloud.mydomain.com:22')
+>>> nd.set_node('/production/ssh/server2.cloud.mydomain.com:22')
+>>> nd.set_node('/production/ssh/server3.cloud.mydomain.com:22')
+>>> nd.set_node('/production/web/server2.cloud.mydomain.com:22',
                      data={'type': 'apache'})
 
 Example of getting a static list of nodes from /production/ssh. The first time
@@ -358,7 +358,7 @@ class KazooServiceRegistry(ServiceRegistry):
         All existing watches/registrations/etc will be re-established."""
         self._connect(self._lazy)
 
-    def set(self, node, data=None, state=None):
+    def set(self, node, data=None, state=None, type=EphemeralNode):
         """Registers a supplied node (full path and nodename).
 
         Registers the supplied node-name with ZooKeeper and converts the
@@ -370,6 +370,8 @@ class KazooServiceRegistry(ServiceRegistry):
             data: A dict with any additional data you wish to register.
             state: True/False whether or not the node is actively listed
                    in Zookeeper
+            type: A Registration class object representing the type of node
+                  we're registering.
 
         Returns:
             True: registration was sucessfull"""
@@ -398,9 +400,13 @@ class KazooServiceRegistry(ServiceRegistry):
 
         # Create a new registration object
         self.log.debug('Creating Registration object for [%s]' % node)
-        self._registrations[node] = EphemeralNode(zk=self._zk, path=node,
-                                                  data=data, state=state)
+        self._registrations[node] = type(zk=self._zk, path=node,
+                                         data=data, state=state)
         return True
+
+    def set_node(self, node, data=None, state=None):
+        """Registeres an EphemeralNode type."""
+        self.set(node=node, data=data, state=state, type=EphemeralNode)
 
     def _connect(self, lazy):
         """Connect to Zookeeper.
