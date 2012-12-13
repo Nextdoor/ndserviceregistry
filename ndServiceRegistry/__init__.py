@@ -393,7 +393,7 @@ class KazooServiceRegistry(ServiceRegistry):
                 self._registrations[node].update(data=data, state=state)
                 return True
             else:
-                self.log.debug('[%s] Registration object is dead.' % node)
+                self.log.warning('[%s] Registration object is dead.' % node)
                 del self._registrations[node]
 
         # Create a new registration object
