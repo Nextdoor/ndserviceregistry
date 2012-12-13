@@ -436,6 +436,18 @@ class KazooServiceRegistry(ServiceRegistry):
                                          data=data, state=state)
         return True
 
+    def unset(self, node):
+        """Destroys a particular Registration object.
+
+        Args:
+            node: (String) representing the node path to the object"""
+
+        if node in self._registrations:
+            self.log.debug('Found Registration object [%s] to delete.' %
+                            node)
+            self._registrations[node].stop()
+            del self._registrations[node]
+
     def set_node(self, node, data=None, state=None):
         """Registeres an EphemeralNode type."""
         self.set(node=node, data=data, state=state, type=EphemeralNode)
