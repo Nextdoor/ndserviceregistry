@@ -23,6 +23,7 @@ __author__ = 'matt@nextdoor.com (Matt Wise)'
 import logging
 import threading
 import time
+import sys
 
 from ndServiceRegistry import funcs
 
@@ -74,6 +75,7 @@ class Registration(threading.Thread):
         self._path = path
         self._state = state
         self._registered = False
+        self._raw_data = None
         self._event = threading.Event()
 
         # Encode and set our data
@@ -95,7 +97,15 @@ class Registration(threading.Thread):
 
         Args:
             data: String or Dict of data to register with this object."""
+
+        # If the data supplied was the same as our original data, then don't
+        # bother updating because the newly encoded data will include a time
+        # stamp that always changes.
+        if data == self._raw_data:
+            return
+
         self._data = funcs.encode(data)
+        self._raw_data = data
         self._registered = False
 
     def path(self):
@@ -114,7 +124,7 @@ class Registration(threading.Thread):
         last_run = 0
         while True and not self._event.is_set():
             self._event.wait(1)
-            if time.time() - last_run >= TIMEOUT or self._registered == False:
+            if time.time() - last_run >= TIMEOUT or not self.is_registered():
                 self.log.debug('Executing self._update()')
                 self._registered = self._update()
                 last_run = time.time()
@@ -146,8 +156,27 @@ class Registration(threading.Thread):
         self._state = state
         self._registered = False
 
-    def update(self):
-        """Triggers near-immediate run of the self._update() function"""
+    def is_registered(self):
+        """Returns self._registered"""
+        return self._registered
+
+    def update(self, data=None, state=None):
+        """Triggers near-immediate run of the self._update() function.
+
+        If data or state are supplied, these are updated before triggering the
+        update.
+
+        Args:
+            data: (String/Dict) data to register with this object.
+            state: (Boolean) whether to register or unregister this object
+        """
+
+        if data:
+            self.set_data(data)
+
+        if state:
+            self.set_state(state)
+
         self._registered = False
 
     def _update(self):
@@ -208,7 +237,7 @@ class Registration(threading.Thread):
         # If a node was returned, check whether the data is the exact same or
         # not.
         try:
-            if node[0] == self._data:
+            if node[0] == self.data():
                 self.log.debug('Node already registered and data matches.')
                 return True
         except:
@@ -219,15 +248,15 @@ class Registration(threading.Thread):
         # Register our connection with zookeeper
         try:
             self.log.debug('Attempting to register %s' % self._path)
-            self._zk.retry(self._zk.create, self._path, value=self._data,
+            self._zk.retry(self._zk.create, self._path, value=self.data(),
                            ephemeral=self._ephemeral, makepath=True)
             self.log.debug('Node %s registered with data: %s' %
-                          (self._path, self._data))
+                          (self._path, self.data()))
         except kazoo.exceptions.NodeExistsError:
             self.log.debug('Node %s exists, updating data.' % self._path)
-            self._zk.retry(self._zk.set, self._path, value=self._data)
+            self._zk.retry(self._zk.set, self._path, value=self.data())
             self.log.debug('Node %s updated with data: %s' %
-                          (self._path, self._data))
+                          (self._path, self.data()))
         except kazoo.exceptions.NoAuthError, e:
             self.log.error(('No authorization to create/set node [%s]. '
                             'Will retry on next loop.' % self._path))
