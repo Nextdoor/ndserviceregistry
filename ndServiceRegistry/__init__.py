@@ -203,6 +203,19 @@ class ServiceRegistry(object):
         self.log.debug('Triggering setup_auth')
         self._setup_auth()
 
+    def _save_watcher_to_dict(self, data):
+        """Saves the supplied data to our locally cached dict file.
+
+        This is not meant to be called by hand, but rather by the
+        Watcher._execute_callback() function. It takes a dict supplied
+        by the get() method from a Watcher object."""
+
+        if not self._cache_file:
+            return
+
+        cache = { data['path']: data }
+        self.log.debug('Saving Watcher object to cache: %s' % cache)
+        funcs.save_dict(cache, self._cache_file)
 
 class KazooServiceRegistry(ServiceRegistry):
 
@@ -255,10 +268,9 @@ class KazooServiceRegistry(ServiceRegistry):
         # Store all of our owned Watcher objects here
         self._watchers = {}
 
-#        # Create a local 'dict' that we'll use to store the results of our
-#        # get_nodes/get_node_data calls.
-        self._cache = {}
-#        self._cache_file = cachefile
+        # Create a local 'dict' that we'll use to store the results of our
+        # get_nodes/get_node_data calls.
+        self._cache_file = cachefile
 
         # Define our zookeeper client here so that it never gets overwritten
         self._zk = KazooClient(hosts=self._server,
@@ -559,5 +571,10 @@ class KazooServiceRegistry(ServiceRegistry):
                                        path,
                                        watch_children=True,
                                        callback=callback)
+
+        # Always register our dictionary saver callback, in addition to
+        # whatever our user has supplied
+        self._watchers[path].add_callback(self._save_watcher_to_dict)
+
         return self._watchers[path].get()
 

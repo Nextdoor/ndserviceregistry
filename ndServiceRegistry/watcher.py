@@ -56,7 +56,8 @@ class Watcher(object):
             'children': {
                 'node1:22': { 'data': 'value' },
                 'node2:22': { 'data': 'value2' },
-            }
+            },
+            'path': '/services/foo',
         }
     """
 
@@ -97,6 +98,7 @@ class Watcher(object):
         """Returns local data/children in specific dict format"""
         ret = {}
         ret['stat'] = self.stat()
+        ret['path'] = self._path
         ret['data'] = self.data()
         ret['children'] = self._children
         return ret
