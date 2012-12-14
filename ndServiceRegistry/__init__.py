@@ -101,6 +101,7 @@ from os.path import split
 
 # Our own classes
 from ndServiceRegistry.registration import EphemeralNode
+from ndServiceRegistry.watcher import Watcher
 from ndServiceRegistry import funcs
 from ndServiceRegistry import exceptions
 
@@ -184,13 +185,11 @@ class ServiceRegistry(object):
         if not callback in self._callbacks[path]:
                 self._callbacks[path].append(callback)
 
-    def get_nodes(self, path):
-        """Retrieve a list (dict) of servers for a given path.
+    def get(self, path):
+        """Retrieves a list of nodes (or a single node) in dict() form.
 
-        Returns a list of servers (host:port) format with any applicable
-        config data (usernames, passwords, etc). Data is returned in a
-        dict, and cached. Once the dict exists, data is always returned
-        from the dict first.
+        Creates a Watcher object for the supplied path and returns the data
+        for the requested path.
 
         Args:
             path: A string representing the path to the servers.
@@ -200,49 +199,16 @@ class ServiceRegistry(object):
         """
 
         # Return the object from our cache, if it's there
-        self.log.debug('Checking for [%s] in cache.' % path)
-        if path in self._cache:
-            self.log.debug('Found [%s] in cache. Nodes: %s' %
-                          (path, str(self._cache[path])))
-            return self._cache[path]
+        self.log.debug('[%s] Checking for existing object...' % path)
+        if path in self._watchers:
+            self.log.debug('Found [%s] in cache: %s' %
+                          (path, str(self._watchers[path].get())))
+            return self._watchers[path].get()
 
         # Ok, so the cache is missing the key. Lets look for it in Zookeeper
-        self.log.debug('Checking for [%s] in data provider.' % path)
-        return self._get_nodes_from_provider(path)
-
-    def get_node(self, node):
-        """Retrieve a dict of data for the node supplied.
-
-        Returns the data from a given path (if it is a node). If it does
-        not exist, returns None.
-
-        Args:
-            path: A string representing the path to the server.
-            node: A string representing the actual node identifier
-
-        Returns:
-            dict() of the servers requested, and any data they include
-            None if no data is available
-            False if the server does not exist at all at that path
-        """
-
-        # Return the object from our cache, if it's there. If we have the path
-        # in our local cache, assume its authoritative and do not bother asking
-        # backend at all.
-        directory, nodename = split(node)
-        self.log.debug('Checking for [%s] in cache.' % node)
-        if directory in self._cache:
-            if nodename in self._cache[directory]:
-                self.log.debug('Node %s found in cache. Data: %s' %
-                              (node, str(self._cache[directory][nodename])))
-                return self._cache[directory][nodename]
-            else:
-                self.log.debug('Node %s not found in cache.' % node)
-                return False
-
-        # Ok, so the cache is missing the key. Lets look for it in the backend
-        self.log.debug('Checking for [%s] in data provider.' % node)
-        return self._get_node_from_provider(node)
+        self.log.debug('[%s] Creating Watcher object...' % path)
+        self._watchers[path] = Watcher(self._zk, path, watch_children=True)
+        return self._watchers[path].get()
 
     def username(self):
         """Returns self._username"""
@@ -320,19 +286,18 @@ class KazooServiceRegistry(ServiceRegistry):
         # Keep a local dict of all of our DataWatch objects
         self._data_watches = []
 
-        # Create a callback registry so that other objects can be notified
-        # when our server lists change.
-        self._callbacks = {}
-
         # Create a registrations registry so that we know what paths we've been
         # asked to register. Upon any kind of a reset, we can use this to re-
         # register these paths.
         self._registrations = {}
 
-        # Create a local 'dict' that we'll use to store the results of our
-        # get_nodes/get_node_data calls.
+        # Store all of our owned Watcher objects here
+        self._watchers = {}
+
+#        # Create a local 'dict' that we'll use to store the results of our
+#        # get_nodes/get_node_data calls.
         self._cache = {}
-        self._cache_file = cachefile
+#        self._cache_file = cachefile
 
         # Define our zookeeper client here so that it never gets overwritten
         self._zk = KazooClient(hosts=self._server,
@@ -379,9 +344,12 @@ class KazooServiceRegistry(ServiceRegistry):
 
     @_health_check
     def stop(self):
-        """Walks through our object and stops everything.
+        """Cleanly stops our Zookeeper connection.
 
-        Terminates our ZK connection gracefully."""
+        All Registration/Watch objects stick around. If the connection
+        is re-established, they will automatically re-create their
+        connections."""
+
         self._zk.stop()
 
     def start(self):
@@ -543,141 +511,18 @@ class KazooServiceRegistry(ServiceRegistry):
         if self._acl:
             self._zk.default_acl = (ACL, READONLY_ACL)
 
-    @_health_check
-    def _get_nodes_from_provider(self, path):
-        """Returns a list of children from Zookeeper.
-
-        Go to Zookeeper and get a list of hosts from a particular path.
-        Raises an exception if we cannot return a valid result.
-
-        Args:
-            path: A string representing the path to check in Zookeeper.
-
-        Returns:
-            <dict> object of server list in hostname:port form
-        """
-
-        # Get an iterator for the path
-        self.log.debug('Registering a kazoo.ChildrenWatch object for '
-                       'path [%s].' % path)
-
-        # Establish a watch on the entire path for any updates
-        @self._zk.ChildrenWatch(path)
-        def _update_node_list(nodes):
-            self.log.info('%s path node list has changed.' % path)
-            # Create a temporary local dict and fill it with all of our
-            # new node data
-            temp_cache = dict()
-            for node in sorted(nodes):
-                # Get the data and the full path name
-                fullpath = str(path + '/' + node)
-                temp_cache[node] = funcs.decode(
-                    self._zk.retry(self._zk.get, fullpath)[0])
-
-                # Now, call _create_data_watch to create a new DataWatch
-                # object for this path.
-                self._create_datawatch(fullpath)
-
-            # Swap in our new dict data to the local self._cache object
-            self._cache[path] = temp_cache
-
-            # Now we have a full new node list
-            self.log.info('%s path new node list: %s' %
-                         (path, self._cache[path]))
-
-            # If we are saving our caches to a local file, do it
-            if self._cache_file:
-                funcs.save_dict(self._cache, self._cache_file)
-
-            # Execute any callbacks
-            self._execute_callbacks(path)
-
-        # Establish a watch on each individual server listed in the
-        # supplied path. Any time that the parent update() function is
-        # called, which will walk through and establish new watches
-        # on any new nodes.
-
-        return self._cache[path]
-
-    @_health_check
-    def _create_datawatch(self, node):
-        """Creates a new DataWatch object for 'node'.
-
-        This method checks if an existing DataWatch has already been created
-        for a particular path. If it has, it just exits out because that
-        DataWatch should take care of updating the local cache and triggering
-        callbacks.
-
-        If the DataWatch does not exist, we create one and save it in our lcoal
-        dict so that we know not to do it again. If no existing data for the
-        supplied node exists, we assume were being called by _update_node_list
-        and that it will handle running the callback function. Otherwise, we
-        check if the data has indeed changed, and if so we trigger the
-        callback function.
-
-        Args:
-            node: String representing the full node-path to watch
-        """
-
-        if not node in self._data_watches:
-            # Make sure that we only create this callback once for this node
-            self._data_watches.append(node)
-
-            # This is the first time we've asked for data about this node,
-            # so we will register a watcher on it that handles updating the
-            # local cache if the node data changes.
-            @self._zk.DataWatch(node)
-            def _update_node_data(data, stat):
-                # Make sure that self._cache[directory] exists before we try
-                # to add some node data to it.
-                directory, nodename = split(node)
-                if not directory in self._cache:
-                    self._cache[directory] = dict()
-
-                # If the node has been deleted, just get out of this function
-                if not data and not stat:
-                    return 
-
-                # Take in our updated data and decode it
-                decoded = funcs.decode(data)
-
-                # See if our data changed, or if its the exact same
-                if not nodename in self._cache[directory]:
-                    # Assume this is the first time we're being run, and
-                    # therefore we will not trigger the callbacks. They should
-                    # get triggered by the _update_node_list() function that
-                    # initiated us.
-                    self._cache[directory][nodename] = decoded
-                    trigger_callback = False
-                else:
-                    if self._cache[directory][nodename] == decoded:
-                        self.log.debug('Node data for %s is the same as what '
-                                       'we already had registered. Not '
-                                       'executing callbacks.' % node)
-                        return
-                    else:
-                        # Update our local cache data
-                        self._cache[directory][nodename] = decoded
-                        trigger_callback = True
-
-                if trigger_callback:
-                    # Execute any callbacks on the path that this node is in
-                    self.log.debug('New node data for %s (%s) has triggered '
-                                   'the callbacks.' % (node, decoded))
-                    self._execute_callbacks(directory)
-
-    @_health_check
-    def _get_node_from_provider(self, node):
-        """Returns the data from the node registered at path"""
-
-        # Check whether we've got an existing DataWatch on this path
-        self._create_datawatch(node)
-
-        # The DataWatch callback only runs after data has been changed, not
-        # on the initial registration. We need to manually fetch the data
-        # once here.
-        directory, nodename = split(node)
-        return self._cache[directory][nodename]
+#    @_health_check
+#    def _get_node_from_provider(self, node):
+#        """Returns the data from the node registered at path"""
+#
+#        # Check whether we've got an existing DataWatch on this path
+#        self._create_datawatch(node)
+#
+#        # The DataWatch callback only runs after data has been changed, not
+#        # on the initial registration. We need to manually fetch the data
+#        # once here.
+#        directory, nodename = split(node)
+#        return self._cache[directory][nodename]
 
     def _state_listener(self, state):
         """Listens for state changes about our connection.
