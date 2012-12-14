@@ -21,11 +21,11 @@ Copyright 2012 Nextdoor Inc."""
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
-import threading
 import time
 import sys
 
 from ndServiceRegistry import funcs
+from ndServiceRegistry.watcher import Watcher
 
 # For KazooServiceRegistry Class
 import kazoo.exceptions
@@ -36,22 +36,18 @@ from version import __version__ as VERSION
 TIMEOUT = 30
 
 
-class Registration(threading.Thread):
+class Registration(object):
     """An object that registers a znode with ZooKeeper.
 
     This object handles the initial registration, updating of registered
     data, and connection state changes from the supplied ServiceRegistry
     object.
 
-    In order to constantly maintain our state with the Zookeeper service we
-    run this as a threading.Thread object with a run() function loop that
-    checks every 30 seconds whether or not the host is still registered.
-    If the node has changed for any reason (connection loss, some delete
-    event, etc), we attempt to re-create the node reference and update its
-    data.
-
-    In addition to this 30 second loop, calling self.update() will trigger
-    an update of the data within just a few seconds.
+    The idea here is that the Registration object creates a Watcher object
+    to keep an eye on the 'node' that we want to register. This Watcher
+    object will then trigger the this Registration object to create/update
+    or delete the node, based on the desired state (self.state() and
+    self.set_state()).
 
     Args:
         zk: kazoo.client.KazooClient object reference
@@ -59,38 +55,56 @@ class Registration(threading.Thread):
               if applicable)
         data: (dict/string) Data to apply to the supplied path
         state: (Boolean) whether to create, or delete the path from ZooKeeper
+
+    Example:
+        Register a new node:
+        >>> r = EphemeralNode(zk, '/services/ssh/foo:123', 'my data', True)
+        >>> r.data()
+        {u'pid': 8364, u'string_value': u'my data', u'created': u'2012-12-14 21:17:50'}
+
+        Now change the nodes data
+        >>> r.set_data('some other data')
+        >>> r.data()
+        {u'pid': 8364, u'string_value': u'some other data', u'created': u'2012-12-14 21:18:26'}
+
+        De-register the node
+        >>> r.set_state(False)
+        >>> r.data()
+        >>> r.get()
+        {'stat': None, 'data': None, 'children': {}}
     """
 
     LOGGING = 'ndServiceRegistry.Registration'
 
     def __init__(self, zk, path, data, state=True):
-        # Initiate our thread
-        super(Registration, self).__init__()
-
         # Create our logger
-        self.log = logging.getLogger(self.LOGGING)
+        self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
 
         # Set our local variables
         self._zk = zk
         self._path = path
-        self._state = state
-        self._registered = False
-        self._raw_data = None
-        self._event = threading.Event()
+        self._data = data
 
-        # Encode and set our data
-        self.set_data(data)
+        if state == False or state == True:
+            self._state = state
+        else:
+            state = True
 
-        # These threads can die with prejudice. Make sure that any time the
-        # python interpreter exits, we exit immediately
-        self.setDaemon(True)
+        # Store both encdoed-string and decoded-dict versions of our 'data'
+        # for comparison purposes later.
+        self._encoded_data = funcs.encode(data)
+        self._decoded_data = funcs.decode(self._encoded_data)
 
-        # Start up
-        self.start()
+        # Make sure that we have a watcher on the path we care about
+        self._watcher = Watcher(self._zk, self._path, watch_children=False, callback=self._update)
 
     def data(self):
-        """Returns self._data"""
-        return self._data
+        """Returns live node data from Watcher object."""
+        return self._watcher.data()
+
+    def get(self):
+        """Returns live node information from Watcher object."""
+        return self._watcher.get()
 
     def set_data(self, data):
         """Sets self._data.
@@ -98,45 +112,28 @@ class Registration(threading.Thread):
         Args:
             data: String or Dict of data to register with this object."""
 
-        # If the data supplied was the same as our original data, then don't
-        # bother updating because the newly encoded data will include a time
-        # stamp that always changes.
-        if data == self._raw_data:
+        if not data == self._data:
+            self._data = data
+            self._encoded_data = funcs.encode(data)
+            self._decoded_data = funcs.decode(self._encoded_data)
+            self._set_data()
+
+    def _set_data(self):
+        try:
+            self.log.debug('Updating data')
+            self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
+            self.log.debug('Updated with data: %s' % self._data)
+        except kazoo.exceptions.NoAuthError, e:
+            self.log.error('No authorization to set node.')
             return
 
-        self._data = funcs.encode(data)
-        self._raw_data = data
-        self._registered = False
-
-    def path(self):
-        """Returns self._path"""
-        return self._path
-
-    def run(self):
-        """Simple background thread that monitors our Zookeeper registration.
-
-        We want our threads to respond to an outside Exception extremely
-        quickly, however, we don't want to run our self._update() loop super
-        often. What we do here is loop every half-second and check whether the
-        last-time the self._update() method executed is greater than TIMEOUT.
-        """
-
-        last_run = 0
-        while True and not self._event.is_set():
-            self._event.wait(1)
-            if time.time() - last_run >= TIMEOUT or not self.is_registered():
-                self.log.debug('Executing self._update()')
-                self._registered = self._update()
-                last_run = time.time()
-
-        # Let go of our _zk reference
-        self._zk = None
-        self.log.debug('Registration %s is exiting run() loop.' % self._path)
-
     def stop(self):
-        """Stops the run() method."""
-        # Stop the main run() method
-        self._event.set()
+        """Disables our registration of the node."""
+        self.set_state(False)
+        
+    def start(self):
+        """Enables our registration of the node."""
+        self.set_state(True)
 
     def state(self):
         """Returns self._state"""
@@ -152,13 +149,38 @@ class Registration(threading.Thread):
         Args:
             state: True or False"""
 
-        # Best effort here
-        self._state = state
-        self._registered = False
+        if self._state == state:
+            return
 
-    def is_registered(self):
-        """Returns self._registered"""
-        return self._registered
+        self._state = state
+        self._set_state(self._state)
+
+    def _set_state(self, state):
+        if state == True:
+            # Register our connection with zookeeper
+            try:
+                self.log.debug('Registering...')
+                self._zk.retry(self._zk.create, self._path,
+                               value=self._encoded_data,
+                               ephemeral=self._ephemeral, makepath=True)
+                self.log.info('Registered with data: %s' % self._data)
+                return
+            except kazoo.exceptions.NoAuthError, e:
+                self.log.error('No authorization to create node.')
+                return
+        elif state == False:
+            # Try to delete the node
+            self.log.debug('Attempting de-registration...')
+            try:
+                self._zk.retry(self._zk.delete, self._path)
+            except kazoo.exceptions.NoAuthError, e:
+                # The node exists, but we don't even have authorization to read
+                # it. We certainly will not have access then to change it below,
+                # so return false. We'll retry again very soon.
+                self.log.error('No authorization to delete node.')
+                pass
+            return
+
 
     def update(self, data=None, state=None):
         """Triggers near-immediate run of the self._update() function.
@@ -177,104 +199,29 @@ class Registration(threading.Thread):
         if state:
             self.set_state(state)
 
-        self._registered = False
-
-    def _update(self):
+    def _update(self, data):
         """Registers a supplied node (full path and nodename).
-
-        Returns:
-            True: If the nodes registration was updated
-            False: If the Zookeeper connection is down
 
         Raises:
             NoAuthException: If no authorization to update node"""
 
-        # Check if we're in read-only mode
-        if not self._zk.connected:
-            self.log.warning('Zookeeper connection is down. Will retry later.')
-            return False
+        # Try to delete the node
+        self.log.debug('Called with data: %s' % data)
 
-        # Check if we are de-registering a path. If so, give it a best effort
-        # brute force attempt
-        if self._state is False:
-            self.log.debug('Making sure that node is de-registered.')
-            if self._zk.exists(self._path):
-                try:
-                    self._zk.retry(self._zk.delete, self._path)
-                except Exception, e:
-                    # Do our absolute best to remove the node, but if the
-                    # command fails, we'll throw a log message and move on.
-                    self.log.warn('Could not remove %s from Zookeeper: %s' %
-                                  (self._path, e))     
-                    # Return False because the ndoe existed, but we were unable
-                    # to delete its registration. This will trigger a retry
-                    # very quickly because of the loop in run().
-                    return False
-            # We suceeded at de-registering our node, so return true.
-            return True
-
-        # Check if this node has already been registered...
-        try:
-            if self._zk.exists(self._path):
-                node = self._zk.get(self._path)
-        except kazoo.exceptions.NoNodeError, e:
-            # The node isn't registered yet, this is fine
-            pass
-        except kazoo.exceptions.NoAuthError, e:
-            # The node exists, but we don't even have authorization to read
-            # it. We certainly will not have access then to change it below,
-            # so return false. We'll retry again very soon.
-            self.log.error(('No authorization to delete node [%s]. '
-                            'Will retry on next loop.' % self._path))
-            return False
-        except kazoo.exceptions.ConnectionLoss:
-            self.log.warning('Zookeeper connection is down. Will retry later.')
-            return False
-        except:
-            # Raise any completely unknown exceptions.
-            self.log.error('Stopping run loop, unexpected exception raised: %s'
-                           % sys.exc_info()[0])
-            self.stop()
-            return False
-
-        # If a node was returned, check whether the data is the exact same or
-        # not.
-        try:
-            if node[0] == self.data():
-                self.log.debug('Node already registered and data matches.')
-                return True
-        except:
-            # We must not have retrieved a node above, so just ignore this and
-            # move on with the registration below.
-            pass
-
-        # Register our connection with zookeeper
-        try:
-            self.log.debug('Attempting to register %s' % self._path)
-            self._zk.retry(self._zk.create, self._path, value=self.data(),
-                           ephemeral=self._ephemeral, makepath=True)
-            self.log.debug('Node %s registered with data: %s' %
-                          (self._path, self.data()))
-        except kazoo.exceptions.NodeExistsError:
-            self.log.debug('Node %s exists, updating data.' % self._path)
-            self._zk.retry(self._zk.set, self._path, value=self.data())
-            self.log.debug('Node %s updated with data: %s' %
-                          (self._path, self.data()))
-        except kazoo.exceptions.NoAuthError, e:
-            self.log.error(('No authorization to create/set node [%s]. '
-                            'Will retry later.' % self._path))
-            return False
-        except kazoo.exceptions.ConnectionLoss:
-            self.log.warning('Zookeeper connection is down. Will retry later.')
-            return False
-        except:
-            # Raise any completely unknown exceptions.
-            self.log.error('Stopping run loop, unexpected exception raised: %s'
-                           % sys.exc_info()[0])
-            self.stop()
-            return False
-
-        return True
+        if self._state is False and not data['stat'] == None:
+            # THe node exists because data['stat'] has data, but our
+            # desired state is False. De-register the node.
+            self._set_state(False)
+        elif self._state is True and data['stat'] == None:
+            # The node does NOT exist because data['stat'] is None,
+            # but our desired state is True. Register the node.
+            self._set_state(True)
+            return
+        elif self._state is True and not data['data'] == self._decoded_data:
+            # Lastly, the node is registered, and we want it to be. However,
+            # the data with the node is incorrect. Change it.
+            self.log.warning('Registered node had different data.')
+            self._set_data()
 
 
 class EphemeralNode(Registration):

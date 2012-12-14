@@ -390,7 +390,7 @@ class KazooServiceRegistry(ServiceRegistry):
         All existing watches/registrations/etc will be re-established."""
         self._connect(self._lazy)
 
-    def set(self, node, data=None, state=None, type=EphemeralNode):
+    def set(self, node, data, state, type):
         """Registers a supplied node (full path and nodename).
 
         Registers the supplied node-name with ZooKeeper and converts the
@@ -423,18 +423,18 @@ class KazooServiceRegistry(ServiceRegistry):
             # a failure. If they do, lets throw a message, toss the object,
             # and then let a new one be created.
             self.log.debug('[%s] already has Registration object.' % node)
-            if self._registrations[node].is_alive():
-                self._registrations[node].update(data=data, state=state)
-                return True
-            else:
-                self.log.warning('[%s] Registration object is dead.' % node)
-                del self._registrations[node]
+            self._registrations[node].update(data=data, state=state)
+            return True
 
         # Create a new registration object
         self.log.debug('Creating Registration object for [%s]' % node)
         self._registrations[node] = type(zk=self._zk, path=node,
                                          data=data, state=state)
         return True
+
+    def set_node(self, node, data=None, state=True):
+        """Registeres an EphemeralNode type."""
+        self.set(node=node, data=data, state=state, type=EphemeralNode)
 
     def unset(self, node):
         """Destroys a particular Registration object.
@@ -446,11 +446,6 @@ class KazooServiceRegistry(ServiceRegistry):
             self.log.debug('Found Registration object [%s] to delete.' %
                             node)
             self._registrations[node].stop()
-            del self._registrations[node]
-
-    def set_node(self, node, data=None, state=None):
-        """Registeres an EphemeralNode type."""
-        self.set(node=node, data=data, state=state, type=EphemeralNode)
 
     def _connect(self, lazy):
         """Connect to Zookeeper.
