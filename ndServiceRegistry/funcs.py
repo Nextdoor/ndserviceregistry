@@ -31,7 +31,7 @@ import cPickle as pickle
 LOGGER = 'ndServiceRegistry.funcs'
 
 
-def encode(data={}):
+def encode(data=None):
     """Converts a data dict into a storable string.
 
     Takes a supplied dict object and converts it into a storable JSON
@@ -43,6 +43,9 @@ def encode(data={}):
 
     Returns:
         A JSON string with the supplied data as well as some default data"""
+
+    if not data:
+        return None
 
     # Check if the data is a single string. If so, turn it into a dict
     if isinstance(data, basestring):
@@ -81,6 +84,9 @@ def decode(data):
 
     Returns:
         A dict that represents the supplied data"""
+
+    if not data:
+        return None
 
     # Strip incoming data of new lines
     s = data.strip()
