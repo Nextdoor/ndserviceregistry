@@ -49,13 +49,15 @@ class Watcher(object):
     the get() method. Data will be returned in this format:
 
         {
-            data = { 'foo': 'bar', 'abc': 123' },
-            children = {
-                'node1:22' = { 'data': 'value' },
-                'node2:22' = { 'data': 'value2' },
+            'data': { 'foo': 'bar', 'abc': 123' },
+            'stat': ZnodeStat(czxid=116, mzxid=4032, ctime=1355424939217,
+                    mtime=1355523495703, version=5, cversion=1912, aversion=0,
+                    ephemeralOwner=0, dataLength=9, numChildren=2, pzxid=8388),
+            'children': {
+                'node1:22': { 'data': 'value' },
+                'node2:22': { 'data': 'value2' },
             }
         }
-
     """
 
     LOGGING = 'ndServiceRegistry.Watcher'
@@ -128,6 +130,17 @@ class Watcher(object):
     def state(self):
         """Returns self._state"""
         return self._state
+
+    def add_callback(self, callback):
+        """Add a callback when watch is updated."""
+        for existing_callback in self._callbacks:
+            if callback == existing_callback:
+                self.log.warning('Callback [%s] already exists. Not '
+                                 'triggering again.' % callback)
+                return
+
+        self._callbacks.append(callback)
+        callback(self.get())
 
     def _begin(self):
         # First, register a watch on the data for the path supplied.

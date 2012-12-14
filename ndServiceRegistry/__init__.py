@@ -162,40 +162,37 @@ class ServiceRegistry(object):
     def add_callback(self, path, callback):
         """Adds a callback in the event of a path change.
 
-        Adds 'callback' to a dict (self._callbacks) with the path as its
-        key. Any time a particular path is updated, we'll walk through the
-        list of callbacks under that path key, and run them.
+        Adds a callback to a given watcher. If the watcher doesnt exist,
+        we create it with that callback. Either way, your callback is
+        immediately executed with the service data.
 
         Args:
             path: A string reprsenting the path to watch for changes.
-            callback: Reference to the functino to callback to.
+            callback: Reference to the function to callback to.
         """
 
-        # Check if the supplied path has ever been requested before. If not
-        # then we do not have a 'watch' in place to keep an eye on that path,
-        # so adding a local callback wouldn't do much good.
-        if not path in self._cache:
-            # Path has never been retrieved before, so go get it and establish
-            # a watch on that path so that we're notified of any changes.
-            self.get_nodes(path)
+        if path in self._watchers:
+            self.log.debug('Found [%s] in watchers. Adding callback.' %
+                path)
+            self._watchers[path].add_callback(callback)
+        else:
+            self.log.debug('No existing watcher for [%s] exists. Creating.' %
+                path)
+            self.get(path, callback=callback)
 
-        if not path in self._callbacks:
-            self._callbacks[path] = []
-
-        if not callback in self._callbacks[path]:
-                self._callbacks[path].append(callback)
-
-    def get(self, path):
+    def get(self, path, callback=None):
         """Retrieves a list of nodes (or a single node) in dict() form.
 
         Creates a Watcher object for the supplied path and returns the data
-        for the requested path.
+        for the requested path. Triggers callback immediately.
 
         Args:
             path: A string representing the path to the servers.
+            callback: (optional) reference to function to call if the path
+                      changes.
 
         Returns:
-            dict() of the servers requested, and any data they include
+            ndServiceRegistry.Watcher.get() dict object
         """
 
         # Return the object from our cache, if it's there
@@ -203,11 +200,20 @@ class ServiceRegistry(object):
         if path in self._watchers:
             self.log.debug('Found [%s] in cache: %s' %
                           (path, str(self._watchers[path].get())))
+            # If a callback was suplied, but we already have a Watcher object,
+            # add that callback to the existing object.
+            if callback:
+                self._watchers[path].add_callback(callback)
+
+            # Return the Watcher object get() data.
             return self._watchers[path].get()
 
         # Ok, so the cache is missing the key. Lets look for it in Zookeeper
         self.log.debug('[%s] Creating Watcher object...' % path)
-        self._watchers[path] = Watcher(self._zk, path, watch_children=True)
+        self._watchers[path] = Watcher(self._zk,
+                                       path,
+                                       watch_children=True,
+                                       callback=callback)
         return self._watchers[path].get()
 
     def username(self):
