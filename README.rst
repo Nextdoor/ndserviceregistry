@@ -47,7 +47,7 @@ To create your initial connection object::
     >>> nd = KazooServiceRegistry()
 
 The KazooServiceRegistry object is a sub-object that conforms to our
-ndServiceRegistry specs, whlie leveraging Kazoo as the backend. The object
+ServiceRegistry specs, whlie leveraging Kazoo as the backend. The object
 handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
 
@@ -56,10 +56,23 @@ Using KazooServiceRegistry to register a service
 
 To register the host as providing a particular service::
 
-    >>> nd.register_node('/services/ssh/server1.mydomain.com',
-                         data={ 'port': 22})
+    >>> nd.set_node('/services/ssh/server1:22', data={ 'foo': 'bar'})
 
 Getting a list of servers at a path::
 
-    >>> nd.get_nodes('/services/ssh')
-    {u'server1.mydomain.com': {u'port': 22, u'pid': 30387, u'created': u'2012-12-11 21:55:18'}}
+    >>> nd.get('/services/ssh')
+    {'children': {u'server1:22': {u'foo': u'bar',
+                                  u'created': u'2012-12-15 00:45:03',
+                                  u'pid': 10733}},
+     'data': None,
+     'path': '/services/ssh',
+     'stat': ZnodeStat(czxid=6, mzxid=6, ctime=1355532303688,
+                       mtime=1355532303688, version=0, cversion=1,
+                       aversion=0, ephemeralOwner=0, dataLength=0,
+                       numChildren=1, pzxid=7)}
+
+API Documentation
+-----------------
+
+Detailed implementation details and instructions are in the individual
+library files.
