@@ -76,27 +76,30 @@ class Registration(object):
 
     LOGGING = 'ndServiceRegistry.Registration'
 
-    def __init__(self, zk, path, data, state=True):
+    def __init__(self, zk, path, data=None, state=True):
         # Create our logger
         self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
 
         # Set our local variables
         self._zk = zk
         self._path = path
-        self._data = data
 
-        if state == False or state == True:
-            self._state = state
-        else:
-            state = True
+        # Make sure 'state' is a bool
+        if not isinstance(state, bool):
+            raise Exception('Invalid "state" passed. Must be a bool.')
+        self._state = state
 
         # Store both encdoed-string and decoded-dict versions of our 'data'
         # for comparison purposes later.
+        self._data = data
         self._encoded_data = funcs.encode(data)
         self._decoded_data = funcs.decode(self._encoded_data)
 
         # Make sure that we have a watcher on the path we care about
-        self._watcher = Watcher(self._zk, self._path, watch_children=False, callback=self._update)
+        self._watcher = Watcher(self._zk,
+                                path=self._path,
+                                watch_children=False,
+                                callback=self._update)
 
     def data(self):
         """Returns live node data from Watcher object."""
