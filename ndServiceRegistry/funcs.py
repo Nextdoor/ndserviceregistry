@@ -44,9 +44,6 @@ def encode(data=None):
     Returns:
         A JSON string with the supplied data as well as some default data"""
 
-    if not data:
-        return None
-
     # Check if the data is a single string. If so, turn it into a dict
     if isinstance(data, basestring):
         new_data = {}
