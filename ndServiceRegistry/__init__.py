@@ -223,12 +223,12 @@ class ServiceRegistry(object):
                                          numChildren=1, pzxid=506)}
         """
 
-        if not self._cache_file:
+        if not self._cachefile:
             return
 
         cache = { data['path']: data }
         self.log.debug('Saving Watcher object to cache: %s' % cache)
-        funcs.save_dict(cache, self._cache_file)
+        funcs.save_dict(cache, self._cachefile)
 
 class KazooServiceRegistry(ServiceRegistry):
 
@@ -270,17 +270,15 @@ class KazooServiceRegistry(ServiceRegistry):
         self._lazy = lazy
         self._pid = os.getpid()
 
-        # Create a registrations registry so that we know what paths we've been
-        # asked to register. Upon any kind of a reset, we can use this to re-
-        # register these paths.
+        # Store all of our Registration objects here
         self._registrations = {}
 
-        # Store all of our owned Watcher objects here
+        # Store all of our Watcher objects here
         self._watchers = {}
 
         # Create a local 'dict' that we'll use to store the results of our
         # get_nodes/get_node_data calls.
-        self._cache_file = cachefile
+        self._cachefile = cachefile
 
         # Define our zookeeper client here so that it never gets overwritten
         self._zk = KazooClient(hosts=self._server,
@@ -433,16 +431,16 @@ class KazooServiceRegistry(ServiceRegistry):
                     'Will continue to try to connect in the background.')
 
                 self.log.debug('Loading cache from dict file...')
-                if self._cache_file:
+                if self._cachefile:
                     try:
-                        self._cache = funcs.load_dict(self._cache_file)
+                        self._cache = funcs.load_dict(self._cachefile)
                     except Exception, e:
                         # If we get an IOError, there's no dict file at all to
                         # pull from, so we start up with an empty dict.
                         self.log.warning(
                             'Could not load up local cache object (%s). '
                             'Starting with no local data. Error: %s' %
-                            (self._cache_file, e))
+                            (self._cachefile, e))
                         pass
             else:
                 # If lazy mode is False, then we stop trying to connect to
