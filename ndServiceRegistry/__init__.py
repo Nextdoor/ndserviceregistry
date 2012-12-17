@@ -258,8 +258,7 @@ class KazooServiceRegistry(ServiceRegistry):
         # Quiet down the Kazoo connection logger no matter what
         logging.getLogger('kazoo.protocol.connection').setLevel(logging.INFO)
 
-        # Record our supplied settings from the user, in the event that we
-        # re-run this init() from the reset() function.
+        # Record the supplied settings
         self._timeout = timeout
         self._username = username
         self._password = password
