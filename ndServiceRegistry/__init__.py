@@ -540,7 +540,6 @@ class KazooServiceRegistry(ServiceRegistry):
                 path)
             self.get(path, callback=callback)
 
-    @_health_check
     def get(self, path, callback=None):
         """Retrieves a list of nodes (or a single node) in dict() form.
 
@@ -569,16 +568,41 @@ class KazooServiceRegistry(ServiceRegistry):
             # Return the Watcher object get() data.
             return self._watchers[path].get()
 
-        # Ok, so the cache is missing the key. Lets look for it in Zookeeper
-        self.log.debug('[%s] Creating Watcher object...' % path)
-        self._watchers[path] = Watcher(self._zk,
-                                       path,
-                                       watch_children=True,
-                                       callback=callback)
-
-        # Always register our dictionary saver callback, in addition to
-        # whatever our user has supplied
-        self._watchers[path].add_callback(self._save_watcher_to_dict)
+        # Go get a Watcher object since one doesnt already exist
+        self._watchers[path] = self._get_watcher(path, callback)
 
         return self._watchers[path].get()
 
+
+    @_health_check
+    def _get_watcher(self, path, callback=None):
+        """Creates a Watcher object for the supplid path.
+
+        Creates a Watcher object for the supplied path and returns the
+        object. Triggers callbacks immediately.
+
+        This is broken into its own function so that it can leverage
+        the @_health_check decorator. This function should never be
+        called from outside of this class.
+
+        Args:
+            path: A string representing the path to the servers.
+            callback: (optional) reference to function to call if the path
+                      changes.
+
+        Returns:
+            ndServiceRegistry.Watcher object
+        """
+
+        # Ok, so the cache is missing the key. Lets look for it in Zookeeper
+        self.log.debug('[%s] Creating Watcher object...' % path)
+        watcher = Watcher(self._zk,
+                          path,
+                          watch_children=True,
+                          callback=callback)
+
+        # Always register our dictionary saver callback, in addition to
+        # whatever our user has supplied
+        watcher.add_callback(self._save_watcher_to_dict)
+
+        return watcher

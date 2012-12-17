@@ -33,7 +33,7 @@ or ::
 Instantiating a KazooServiceRegistry module
 -------------------------------------------
 
-Create a logging.Logger object::
+Create a logger object::
 
     >>> import logging
     >>> logger = logging.getLogger()
@@ -70,6 +70,21 @@ Getting a list of servers at a path::
                        mtime=1355532303688, version=0, cversion=1,
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
+
+Failure Handling
+----------------
+
+The goal of this module is to be as self-contained as possible and require
+as little code in your app as possible. To that end, we `almost never` raise
+an Exception once the module is loaded up and connected.
+
+We do raise a few exceptions, and each one is documented here. Whenever we
+can though, we instead just 'return False' as a way of indicating that we were
+unable to perform your command now ... but that we will take care of it later.
+Whenever we do this, we throw a WARNING log message as well.
+
+-  
+    
 
 API Documentation
 -----------------
