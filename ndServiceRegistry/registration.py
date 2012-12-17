@@ -119,11 +119,15 @@ class Registration(object):
 
     def _set_data(self):
         try:
-            self.log.debug('Updating data')
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             self.log.debug('Updated with data: %s' % self._encoded_data)
         except kazoo.exceptions.NoAuthError, e:
             self.log.error('No authorization to set node.')
+            pass
+        except Exception, e:
+            self.log.error('Received exception. Moving on, will re-attempt ' \
+                           'when Watcher notifies us of a state change: %s '
+                           % e)
             pass
 
     def stop(self):
@@ -171,6 +175,11 @@ class Registration(object):
             except kazoo.exceptions.NoAuthError, e:
                 self.log.error('No authorization to create node.')
                 pass
+        except Exception, e:
+            self.log.error('Received exception. Moving on, will re-attempt ' \
+                           'when Watcher notifies us of a state change: %s '
+                           % e)
+            pass
         elif state == False:
             # Try to delete the node
             self.log.debug('Attempting de-registration...')
@@ -182,8 +191,12 @@ class Registration(object):
                 # so return false. We'll retry again very soon.
                 self.log.error('No authorization to delete node.')
                 pass
+            except Exception, e:
+                self.log.error('Received exception. Moving on, will ' \
+                               're-attempt when Watcher notifies us of a ' \
+                               'state change: %s ' % e)
+                pass
             return
-
 
     def update(self, data=None, state=None):
         """Triggers near-immediate run of the self._update() function.
