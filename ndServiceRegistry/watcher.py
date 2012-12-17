@@ -93,27 +93,11 @@ class Watcher(object):
     def get(self):
         """Returns local data/children in specific dict format"""
         ret = {}
-        ret['stat'] = self.stat()
-        ret['path'] = self.path()
-        ret['data'] = self.data()
+        ret['stat'] = self._stat
+        ret['path'] = self._path
+        ret['data'] = self._data
         ret['children'] = self._children
         return ret
-
-    def data(self):
-        """Returns self._data"""
-        return self._data
-
-    def stat(self):
-        """Returns self._stat"""
-        return self._stat
-
-    def children(self):
-        """Returns self._children"""
-        return self._children
-
-    def path(self):
-        """Returns self._path"""
-        return self._path
 
     def stop(self):
         """Stops watching the path."""
@@ -155,12 +139,14 @@ class Watcher(object):
             if stat:
                 self.log.debug('Node is registered.')
                 data, self._stat = self._zk.retry(self._zk.get, self._path)
-                self._data = funcs.decode(data)
             else:
                 # Just a bit of logging
                 self.log.debug('Node is not registered.')
 
-            self.log.debug('Data: %s, Stat:: %s' % (self._data, self._stat))
+            self._data = funcs.decode(data)
+            self._stat = stat 
+
+            self.log.debug('Data: %s, Stat: %s' % (self._data, self._stat))
             self._execute_callbacks()
 
         # Only register a watch on the children if this path exists. If
