@@ -8,10 +8,6 @@ class ServiceRegistryException(Exception):
     def __str__(self):
         return self.value
 
-
-class NoAuth(ServiceRegistryException):
-    """Thrown when we have no authorization to perform an action."""
-
 class NoConnection(ServiceRegistryException):
     """Any time the backend service is unavailable for an action."""
 
