@@ -210,17 +210,18 @@ class Registration(object):
 
         # Try to delete the node
         self.log.debug('Called with data: %s' % data)
+        self.log.debug('Wanted state: %s' % self.state())
 
-        if self._state is False and not data['stat'] == None:
+        if self.state() is False and data['stat'] != None:
             # THe node exists because data['stat'] has data, but our
             # desired state is False. De-register the node.
             self._set_state(False)
-        elif self._state is True and data['stat'] == None:
+        elif self.state() is True and data['stat'] == None:
             # The node does NOT exist because data['stat'] is None,
             # but our desired state is True. Register the node.
             self._set_state(True)
             return
-        elif self._state is True and not data['data'] == self._decoded_data:
+        elif self.state() is True and not data['data'] == self._decoded_data:
             # Lastly, the node is registered, and we want it to be. However,
             # the data with the node is incorrect. Change it.
             self.log.warning('Registered node had different data.')
