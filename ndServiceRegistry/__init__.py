@@ -206,7 +206,22 @@ class ServiceRegistry(object):
 
         This is not meant to be called by hand, but rather by the
         Watcher._execute_callback() function. It takes a dict supplied
-        by the get() method from a Watcher object."""
+        by the get() method from a Watcher object.
+
+        Args:
+            data: A dict with the data that we wish to save.
+                  eg: {'children': {u'server:22': {u'foo': u'bar',
+                                                   u'created': u'2012-12-17 04:48:46',
+                                                   u'foo': u'barasdf',
+                                                   u'more': u'data',
+                                                   u'pid': 16691}},
+                       'data': None,
+                       'path': '/services/ssh',
+                       'stat': ZnodeStat(czxid=505, mzxid=505, ctime=1355719651687,
+                                         mtime=1355719651687, version=0, cversion=1,
+                                         aversion=0, ephemeralOwner=0, dataLength=0,
+                                         numChildren=1, pzxid=506)}
+        """
 
         if not self._cache_file:
             return
@@ -254,9 +269,6 @@ class KazooServiceRegistry(ServiceRegistry):
         self._server = server
         self._lazy = lazy
         self._pid = os.getpid()
-
-        # Keep a local dict of all of our DataWatch objects
-        self._data_watches = []
 
         # Create a registrations registry so that we know what paths we've been
         # asked to register. Upon any kind of a reset, we can use this to re-
