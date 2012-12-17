@@ -388,17 +388,19 @@ class KazooServiceRegistry(ServiceRegistry):
                                          data=data, state=state)
         return True
 
-    @_health_check
     def unset(self, node):
         """Destroys a particular Registration object.
 
         Args:
             node: (String) representing the node path to the object"""
 
-        if node in self._registrations:
-            self.log.debug('Found Registration object [%s] to delete.' %
-                            node)
+        try:
             self._registrations[node].stop()
+        except:
+            self.log.warning('Node object for %s not found.' % node)
+            return
+
+        self.log.info('Registration for %s stopped.' % node)
 
     def _connect(self, lazy):
         """Connect to Zookeeper.
