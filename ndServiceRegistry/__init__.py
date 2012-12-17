@@ -247,6 +247,53 @@ class KazooServiceRegistry(ServiceRegistry):
     def __init__(self, server=SERVER, readonly=False, timeout=TIMEOUT,
                  cachefile=None, username=None, password=None,
                  acl=None, lazy=False):
+        """Initialize the KazooServiceRegistry object.
+
+        Generally speaking, you can initialize the object with no explicit
+        settings and it will work fine as long as your Zookeeper server is
+        available at 'localhost:2181'.
+
+        A few notes though about some of the options...
+
+        'lazy' mode allows the object to initialize and lazily connect to
+               the Zookeeper services. If Zookeeper is down, it will continue
+               to try to connect in the background, while allowing the object
+               to respond to certain queries out of the 'cachefile'. This
+               option is not very useful without the 'cachefile' setting.
+
+       'cachefile' is a location to save a pickle-dump of our various
+                   data objects. In the event that we start up in 'lazy' mode
+                   and are unable to reach the backend Zookeeper service,
+                   objects are re-created with this cache file instead and
+                   we are able to respond to get() requests with the latest
+                   saved data.
+
+                   Of important note here, if you have multiple processes
+                   using the same file location, they will not overwrite, but
+                   rather they will append to the file as they save data. Each
+                   object saves to this file immediately upon receiving a
+                   data-change from the objects... so its generally very up-
+                   to-date.
+
+        'username' and 'password's can be supplied if you wish to authenticate
+                   with Zookeeper by creating a 'Digest Auth'.
+
+        'readonly' mode just safely sets our connection status to readonly to
+                   prevent any accidental data changes. Good idea for your
+                   data consumers.
+
+        Args:
+            server: String in the format of 'localhost:2181'
+            readonly: Boolean that sets whether our connection to Zookeeper
+                      is a read_only connection or not.
+            timeout: Value in seconds for connection timeout
+            lazy: Boolean whether or not to allow lazy connection mode
+            cachefile: Location of desired cachefile
+            username: Username to create Digest Auth with
+            password: Password to create Digest Auth with
+            acl: A Kazoo ACL-object if special ACLs are desired
+        """
+
         # See if we're already initialized. If we are, just break out quickly.
         if self._initialized:
             return
