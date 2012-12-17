@@ -167,13 +167,14 @@ class Registration(object):
                                value=self._encoded_data,
                                ephemeral=self._ephemeral, makepath=True)
                 self.log.info('Registered with data: %s' % self._encoded_data)
-                return
+                pass
             except kazoo.exceptions.NodeExistsError, e:
-                # Node already exists.. pass
-                return
+                # Node exists ... possible this callback got claled multiple
+                # times
+                pass
             except kazoo.exceptions.NoAuthError, e:
                 self.log.error('No authorization to create node.')
-                return
+                pass
         elif state == False:
             # Try to delete the node
             self.log.debug('Attempting de-registration...')

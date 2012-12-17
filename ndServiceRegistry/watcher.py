@@ -186,6 +186,11 @@ class Watcher(object):
             path: A string value of the 'path' that has been updated. This
                   triggers the callbacks registered for that path only."""
         self.log.debug('execute_callbacks triggered')
+
+        if not self.state():
+            self.log.debug('self.state() is False - not executing callbacks.')
+            return
+
         for callback in self._callbacks:
             self.log.warning('Executing callback %s' % callback)
             callback(self.get())
