@@ -51,8 +51,8 @@ ServiceRegistry specs, whlie leveraging Kazoo as the backend. The object
 handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
 
-Using KazooServiceRegistry to register a service
-------------------------------------------------
+Basic use
+---------
 
 To register the host as providing a particular service::
 
