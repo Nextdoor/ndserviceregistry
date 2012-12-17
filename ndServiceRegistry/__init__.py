@@ -72,19 +72,19 @@ notified if a particular path is updated. Its as simple as defining a
 function that knows how to handle the above-formatted dict, and passing it
 to the get() function.
 
->>> def list(nodes):
-...     import pprint
-...     pprint.pprint(nodes['children'])
-...
->>> nd.get('/production/ssh', callback=list)
-{
-  u'server1.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-  u'server2.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-  u'server3.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-}
+    >>> def list(nodes):
+    ...     import pprint
+    ...     pprint.pprint(nodes['children'])
+    ...
+    >>> nd.get('/production/ssh', callback=list)
+    {
+      u'server1.cloud.mydomain.com:22': {u'pid': 12345,
+                                         u'created': u'2012-12-12 15:26:24'}
+      u'server2.cloud.mydomain.com:22': {u'pid': 12345,
+                                         u'created': u'2012-12-12 15:26:24'}
+      u'server3.cloud.mydomain.com:22': {u'pid': 12345,
+                                         u'created': u'2012-12-12 15:26:24'}
+    }
 
 Copyright 2012 Nextdoor Inc.
 """
