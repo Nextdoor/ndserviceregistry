@@ -58,7 +58,9 @@ Example of getting a static list of nodes from /production/ssh:
                                                      u'pid': 11137}},
      'data': None,
      'path': '/production/ssh',
-     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452, mtime=1355533229452, version=0, cversion=5, aversion=0, ephemeralOwner=0, dataLength=0, numChildren=3, pzxid=45)}
+     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452, mtime=1355533229452,
+                       version=0, cversion=5, aversion=0, ephemeralOwner=0,
+                       dataLength=0, numChildren=3, pzxid=45)}
 
 When you call get(), the ServiceRegistry module goes out and creates a
 Watcher object for the path you provided. This object caches all of the state
@@ -72,7 +74,7 @@ to the get() function.
 
 >>> def list(nodes):
 ...     import pprint
-...     pprint.pprint(nodes)
+...     pprint.pprint(nodes['children'])
 ...
 >>> nd.get('/production/ssh', callback=list)
 {

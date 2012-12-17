@@ -83,10 +83,6 @@ class Registration(object):
         # Set our local variables
         self._zk = zk
         self._path = path
-
-        # Make sure 'state' is a bool
-        if not isinstance(state, bool):
-            raise Exception('Invalid "state" passed. Must be a bool.')
         self._state = state
 
         # Store both encdoed-string and decoded-dict versions of our 'data'
