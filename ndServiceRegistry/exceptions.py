@@ -12,6 +12,8 @@ class ServiceRegistryException(Exception):
 class NoAuthException(ServiceRegistryException):
     """Thrown when we have no authorization to perform an action."""
 
+class NoConnection(ServiceRegistryException):
+    """Any time the backend service is unavailable for an action."""
 
 class ReadOnlyException(ServiceRegistryException):
     """Thrown when a Write operation is attempted while in Read Only mode."""

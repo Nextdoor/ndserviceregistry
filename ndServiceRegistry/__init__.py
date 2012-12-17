@@ -311,7 +311,7 @@ class KazooServiceRegistry(ServiceRegistry):
             self.log.debug('Running healthcheck...')
             pid = os.getpid()
             if pid != self._pid:
-                self.log.info('Fork detected!')
+                self.log.warning('Fork detected!')
                 self._pid = pid
                 try:
                     self.stop()
@@ -321,8 +321,9 @@ class KazooServiceRegistry(ServiceRegistry):
                 self._connect(lazy=False)
 
             # check if our connection is up or not
-            if not self.CONNECTED:
-                return False
+            if not self._zk.connected:
+                e = 'Service is down. Try again later.'
+                raise exceptions.NoConnection(e)
 
             # Nope, we're good
             return func(self, *args, **kwargs)
