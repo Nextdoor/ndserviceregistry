@@ -164,6 +164,7 @@ class Watcher(object):
             # succeed.
             if stat:
                 data, stat = self._zk.retry(self._zk.get, self._path)
+                self._stat = stat
 
             # We only trigger our callbacks if something meaningfull has
             # has changed. If self._data and data are the same, then
