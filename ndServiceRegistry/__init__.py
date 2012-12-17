@@ -22,7 +22,7 @@ register and unregister nodes that provide certain services, and to monitor
 particular service paths for lists of nodes.
 
 Although the service structure is up to you, the ServiceRegistry model is
-largely geared towards this model:
+largely designed around this model:
 
   /production
     /ssh
@@ -39,46 +39,42 @@ largely geared towards this model:
 
 Example usage to provide the above service list:
 
->>> from ndServiceRegistry import KazooServiceRegistry
->>> nd = KazooServiceRegistry(readonly=False,
-                              cachefile='/tmp/cache')
->>> nd.set_node('/production/ssh/server1.cloud.mydomain.com:22')
->>> nd.set_node('/production/ssh/server2.cloud.mydomain.com:22')
->>> nd.set_node('/production/ssh/server3.cloud.mydomain.com:22')
->>> nd.set_node('/production/web/server2.cloud.mydomain.com:22',
-                     data={'type': 'apache'})
+    >>> from ndServiceRegistry import KazooServiceRegistry
+    >>> nd = KazooServiceRegistry()
+    >>> nd.set_node('/production/ssh/server1.cloud.mydomain.com:22')
+    >>> nd.set_node('/production/ssh/server2.cloud.mydomain.com:22')
+    >>> nd.set_node('/production/ssh/server3.cloud.mydomain.com:22')
+    >>> nd.set_node('/production/web/server2.cloud.mydomain.com:22',
+                    data={'type': 'apache'})
 
-Example of getting a static list of nodes from /production/ssh. The first time
-this get_nodes() function is called, it reaches out to the backend data service
-and grabs the data. After that, each time you ask for the same path it is
-returned from a local cache object. This local cache object is updated thoug
-any time the server list changes, automatically, so you do not need to worry
-about it staying up to date.
+Example of getting a static list of nodes from /production/ssh:
 
->>> nd.get_nodes('/production/ssh')
-{
-  u'server1.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-  u'server2.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-  u'server3.cloud.mydomain.com:22': {u'pid': 12345,
-                                     u'created': u'2012-12-12 15:26:24'}
-}
+    >>> nd.get('/production/ssh')
+    {'children': {u'server1.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:09',
+                                                     u'pid': 11137},
+                  u'server2.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:14',
+                                                     u'pid': 11137},
+                  u'server3.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:18',
+                                                     u'pid': 11137}},
+     'data': None,
+     'path': '/production/ssh',
+     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452, mtime=1355533229452, version=0, cversion=5, aversion=0, ephemeralOwner=0, dataLength=0, numChildren=3, pzxid=45)}
 
-Example usage to watch '/production/ssh' for servers. In this case, you define
-a function that operates on the supplied list of nodes in some way. You then
-tell the ServiceRegistry object to notify your function any time the list is
-changed in any way.
+When you call get(), the ServiceRegistry module goes out and creates a
+Watcher object for the path you provided. This object caches all of the state
+data for the supplied path in a local dict. This dict is updated any time the
+Zookeeper service sees a change to that path.
 
-We do **not** call your function right away. It is up to you whether you want
-your callback function executed immediately, or only in the future based on a
-change.
+Since we're leveraging watches anyways, you can also have your application
+notified if a particular path is updated. Its as simple as defining a
+function that knows how to handle the above-formatted dict, and passing it
+to the get() function.
 
 >>> def list(nodes):
+...     import pprint
 ...     pprint.pprint(nodes)
 ...
->>> nd.add_callback(list)
->>> list(nd.get_nodes('/production/ssh')
+>>> nd.get('/production/ssh', callback=list)
 {
   u'server1.cloud.mydomain.com:22': {u'pid': 12345,
                                      u'created': u'2012-12-12 15:26:24'}

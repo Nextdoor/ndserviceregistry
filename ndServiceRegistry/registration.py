@@ -125,10 +125,10 @@ class Registration(object):
         try:
             self.log.debug('Updating data')
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
-            self.log.debug('Updated with data: %s' % self._data)
+            self.log.debug('Updated with data: %s' % self._encoded_data)
         except kazoo.exceptions.NoAuthError, e:
             self.log.error('No authorization to set node.')
-            return
+            pass
 
     def stop(self):
         """Disables our registration of the node."""
@@ -166,7 +166,10 @@ class Registration(object):
                 self._zk.retry(self._zk.create, self._path,
                                value=self._encoded_data,
                                ephemeral=self._ephemeral, makepath=True)
-                self.log.info('Registered with data: %s' % self._data)
+                self.log.info('Registered with data: %s' % self._encoded_data)
+                return
+            except kazoo.exceptions.NodeExistsError, e:
+                # Node already exists.. pass
                 return
             except kazoo.exceptions.NoAuthError, e:
                 self.log.error('No authorization to create node.')

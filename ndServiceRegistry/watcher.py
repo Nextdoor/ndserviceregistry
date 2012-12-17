@@ -155,7 +155,7 @@ class Watcher(object):
 
             # Just a bit of logging
             if not stat:
-                self.log.info('Node is not registered.')
+                self.log.debug('Node is not registered.')
 
             # Since we set allow_missing_node to True, the 'data' passed back
             # is ALWAYS 'None'. This means that we need to actually go out and
@@ -163,6 +163,7 @@ class Watcher(object):
             # long as 'stat' is not None, we know the node exists so this will
             # succeed.
             if stat:
+                self.log.debug('Node is registered.')
                 data, stat = self._zk.retry(self._zk.get, self._path)
                 self._stat = stat
 
@@ -193,7 +194,7 @@ class Watcher(object):
                     self.log.debug('New children: %s' % sorted(children))
                     for child in sorted(children):
                         self._watch_child_data(child) 
-                    self._execute_callbacks()
+                self._execute_callbacks()
 
         # Allow callbacks to finally execute
         self._callback_lock = False
@@ -230,6 +231,7 @@ class Watcher(object):
         Args:
             path: A string value of the 'path' that has been updated. This
                   triggers the callbacks registered for that path only."""
+        self.log.debug('execute_callbacks triggered')
         if self._callback_lock:
             self.log.debug('callbacks are locked. not executing.')
             return
