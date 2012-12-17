@@ -83,7 +83,16 @@ can though, we instead just 'return False' as a way of indicating that we were
 unable to perform your command now ... but that we will take care of it later.
 Whenever we do this, we throw a WARNING log message as well.
 
--  
+ndServiceRegistry.exceptions.NoConnection
+    Thrown if you attempt any operation that requires immediate access to the
+    backend Zookeeper service. Either a 'set' operation, or a 'get' operation
+    on a path for the first time.
+
+    Also thrown during initial connection to Zookeeper, if lazy=False.
+
+    (It should be noted, a 'get' will actually return the cached results even
+    if Zookeeper is down. This allows the service to fail temporarily in the
+    background but your app is still able to get the 'last known' results.)
     
 
 API Documentation

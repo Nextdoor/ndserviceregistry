@@ -448,8 +448,8 @@ class KazooServiceRegistry(ServiceRegistry):
                 # Zookeeper and raise an exception. The client can deal with
                 # what-to-do at this point.
                 self._zk.stop()
-                raise ServiceRegistryException(
-                    'Could not connect to ZooKeeper: %s' % e)
+                raise exceptions.NoConnection(
+                    'Could not connect to ZooKeeper')
 
     @_health_check
     def _setup_auth(self):
