@@ -303,7 +303,12 @@ class KazooServiceRegistry(ServiceRegistry):
             if pid != self._pid:
                 self.log.info('Fork detected!')
                 self._pid = pid
-                self.reset()
+                try:
+                    self.stop()
+                except:
+                    # Allow this to fail.. we'll just restart the conn anyways
+                    pass
+                self._connect(lazy=False)
 
             # check if our connection is up or not
             if not self.CONNECTED:
@@ -329,6 +334,7 @@ class KazooServiceRegistry(ServiceRegistry):
         All existing watches/registrations/etc will be re-established."""
         self._connect(self._lazy)
 
+    @_health_check
     def set(self, node, data, state, type):
         """Registers a supplied node (full path and nodename).
 
@@ -371,6 +377,7 @@ class KazooServiceRegistry(ServiceRegistry):
                                          data=data, state=state)
         return True
 
+    @_health_check
     def unset(self, node):
         """Destroys a particular Registration object.
 
@@ -433,6 +440,7 @@ class KazooServiceRegistry(ServiceRegistry):
                 raise ServiceRegistryException(
                     'Could not connect to ZooKeeper: %s' % e)
 
+    @_health_check
     def _setup_auth(self):
         """Set up our credentials with the Zookeeper service.
 
@@ -478,19 +486,6 @@ class KazooServiceRegistry(ServiceRegistry):
         if self._acl:
             self._zk.default_acl = (ACL, READONLY_ACL)
 
-#    @_health_check
-#    def _get_node_from_provider(self, node):
-#        """Returns the data from the node registered at path"""
-#
-#        # Check whether we've got an existing DataWatch on this path
-#        self._create_datawatch(node)
-#
-#        # The DataWatch callback only runs after data has been changed, not
-#        # on the initial registration. We need to manually fetch the data
-#        # once here.
-#        directory, nodename = split(node)
-#        return self._cache[directory][nodename]
-
     def _state_listener(self, state):
         """Listens for state changes about our connection.
 
@@ -535,6 +530,7 @@ class KazooServiceRegistry(ServiceRegistry):
                 path)
             self.get(path, callback=callback)
 
+    @_health_check
     def get(self, path, callback=None):
         """Retrieves a list of nodes (or a single node) in dict() form.
 
