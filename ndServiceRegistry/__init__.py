@@ -571,7 +571,6 @@ class KazooServiceRegistry(ServiceRegistry):
 
         # Go get a Watcher object since one doesnt already exist
         self._watchers[path] = self._get_watcher(path, callback)
-
         return self._watchers[path].get()
 
 
