@@ -172,10 +172,11 @@ class Registration(object):
             except kazoo.exceptions.NoAuthError, e:
                 self.log.error('No authorization to create node.')
                 pass
-        except Exception, e:
-            self.log.error('Received exception. Moving on, will re-attempt ' \
-                           'when Watcher notifies us of a state change: %s '
-                           % e)
+            except Exception, e:
+                self.log.error('Received exception. Moving on, will ' \
+                               're-attempt when Watcher notifies us of a ' \
+                               'state change: %s ' % e)
+                pass
             pass
         elif state == False:
             # Try to delete the node
