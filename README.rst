@@ -93,7 +93,11 @@ ndServiceRegistry.exceptions.NoConnection
     (It should be noted, a 'get' will actually return the cached results even
     if Zookeeper is down. This allows the service to fail temporarily in the
     background but your app is still able to get the 'last known' results.)
-    
+
+ndServiceRegistry.exceptions.ReadOnly
+    If readonly=True, any operation that would result in a 'write' will throw
+    this exception. Most notably, a 'set()' operation will fail with this
+    exception if readonly=True.
 
 API Documentation
 -----------------

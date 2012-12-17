@@ -9,12 +9,12 @@ class ServiceRegistryException(Exception):
         return self.value
 
 
-class NoAuthException(ServiceRegistryException):
+class NoAuth(ServiceRegistryException):
     """Thrown when we have no authorization to perform an action."""
 
 class NoConnection(ServiceRegistryException):
     """Any time the backend service is unavailable for an action."""
 
-class ReadOnlyException(ServiceRegistryException):
+class ReadOnly(ServiceRegistryException):
     """Thrown when a Write operation is attempted while in Read Only mode."""
 

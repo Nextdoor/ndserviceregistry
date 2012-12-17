@@ -362,11 +362,11 @@ class KazooServiceRegistry(ServiceRegistry):
                   we're registering.
 
         Returns:
-            True: registration was sucessfull"""
+            True: registration was successful"""
 
         # Check if we're in read-only mode
         if self._readonly:
-            raise ReadOnlyException('In read-only mode, no writes allowed')
+            raise exceptions.ReadOnly('In read-only mode, no writes allowed')
 
         # Check if the node is already there or not. If it is, we have to
         # figure out if we were the ones who registered it or not. If we are,
@@ -605,5 +605,4 @@ class KazooServiceRegistry(ServiceRegistry):
         # Always register our dictionary saver callback, in addition to
         # whatever our user has supplied
         watcher.add_callback(self._save_watcher_to_dict)
-
         return watcher
