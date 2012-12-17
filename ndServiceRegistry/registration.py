@@ -16,6 +16,38 @@
 
 """Kazoo Zookeeper znode registration client
 
+This object type handles the initial registration, updating of registered
+data, and connection state changes from the supplied ServiceRegistry object.
+
+The idea here is that the Registration object creates a Watcher object to
+keep an eye on the 'node' that we want to register. This Watcher object
+will then trigger the this Registration object to create/update or delete
+the node, based on the desired state (self.state() and self.set_state()).
+
+Args:
+    zk: kazoo.client.KazooClient object reference
+    path: (string) The full path to register (including hostname,
+          if applicable)
+    data: (dict/string) Data to apply to the supplied path
+    state: (Boolean) whether to create, or delete the path from ZooKeeper
+
+Example:
+    Register a new node:
+    >>> r = EphemeralNode(zk, '/services/ssh/foo:123', 'my data', True)
+    >>> r.data()
+    {u'pid': 8364, u'string_value': u'my data', u'created': u'2012-12-14 21:17:50'}
+
+    Now change the nodes data
+    >>> r.set_data('some other data')
+    >>> r.data()
+    {u'pid': 8364, u'string_value': u'some other data', u'created': u'2012-12-14 21:18:26'}
+
+    De-register the node
+    >>> r.set_state(False)
+    >>> r.data()
+    >>> r.get()
+    {'stat': None, 'data': None, 'children': {}}
+
 Copyright 2012 Nextdoor Inc."""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
@@ -37,42 +69,7 @@ TIMEOUT = 30
 
 
 class Registration(object):
-    """An object that registers a znode with ZooKeeper.
-
-    This object handles the initial registration, updating of registered
-    data, and connection state changes from the supplied ServiceRegistry
-    object.
-
-    The idea here is that the Registration object creates a Watcher object
-    to keep an eye on the 'node' that we want to register. This Watcher
-    object will then trigger the this Registration object to create/update
-    or delete the node, based on the desired state (self.state() and
-    self.set_state()).
-
-    Args:
-        zk: kazoo.client.KazooClient object reference
-        path: (string) The full path to register (including hostname,
-              if applicable)
-        data: (dict/string) Data to apply to the supplied path
-        state: (Boolean) whether to create, or delete the path from ZooKeeper
-
-    Example:
-        Register a new node:
-        >>> r = EphemeralNode(zk, '/services/ssh/foo:123', 'my data', True)
-        >>> r.data()
-        {u'pid': 8364, u'string_value': u'my data', u'created': u'2012-12-14 21:17:50'}
-
-        Now change the nodes data
-        >>> r.set_data('some other data')
-        >>> r.data()
-        {u'pid': 8364, u'string_value': u'some other data', u'created': u'2012-12-14 21:18:26'}
-
-        De-register the node
-        >>> r.set_state(False)
-        >>> r.data()
-        >>> r.get()
-        {'stat': None, 'data': None, 'children': {}}
-    """
+    """An object that registers a znode with ZooKeeper."""
 
     LOGGING = 'ndServiceRegistry.Registration'
 
