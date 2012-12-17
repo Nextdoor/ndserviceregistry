@@ -256,8 +256,7 @@ class KazooServiceRegistry(ServiceRegistry):
         self.log.info('Initializing ServiceRegistry object')
 
         # Quiet down the Kazoo connection logger no matter what
-        self._kz_log = logging.getLogger('kazoo.protocol.connection')
-        self._kz_log.setLevel(logging.INFO)
+        logging.getLogger('kazoo.protocol.connection').setLevel(logging.INFO)
 
         # Record our supplied settings from the user, in the event that we
         # re-run this init() from the reset() function.
