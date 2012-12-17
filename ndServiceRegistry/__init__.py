@@ -167,7 +167,7 @@ class ServiceRegistry(object):
 
     def set_node(self, node, data=None, state=True):
         """Short-cut for creating an EphemeralNode object."""
-        self.set(node=node, data=data, state=state, type=EphemeralNode)
+        return self.set(node=node, data=data, state=state, type=EphemeralNode)
 
     def username(self):
         """Returns self._username"""
@@ -301,11 +301,11 @@ class KazooServiceRegistry(ServiceRegistry):
         self.log.info('Initialization Done!')
 
     def _health_check(func):
-        """Decorator used to heathcheck the ZooKeeper connection.
+        """Decorator used to heathcheck the Zookeeper connection.
 
         If this healthcheck fails, we raise a ServiceUnavailable exception.
         If we detect that we've been forked, then we re-create our connection
-        to the ZooKeeper backend and move on with our health check."""
+        to the Zookeeper backend and move on with our health check."""
 
         def _health_check_decorator(self, *args, **kwargs):
             self.log.debug('Running healthcheck...')
@@ -349,7 +349,7 @@ class KazooServiceRegistry(ServiceRegistry):
     def set(self, node, data, state, type):
         """Registers a supplied node (full path and nodename).
 
-        Registers the supplied node-name with ZooKeeper and converts the
+        Registers the supplied node-name with Zookeeper and converts the
         supplied data into JSON-text.
 
         Args:
@@ -449,13 +449,13 @@ class KazooServiceRegistry(ServiceRegistry):
                 # what-to-do at this point.
                 self._zk.stop()
                 raise exceptions.NoConnection(
-                    'Could not connect to ZooKeeper')
+                    'Could not connect to Zookeeper')
 
     @_health_check
     def _setup_auth(self):
         """Set up our credentials with the Zookeeper service.
 
-        If credentials were passwed to us, authenticate with ZooKeeper. These
+        If credentials were passwed to us, authenticate with Zookeeper. These
         credentials do not have to exist in the system, they're compared
         against other credentials to validate whether two users are the same,
         or whether a particular set of credentials has access to a particular
@@ -501,7 +501,7 @@ class KazooServiceRegistry(ServiceRegistry):
         """Listens for state changes about our connection.
 
         If our client becomes disconnected, we set a local variable that lets
-        the rest of the code know to not try to run any ZooKeeper commands
+        the rest of the code know to not try to run any Zookeeper commands
         until the service is back up."""
 
         self.log.warning('Zookeeper connection state changed: %s' % state)
