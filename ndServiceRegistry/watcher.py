@@ -88,15 +88,13 @@ class Watcher(object):
         self._state = True
 
         # Start up
-        self._callback_lock = False
         self._begin()
-        self._execute_callbacks()
 
     def get(self):
         """Returns local data/children in specific dict format"""
         ret = {}
         ret['stat'] = self.stat()
-        ret['path'] = self._path
+        ret['path'] = self.path()
         ret['data'] = self.data()
         ret['children'] = self._children
         return ret
@@ -143,19 +141,11 @@ class Watcher(object):
         callback(self.get())
 
     def _begin(self):
-        # On the first startup of the object, do not run the callbacks until
-        # we're totally finished getting all of our watches in place.
-        self._callback_lock = True
-
         # First, register a watch on the data for the path supplied.
         self.log.debug('Registering watch on data changes')
         @self._zk.DataWatch(self._path, allow_missing_node=True)
         def _update_root_data(data, stat):
             self.log.debug('Data change detected')
-
-            # Just a bit of logging
-            if not stat:
-                self.log.debug('Node is not registered.')
 
             # Since we set allow_missing_node to True, the 'data' passed back
             # is ALWAYS 'None'. This means that we need to actually go out and
@@ -164,20 +154,14 @@ class Watcher(object):
             # succeed.
             if stat:
                 self.log.debug('Node is registered.')
-                data, stat = self._zk.retry(self._zk.get, self._path)
-                self._stat = stat
+                data, self._stat = self._zk.retry(self._zk.get, self._path)
+                self._data = funcs.decode(data)
+            else:
+                # Just a bit of logging
+                self.log.debug('Node is not registered.')
 
-            # We only trigger our callbacks if something meaningfull has
-            # has changed. If self._data and data are the same, then
-            # we keep our mouths shut.
-            decoded_data = funcs.decode(data)
-            if not self._data == decoded_data:
-                # Update our local variables with the raw data from Zookeeper.
-                # This data is either None, or a BaseString. If the node does
-                # not exist at all, it will be None.
-                self.log.debug('New data: %s' % decoded_data)
-                self._data = decoded_data
-                self._execute_callbacks()
+            self.log.debug('Data: %s, Stat:: %s' % (self._data, self._stat))
+            self._execute_callbacks()
 
         # Only register a watch on the children if this path exists. If
         # it doesnt, we're assuming that you're watching a specific node
@@ -185,45 +169,15 @@ class Watcher(object):
         if self._zk.exists(self._path) and self._watch_children:
             self.log.debug('Registering watch on child changes')
             @self._zk.ChildrenWatch(self._path)
-            def _update_child_list(children):
-                self.log.debug('Children have changed')
-                # We only trigger our callbacks if something meaningfull has
-                # has changed. If self._children and children are the same, then
-                # we keep our mouths shut.
-                if not sorted(children) == self._children:
-                    self.log.debug('New children: %s' % sorted(children))
-                    for child in sorted(children):
-                        self._watch_child_data(child) 
+            def _update_child_list(data):
+                self.log.debug('New children: %s' % sorted(data))
+                children = {}
+                for child in data:
+                    fullpath = '%s/%s' % (self._path, child)
+                    data, stat = self._zk.retry(self._zk.get, fullpath)
+                    children[child] = funcs.decode(data)
+                self._children = children
                 self._execute_callbacks()
-
-        # Allow callbacks to finally execute
-        self._callback_lock = False
-        self._execute_callbacks()
-
-    def _watch_child_data(self, child):
-        fullpath = '%s/%s' % (self._path, child)
-
-        @self._zk.DataWatch(fullpath, allow_missing_node=False)
-        def _update_child_data(data, stat):
-            self.log.debug('%s: Checking data' % fullpath)
-            decoded_data = funcs.decode(data)
-
-            if not data and not stat and child in self._children:
-                # if data and stat are None, then the node has been deleted
-                del self._children[child]
-            elif not child in self._children:
-                # if this is the first time that we're adding this node,
-                # then do not trigger the callbacks because the
-                # ChildrenWatch will take care of that for us.
-                self.log.debug('%s: New child with data: %s' %
-                              (fullpath, decoded_data))
-                self._children[child] = decoded_data
-            elif child in self._children:
-                # lastly, if the node already exists and we're just changing
-                # its data, DO trigger the callbacks.
-                self.log.debug('%s: New data: %s' % (fullpath, decoded_data))
-                self._children[child] = decoded_data
-                self._execute_callbacks(trigger)
 
     def _execute_callbacks(self):
         """Runs any callbacks that were passed to us for a given path.
@@ -232,10 +186,6 @@ class Watcher(object):
             path: A string value of the 'path' that has been updated. This
                   triggers the callbacks registered for that path only."""
         self.log.debug('execute_callbacks triggered')
-        if self._callback_lock:
-            self.log.debug('callbacks are locked. not executing.')
-            return
-
         for callback in self._callbacks:
             self.log.warning('Executing callback %s' % callback)
             callback(self.get())
