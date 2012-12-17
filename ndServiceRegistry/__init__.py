@@ -467,8 +467,8 @@ class KazooServiceRegistry(ServiceRegistry):
             self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
                           (self._username, self._password))
 
-            # If an ACL was provided, set it. Otherwise, no ACL is passed and
-            # all of our objects are avialable to everybody.
+            # If an ACL was provided, we'll use it. If not though, we'll
+            # create our own ACL described below:
             #
             # This ACL essentially allows our USERNAME+PASSWORD combination to
             # completely own any nodes that were also created with the same
