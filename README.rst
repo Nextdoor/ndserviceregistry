@@ -2,6 +2,9 @@
 ndServiceRegistry
 =================
 
+`DISCLAIMER: This module is not yet ready for use. Its under heavy development
+right now and is changing daily.`
+
 `ndServiceRegistry` is a Python module that provides a simple way to leverage
 `Apache Zookeeper` as a dynamic configuration and service registry.
 
@@ -46,9 +49,9 @@ To create your initial connection object::
     >>> from ndServiceRegistry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
 
-The KazooServiceRegistry object is a sub-object that conforms to our
-ServiceRegistry specs, whlie leveraging Kazoo as the backend. The object
-handles all of your connection states - there is no need to start/stop
+The KazooServiceRegistry object is a child of ndServiceRegistry that conforms 
+to our ServiceRegistry specs, whlie leveraging Kazoo as the backend. The
+object handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
 
 Basic use
