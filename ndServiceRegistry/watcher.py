@@ -127,6 +127,7 @@ class Watcher(object):
     def _begin(self):
         # First, register a watch on the data for the path supplied.
         self.log.debug('Registering watch on data changes')
+
         @self._zk.DataWatch(self._path, allow_missing_node=True)
         def _update_root_data(data, stat):
             self.log.debug('Data change detected')
@@ -144,7 +145,7 @@ class Watcher(object):
                 self.log.debug('Node is not registered.')
 
             self._data = funcs.decode(data)
-            self._stat = stat 
+            self._stat = stat
 
             self.log.debug('Data: %s, Stat: %s' % (self._data, self._stat))
             self._execute_callbacks()
@@ -154,6 +155,7 @@ class Watcher(object):
         # that may or may not be registered.
         if self._zk.exists(self._path) and self._watch_children:
             self.log.debug('Registering watch on child changes')
+
             @self._zk.ChildrenWatch(self._path)
             def _update_child_list(data):
                 self.log.debug('New children: %s' % sorted(data))
@@ -180,3 +182,43 @@ class Watcher(object):
         for callback in self._callbacks:
             self.log.info('Executing callback %s' % callback)
             callback(self.get())
+
+
+class DummyWatcher(Watcher):
+    """Provides a Watcher-interface, without any actual Zookeeper connection.
+
+    This object can store and return data just like a Watcher object, but
+    has no connection at all to Zookeeper or any actual watches. This object
+    is meant to be used in the event that Zookeeper is down and we still
+    want to be able to return valid data.
+    """
+
+    LOGGING = 'ndServiceRegistry.DummyWatcher'
+
+    def __init__(self, path, data, callback=None):
+        # Create our logger
+        self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
+
+        # Set our local variables
+        self._path = path
+        self._data = data['data']
+        self._stat = data['stat']
+        self._children = data['children']
+
+        # Array to hold any callback functions we're supposed to notify when
+        # anything changes on this path
+        self._callbacks = []
+        if callback:
+            self.add_callback(callback)
+
+    def stop(self):
+        """Stops watching the path (not applicable here)"""
+        return
+
+    def start(self):
+        """Starts watching the path (not applicable here)"""
+        return
+
+    def state(self):
+        """Returns state of the object (not applicable here)"""
+        return True
