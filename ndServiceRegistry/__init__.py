@@ -16,12 +16,12 @@
 
 """Simple service registration class for managing lists of servers.
 
-The ServiceRegistry model at Nextdoor is geared around simplicity and
+The ndServiceRegistry model at Nextdoor is geared around simplicity and
 reliability. This model provides a few core features that allow you to
 register and unregister nodes that provide certain services, and to monitor
 particular service paths for lists of nodes.
 
-Although the service structure is up to you, the ServiceRegistry model is
+Although the service structure is up to you, the ndServiceRegistry model is
 largely designed around this model:
 
   /production
@@ -62,7 +62,7 @@ Example of getting a static list of nodes from /production/ssh:
                        version=0, cversion=5, aversion=0, ephemeralOwner=0,
                        dataLength=0, numChildren=3, pzxid=45)}
 
-When you call get(), the ServiceRegistry module goes out and creates a
+When you call get(), the ndServiceRegistry module goes out and creates a
 Watcher object for the path you provided. This object caches all of the state
 data for the supplied path in a local dict. This dict is updated any time the
 Zookeeper service sees a change to that path.
@@ -91,7 +91,7 @@ Copyright 2012 Nextdoor Inc.
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-# For ServiceRegistry Class
+# For ndServiceRegistry Class
 import os
 import logging
 import exceptions
@@ -125,7 +125,7 @@ SERVER = 'localhost:2181'
 
 
 
-class ServiceRegistry(object):
+class ndServiceRegistry(object):
     """Main Service Registry object.
 
     The ServiceRegistry object is a framework object, not meant to be
@@ -230,7 +230,7 @@ class ServiceRegistry(object):
         self.log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
 
-class KazooServiceRegistry(ServiceRegistry):
+class KazooServiceRegistry(ndServiceRegistry):
 
     _instance = None
     _initialized = False
