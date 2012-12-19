@@ -153,6 +153,10 @@ class ndServiceRegistry(object):
         """Creates a Registration object."""
         raise NotImplementedError('Not implemented. Use one of my subclasses.')
 
+    def set_node(self, node, data=None, state=True):
+        """Short-cut for creating an EphemeralNode object."""
+        return self.set(node=node, data=data, state=state, type=EphemeralNode)
+
     def unset(self, node):
         """Disables a Registration object."""
         raise NotImplementedError('Not implemented. Use one of my subclasses.')
@@ -164,10 +168,6 @@ class ndServiceRegistry(object):
     def get(self, path, callback=None):
         """Retrieves a Watcher.get() dict for a given path."""
         raise NotImplementedError('Not implemented. Use one of my subclasses.')
-
-    def set_node(self, node, data=None, state=True):
-        """Short-cut for creating an EphemeralNode object."""
-        return self.set(node=node, data=data, state=state, type=EphemeralNode)
 
     def username(self):
         """Returns self._username"""
