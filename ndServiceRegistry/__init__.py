@@ -387,6 +387,9 @@ class KazooServiceRegistry(ndServiceRegistry):
                                retry_backoff=2,
                                retry_max_delay=10)
 
+        # Get a lock handler
+        self._run_lock = self._zk.handler.lock_object()
+
         # Watch for any connection state changes
         self._zk.add_listener(self._state_listener)
 
@@ -552,40 +555,44 @@ class KazooServiceRegistry(ndServiceRegistry):
         node.
         """
 
-        if self._username and self._password:
-            self.log.debug('Credentials were supplied, creating digest auth.')
-            self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
-                          (self._username, self._password))
+        with self._run_lock:
+            if self._username and self._password:
+                # If an ACL was provided, we'll use it. If not though, we'll
+                # create our own ACL described below:
+                #
+                # This ACL essentially allows our USERNAME+PASSWORD combo to
+                # completely own any nodes that were also created with the same
+                # USERNAME+PASSWORD combo. This means that if all of your
+                # production machines share a particular username/password,
+                # they can each mess with the other machines node
+                # registrations.
+                #
+                # Its highly recommended that you break up your server farms
+                # into different permission groups.
+                ACL = kazoo.security.make_digest_acl(self._username,
+                                                     self._password, all=True)
 
-            # If an ACL was provided, we'll use it. If not though, we'll
-            # create our own ACL described below:
-            #
-            # This ACL essentially allows our USERNAME+PASSWORD combination to
-            # completely own any nodes that were also created with the same
-            # USERNAME+PASSWORD combo. This means that if all of your
-            # production machines share a particular username/password, they
-            # can each mess with the other machines node registrations.
-            #
-            # Its highly recommended that you  break up your server farms into
-            # different permission groups.
-            ACL = kazoo.security.make_digest_acl(self._username,
-                                                 self._password, all=True)
+                # This allows *all* users to read child nodes, but disallows
+                # them from reading, updating permissions, deleting child
+                # nodes, or writing to child nodes that they do not own.
+                READONLY_ACL = kazoo.security.make_acl('world', 'anyone',
+                                                       create=False,
+                                                       delete=False,
+                                                       write=False,
+                                                       read=True,
+                                                       admin=False)
 
-            # This allows *all* users to read child nodes, but disallows them
-            # from reading, updating permissions, deleting child nodes, or
-            # writing to child nodes that they do not own.
-            READONLY_ACL = kazoo.security.make_acl('world', 'anyone',
-                                                   create=False, delete=False,
-                                                   write=False, read=True,
-                                                   admin=False)
+                self.log.debug('Credentials were supplied, adding auth.')
+                self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
+                              (self._username, self._password))
 
-            if not self._acl:
-                self._acl = (ACL, READONLY_ACL)
+                if not self._acl:
+                    self._acl = (ACL, READONLY_ACL)
 
-        # If an ACL was providfed, or we dynamically generated one with the
-        # username/password, then set it.
-        if self._acl:
-            self._zk.default_acl = (ACL, READONLY_ACL)
+            # If an ACL was providfed, or we dynamically generated one with the
+            # username/password, then set it.
+            if self._acl:
+                self._zk.default_acl = (ACL, READONLY_ACL)
 
     def _state_listener(self, state):
         """Listens for state changes about our connection.
