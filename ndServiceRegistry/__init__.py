@@ -611,7 +611,7 @@ class KazooServiceRegistry(ndServiceRegistry):
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
 
-            # We are not allowed fto call any blocking calls in this callback
+            # We are not allowed to call any blocking calls in this callback
             # because it is actually triggered by the thread that holds onto
             # the Zookeeper connection -- and that causes a deadlock.
             #
