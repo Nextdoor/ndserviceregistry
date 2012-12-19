@@ -178,5 +178,5 @@ class Watcher(object):
             return
 
         for callback in self._callbacks:
-            self.log.warning('Executing callback %s' % callback)
+            self.log.info('Executing callback %s' % callback)
             callback(self.get())
