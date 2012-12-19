@@ -2,11 +2,11 @@
 ndServiceRegistry
 =================
 
-`DISCLAIMER: This module is not yet ready for use. Its under heavy development
-right now and is changing daily.`
+**DISCLAIMER: This module is not yet ready for use. Its under heavy development
+right now and is changing daily.**
 
-`ndServiceRegistry` is a Python module that provides a simple way to leverage
-`Apache Zookeeper` as a dynamic configuration and service registry.
+*`ndServiceRegistry`* is a Python module that provides a simple way to leverage
+*`Apache Zookeeper`* as a dynamic configuration and service registry.
 
 The goal of the package is to provide a single foundational class that can be
 leveraged by any Python program for registering and monitoring services through
@@ -78,7 +78,7 @@ Failure Handling
 ----------------
 
 The goal of this module is to be as self-contained as possible and require
-as little code in your app as possible. To that end, we `almost never` raise
+as little code in your app as possible. To that end, we *almost never* raise
 an Exception once the module is loaded up and connected.
 
 We do raise a few exceptions, and each one is documented here. Whenever we
