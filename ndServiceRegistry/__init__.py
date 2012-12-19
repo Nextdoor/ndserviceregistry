@@ -513,16 +513,7 @@ class KazooServiceRegistry(ndServiceRegistry):
                     'Will continue to try to connect in the background.')
 
                 self.log.debug('Loading cache from dict file...')
-                try:
-                    self._load_cache_into_dummywatchers()
-                except Exception, e:
-                    # If we get an IOError, there's no dict file at all to
-                    # pull from, so we start up with an empty dict.
-                    self.log.warning(
-                        'Could not load up local cache object (%s). '
-                        'Starting with no local data. Error: %s' %
-                        (self._cachefile, e))
-                    pass
+                self._load_cache_into_dummywatchers()
             else:
                 # If lazy mode is False, then we stop trying to connect to
                 # Zookeeper and raise an exception. The client can deal with
