@@ -26,14 +26,14 @@ largely designed around this model:
 
   /production
     /ssh
-      /server1.cloud.mydomain.com:22
+      /server1:22
         pid = 12345
-      /server2.cloud.mydomain.com:22
+      /server2:22
         pid = 12345
-      /server3.cloud.mydomain.com:22
+      /server3:22
         pid = 12345
     /web
-      /server1.cloud.mydomain.com:80
+      /server1:80
         pid = 12345
         type = u'apache'
 
@@ -41,26 +41,27 @@ Example usage to provide the above service list:
 
     >>> from ndServiceRegistry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
-    >>> nd.set_node('/production/ssh/server1.cloud.mydomain.com:22')
-    >>> nd.set_node('/production/ssh/server2.cloud.mydomain.com:22')
-    >>> nd.set_node('/production/ssh/server3.cloud.mydomain.com:22')
-    >>> nd.set_node('/production/web/server2.cloud.mydomain.com:22',
+    >>> nd.set_node('/production/ssh/server1:22')
+    >>> nd.set_node('/production/ssh/server2:22')
+    >>> nd.set_node('/production/ssh/server3:22')
+    >>> nd.set_node('/production/web/server2:22',
                     data={'type': 'apache'})
 
 Example of getting a static list of nodes from /production/ssh:
 
     >>> nd.get('/production/ssh')
-    {'children': {u'server1.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:09',
-                                                     u'pid': 11137},
-                  u'server2.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:14',
-                                                     u'pid': 11137},
-                  u'server3.cloud.mydomain.com:22': {u'created': u'2012-12-15 01:15:18',
-                                                     u'pid': 11137}},
+    {'children': {u'server1:22': {u'created': u'2012-12-15 01:15:09',
+                                  u'pid': 11137},
+                  u'server2:22': {u'created': u'2012-12-15 01:15:14',
+                                  u'pid': 11137},
+                  u'server3:22': {u'created': u'2012-12-15 01:15:18',
+                                  u'pid': 11137}},
      'data': None,
      'path': '/production/ssh',
-     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452, mtime=1355533229452,
-                       version=0, cversion=5, aversion=0, ephemeralOwner=0,
-                       dataLength=0, numChildren=3, pzxid=45)}
+     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452,
+                       mtime=1355533229452, version=0, cversion=5,
+                       aversion=0, ephemeralOwner=0, dataLength=0,
+                       numChildren=3, pzxid=45)}
 
 When you call get(), the ndServiceRegistry module goes out and creates a
 Watcher object for the path you provided. This object caches all of the state
@@ -78,12 +79,12 @@ to the get() function.
     ...
     >>> nd.get('/production/ssh', callback=list)
     {
-      u'server1.cloud.mydomain.com:22': {u'pid': 12345,
-                                         u'created': u'2012-12-12 15:26:24'}
-      u'server2.cloud.mydomain.com:22': {u'pid': 12345,
-                                         u'created': u'2012-12-12 15:26:24'}
-      u'server3.cloud.mydomain.com:22': {u'pid': 12345,
-                                         u'created': u'2012-12-12 15:26:24'}
+      u'server1:22': {u'pid': 12345,
+                      u'created': u'2012-12-12 15:26:24'}
+      u'server2:22': {u'pid': 12345,
+                      u'created': u'2012-12-12 15:26:24'}
+      u'server3:22': {u'pid': 12345,
+                      u'created': u'2012-12-12 15:26:24'}
     }
 
 Copyright 2012 Nextdoor Inc.
@@ -100,6 +101,7 @@ from os.path import split
 # Our own classes
 from ndServiceRegistry.registration import EphemeralNode
 from ndServiceRegistry.watcher import Watcher
+from ndServiceRegistry.watcher import DummyWatcher
 from ndServiceRegistry import funcs
 from ndServiceRegistry import exceptions
 
@@ -122,7 +124,6 @@ from version import __version__ as VERSION
 # Defaults
 TIMEOUT = 5  # seconds
 SERVER = 'localhost:2181'
-
 
 
 class ndServiceRegistry(object):
@@ -210,25 +211,58 @@ class ndServiceRegistry(object):
 
         Args:
             data: A dict with the data that we wish to save.
-                  eg: {'children': {u'server:22': {u'foo': u'bar',
-                                                   u'created': u'2012-12-17 04:48:46',
-                                                   u'foo': u'barasdf',
-                                                   u'more': u'data',
-                                                   u'pid': 16691}},
-                       'data': None,
-                       'path': '/services/ssh',
-                       'stat': ZnodeStat(czxid=505, mzxid=505, ctime=1355719651687,
-                                         mtime=1355719651687, version=0, cversion=1,
-                                         aversion=0, ephemeralOwner=0, dataLength=0,
-                                         numChildren=1, pzxid=506)}
+              eg: {'children':
+                     {u'server:22': {u'foo': u'bar',
+                                     u'created': u'2012-12-17 04:48:46',
+                                     u'foo': u'barasdf',
+                                     u'more': u'data',
+                                     u'pid': 16691}},
+                   'data': None,
+                   'path': '/services/ssh',
+                   'stat': ZnodeStat(czxid=505, mzxid=505, ctime=1355719651687,
+                                    mtime=1355719651687, version=0, cversion=1,
+                                    aversion=0, ephemeralOwner=0, dataLength=0,
+                                    numChildren=1, pzxid=506)}
         """
 
         if not self._cachefile:
             return
 
-        cache = { data['path']: data }
+        cache = {data['path']: data}
         self.log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
+
+    def _load_cache_into_dummywatchers(self):
+        """Creates DummyWatcher objects from our saved cache.
+
+        This is not meant to be called directly, but rather by the
+        initialization process of the object. This method reads the saved
+        cachefile and creates new DummyWatcher objects for each path with
+        stored data in that file. These objects can then be used to respond
+        to client requests until Zookeeper connection is up, and they can
+        be replaced with Watcher objects."""
+
+        if not self._cachefile:
+            return
+
+        self.log.debug('Getting cachefile data...')
+        cache = funcs.load_dict(self._cachefile)
+        for path in cache:
+            # Check if theres already a Watcher object for this path
+            if path in self._watchers:
+                self.log.debug('Found [%s] in cache' % path)
+            else:
+                try:
+                    self.log.debug('Creating DummyWatcher object for %s' %
+                                   path)
+                    self._watchers[path] = DummyWatcher(path=path,
+                                                        data=cache[path])
+                except:
+                    self.log.warning('Could not create DummyWatcher object '
+                                     'from local cachefile (%s) for path %s.' %
+                                     (self._cachefile, path))
+                    pass
+
 
 class KazooServiceRegistry(ndServiceRegistry):
 
@@ -479,17 +513,16 @@ class KazooServiceRegistry(ndServiceRegistry):
                     'Will continue to try to connect in the background.')
 
                 self.log.debug('Loading cache from dict file...')
-                if self._cachefile:
-                    try:
-                        self._cache = funcs.load_dict(self._cachefile)
-                    except Exception, e:
-                        # If we get an IOError, there's no dict file at all to
-                        # pull from, so we start up with an empty dict.
-                        self.log.warning(
-                            'Could not load up local cache object (%s). '
-                            'Starting with no local data. Error: %s' %
-                            (self._cachefile, e))
-                        pass
+                try:
+                    self._load_cache_into_dummywatchers()
+                except Exception, e:
+                    # If we get an IOError, there's no dict file at all to
+                    # pull from, so we start up with an empty dict.
+                    self.log.warning(
+                        'Could not load up local cache object (%s). '
+                        'Starting with no local data. Error: %s' %
+                        (self._cachefile, e))
+                    pass
             else:
                 # If lazy mode is False, then we stop trying to connect to
                 # Zookeeper and raise an exception. The client can deal with
@@ -580,12 +613,11 @@ class KazooServiceRegistry(ndServiceRegistry):
         """
 
         if path in self._watchers:
-            self.log.debug('Found [%s] in watchers. Adding callback.' %
-                path)
+            self.log.debug('Found [%s] in watchers. Adding callback.' % path)
             self._watchers[path].add_callback(callback)
         else:
             self.log.debug('No existing watcher for [%s] exists. Creating.' %
-                path)
+                           path)
             self.get(path, callback=callback)
 
     def get(self, path, callback=None):
@@ -619,7 +651,6 @@ class KazooServiceRegistry(ndServiceRegistry):
         # Go get a Watcher object since one doesnt already exist
         self._watchers[path] = self._get_watcher(path, callback)
         return self._watchers[path].get()
-
 
     @_health_check
     def _get_watcher(self, path, callback=None):
