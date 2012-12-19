@@ -263,6 +263,25 @@ class ndServiceRegistry(object):
                                      (self._cachefile, path))
                     pass
 
+    def _convert_dummywatchers_to_watchers(self):
+        """Converts all DummyWatcher objects to Watcher objects.
+
+        Walks through our self._watchers dict and attempts to replace each
+        DummyWatcher object with a regular Watcher object."""
+
+        for path in self._watchers:
+            if isinstance(self._watchers[path], DummyWatcher):
+                self.log.debug('Found DummyWatcher for %s' % path)
+                w = None
+                try:
+                    w = self._get_watcher(path)
+                except Exception, e:
+                    self.log.warning('Could not create Watcher '
+                                     'object for %s: %s' % (path, e))
+
+                if w:
+                    self._watchers[path] = w
+
 
 class KazooServiceRegistry(ndServiceRegistry):
 
@@ -588,8 +607,18 @@ class KazooServiceRegistry(ndServiceRegistry):
             self.CONNECTED = False
         else:
             self.CONNECTED = True
+
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
+
+            # We are not allowed fto call any blocking calls in this callback
+            # because it is actually triggered by the thread that holds onto
+            # the Zookeeper connection -- and that causes a deadlock.
+            #
+            # In order to re-register our Watchers, we use the Kazoo spawn()
+            # function. This runs the function in a separate thread and allows
+            # the state_listener function to return quickly.
+            self._zk.handler.spawn(self._convert_dummywatchers_to_watchers)
 
     def add_callback(self, path, callback):
         """Adds a callback in the event of a path change.
