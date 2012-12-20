@@ -294,8 +294,12 @@ class ndServiceRegistry(object):
                 except Exception, e:
                     self.log.warning('Could not create Watcher '
                                      'object for %s: %s' % (path, e))
-
                 if w:
+                    # Get a list of all callbacks associated with
+                    # the DummyWatcher
+                    for callback in self._watchers[path]._callbacks:
+                        w.add_callback(callback)
+
                     self._watchers[path] = w
 
 
