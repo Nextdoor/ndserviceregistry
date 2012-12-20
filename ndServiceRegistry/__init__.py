@@ -706,7 +706,7 @@ class KazooServiceRegistry(ndServiceRegistry):
             # Ugh. Total failure. Return false
             self.log.error('Unable to retrieve [%s] from Zookeeper or cache - '
                            'try again later: %s' % (path, e))
-            return Falsse
+            return False
 
         return self._watchers[path].get()
 
