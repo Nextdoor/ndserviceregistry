@@ -232,36 +232,52 @@ class ndServiceRegistry(object):
         self.log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
 
-    def _load_cache_into_dummywatchers(self):
+    def _get_dummywatcher(self, path, callback=None):
         """Creates DummyWatcher objects from our saved cache.
 
-        This is not meant to be called directly, but rather by the
-        initialization process of the object. This method reads the saved
-        cachefile and creates new DummyWatcher objects for each path with
-        stored data in that file. These objects can then be used to respond
-        to client requests until Zookeeper connection is up, and they can
-        be replaced with Watcher objects."""
+        Creates a DummyWatcher object for the supplied path and returns the
+        object. Triggers callbacks immediately.
 
+        Args:
+            path: A string representing the path to the servers.
+            callback: (optional) reference to function to call if the path
+                      changes.
+
+        Returns:
+            ndServiceRegistry.DummyWatcher object
+        """
+
+        # Initial startup checks
+        self.log.debug('[%s] Creating DummyWatcher object...' % path)
         if not self._cachefile:
-            return
+            self.log.debug('[%s] No cachefile supplied...' % path)
+            raise exceptions.ServiceRegistryException(
+                'No cachefile supplied, unable to restore item from cache.')
 
+        # Make sure we can load the cache file properly
         self.log.debug('Getting cachefile data...')
-        cache = funcs.load_dict(self._cachefile)
-        for path in cache:
-            # Check if theres already a Watcher object for this path
-            if path in self._watchers:
-                self.log.debug('Found [%s] in cache' % path)
-            else:
-                try:
-                    self.log.debug('Creating DummyWatcher object for %s' %
-                                   path)
-                    self._watchers[path] = DummyWatcher(path=path,
-                                                        data=cache[path])
-                except:
-                    self.log.warning('Could not create DummyWatcher object '
-                                     'from local cachefile (%s) for path %s.' %
-                                     (self._cachefile, path))
-                    pass
+        try:
+            cache = funcs.load_dict(self._cachefile)
+        except (IOError, EOFError), e:
+            raise exceptions.ServiceRegistryException(
+                'Unable to load cachefile.')
+
+        # Make sure that the path was cached.
+        if not path in cache:
+            raise exceptions.ServiceRegistryException(
+                '[%s] not found in cachefile.' % path)
+
+        # Lastly, try to create an object from the data in the cache.
+        try:
+            self.log.debug('Creating DummyWatcher object for %s' % path)
+            watcher = DummyWatcher(path=path,
+                                   data=cache[path],
+                                   callback=callback)
+            return watcher
+        except:
+            raise exceptions.ServiceRegistryException(
+                'Could not create DummyWatcher object from local cachefile '
+                '(%s) for path %s.' % (self._cachefile, path))
 
     def _convert_dummywatchers_to_watchers(self):
         """Converts all DummyWatcher objects to Watcher objects.
@@ -533,9 +549,6 @@ class KazooServiceRegistry(ndServiceRegistry):
                     'Could not reach Zookeeper server. '
                     'Starting up in crippled mode. '
                     'Will continue to try to connect in the background.')
-
-                self.log.debug('Loading cache from dict file...')
-                self._load_cache_into_dummywatchers()
             else:
                 # If lazy mode is False, then we stop trying to connect to
                 # Zookeeper and raise an exception. The client can deal with
@@ -675,8 +688,20 @@ class KazooServiceRegistry(ndServiceRegistry):
             # Return the Watcher object get() data.
             return self._watchers[path].get()
 
-        # Go get a Watcher object since one doesnt already exist
-        self._watchers[path] = self._get_watcher(path, callback)
+        try:
+            # Go get a Watcher object since one doesnt already exist
+            self._watchers[path] = self._get_watcher(path, callback)
+        except exceptions.NoConnection, e:
+            # Get a DummyWatcher cached object instead
+            self.log.warning('Health Check failed. Attempting to load from '
+                             'cache instead. Error: %s' % e)
+            self._watchers[path] = self._get_dummywatcher(path, callback)
+        finally:
+            # Ugh. Total failure. Return false
+            self.log.error('Unable to retrieve [%s] from Zookeeper or cache. '
+                           'Try again later.' % path)
+            return False
+
         return self._watchers[path].get()
 
     @_health_check

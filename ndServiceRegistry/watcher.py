@@ -72,6 +72,9 @@ class Watcher(object):
         self._path = path
         self._watch_children = watch_children
 
+        # Get a lock handler
+        self._run_lock = self._zk.handler.lock_object()
+
         # Create local caches of the 'data' and the 'children' data
         self._children = {}
         self._data = None
