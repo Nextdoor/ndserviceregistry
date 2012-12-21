@@ -107,7 +107,7 @@ from ndServiceRegistry import exceptions
 
 # For KazooServiceRegistry Class
 import kazoo.security
-from kazoo.client import KazooClient
+from ndServiceRegistry.shims import ZookeeperClient
 from kazoo.client import KazooState
 
 # Use Gevent as our threader (DOES NOT WORK RIGHT NOW)
@@ -399,13 +399,13 @@ class KazooServiceRegistry(ndServiceRegistry):
         self._cachefile = cachefile
 
         # Define our zookeeper client here so that it never gets overwritten
-        self._zk = KazooClient(hosts=self._server,
-                               timeout=self._timeout,
-                               read_only=self._readonly,
-                               handler=EventHandler(),
-                               retry_delay=0.1,
-                               retry_backoff=2,
-                               retry_max_delay=10)
+        self._zk = ZookeeperClient(hosts=self._server,
+                                   timeout=self._timeout,
+                                   read_only=self._readonly,
+                                   handler=EventHandler(),
+                                   retry_delay=0.1,
+                                   retry_backoff=2,
+                                   retry_max_delay=10)
 
         # Get a lock handler
         self._run_lock = self._zk.handler.lock_object()
