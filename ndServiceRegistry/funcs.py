@@ -184,7 +184,7 @@ def load_dict(file):
     return cache
 
 
-def rateLimiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
+def rate_limiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
     """Provides a decorator for rate-limiting function.
 
     This allows you to decorate your function and rate-limit the number
@@ -205,8 +205,8 @@ def rateLimiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
     log = logging.getLogger('rateLimiter')
 
     # Main decorwator wrapper
-    def decorate(func):
-        def rateLimitedFunction(*args, **kwargs):
+    def _decorate(func):
+        def _rate_limited_function(*args, **kwargs):
             # Start out assuming we will not throttle the frequency
             # of the function
             throttle = False
@@ -247,5 +247,5 @@ def rateLimiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
             log.debug('Last %s calls: %s' %
                       (numCallsToAverage, calls[-numCallsToAverage:]))
             return ret
-        return rateLimitedFunction
-    return decorate
+        return _rate_limited_function
+    return _decorate

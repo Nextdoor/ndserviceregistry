@@ -244,7 +244,7 @@ class ndServiceRegistry(object):
                       changes.
 
         Returns:
-            ndServiceRegistry.DummyWatcher object
+            DummyWatcher object
         """
 
         # Initial startup checks

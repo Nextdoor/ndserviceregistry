@@ -112,9 +112,9 @@ class Registration(object):
             self._data = data
             self._encoded_data = funcs.encode(data)
             self._decoded_data = funcs.decode(self._encoded_data)
-            self._set_data()
+            self._update_data()
 
-    def _set_data(self):
+    def _update_data(self):
         try:
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             self.log.debug('Updated with data: %s' % self._encoded_data)
@@ -153,9 +153,9 @@ class Registration(object):
             return
 
         self._state = state
-        self._set_state(self._state)
+        self._update_state(self._state)
 
-    def _set_state(self, state):
+    def _update_state(self, state):
         if state == True:
             # Register our connection with zookeeper
             try:
@@ -214,10 +214,7 @@ class Registration(object):
             self.set_state(state)
 
     def _update(self, data):
-        """Registers a supplied node (full path and nodename).
-
-        Raises:
-            NoAuthException: If no authorization to update node"""
+        """Registers a supplied node (full path and nodename)."""
 
         # Try to delete the node
         self.log.debug('Called with data: %s' % data)
@@ -226,17 +223,17 @@ class Registration(object):
         if self.state() is False and data['stat'] != None:
             # THe node exists because data['stat'] has data, but our
             # desired state is False. De-register the node.
-            self._set_state(False)
+            self._update_state(False)
         elif self.state() is True and data['stat'] == None:
             # The node does NOT exist because data['stat'] is None,
             # but our desired state is True. Register the node.
-            self._set_state(True)
+            self._update_state(True)
             return
         elif self.state() is True and not data['data'] == self._decoded_data:
             # Lastly, the node is registered, and we want it to be. However,
             # the data with the node is incorrect. Change it.
             self.log.warning('Registered node had different data.')
-            self._set_data()
+            self._update_data()
 
 
 class EphemeralNode(Registration):

@@ -22,7 +22,7 @@ __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
 from kazoo.client import KazooClient
-from ndServiceRegistry.funcs import rateLimiter
+from ndServiceRegistry.funcs import rate_limiter
 
 # Our default variables
 from version import __version__ as VERSION
@@ -31,22 +31,22 @@ from version import __version__ as VERSION
 class ZookeeperClient(KazooClient):
     """Shim-layer that provides some safety controls"""
 
-    @rateLimiter(targetAvgTimeBetweenCalls=1)
+    @rate_limiter(targetAvgTimeBetweenCalls=1)
     def retry(self, *args, **kwargs):
         return super(ZookeeperClient, self).retry(*args, **kwargs)
 
-    @rateLimiter(targetAvgTimeBetweenCalls=1)
+    @rate_limiter(targetAvgTimeBetweenCalls=1)
     def get(self, *args, **kwargs):
         return super(ZookeeperClient, self).get(*args, **kwargs)
 
-    @rateLimiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
     def set(self, *args, **kwargs):
         return super(ZookeeperClient, self).set(*args, **kwargs)
 
-    @rateLimiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
     def create(self, *args, **kwargs):
         return super(ZookeeperClient, self).create(*args, **kwargs)
 
-    @rateLimiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
     def delete(self, *args, **kwargs):
         return super(ZookeeperClient, self).delete(*args, **kwargs)
