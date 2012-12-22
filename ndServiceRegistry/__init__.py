@@ -692,6 +692,7 @@ class KazooServiceRegistry(ndServiceRegistry):
         try:
             # Go get a Watcher object since one doesnt already exist
             self._watchers[path] = self._get_watcher(path, callback)
+            return self._watchers[path].get()
         except exceptions.NoConnection, e:
             # Get a DummyWatcher cached object instead
             self.log.warning('Health Check failed: %s' % e)
@@ -699,13 +700,13 @@ class KazooServiceRegistry(ndServiceRegistry):
         try:
             self.log.info('[%s] Loading from cache instead' % path)
             self._watchers[path] = self._get_dummywatcher(path, callback)
+            return self._watchers[path].get()
         except exceptions.ServiceRegistryException, e:
             # Ugh. Total failure. Return false
             self.log.error('Unable to retrieve [%s] from Zookeeper or cache - '
                            'try again later: %s' % (path, e))
-            return False
+        return False
 
-        return self._watchers[path].get()
 
     @_health_check
     def _get_watcher(self, path, callback=None):
