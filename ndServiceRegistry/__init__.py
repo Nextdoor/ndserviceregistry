@@ -622,16 +622,14 @@ class KazooServiceRegistry(ndServiceRegistry):
         if state == KazooState.SUSPENDED:
             # In this state, just mark that we can't handle any 'writes' right
             # now but that we might come back to life soon.
-            self.CONNECTED = False
+            return
         elif state == KazooState.LOST:
             # If we enter the LOST state, we've started a whole new session
             # with the Zookeeper server. Watches are re-established auto-
             # magically. Registered paths are re-established by their own
             # Registration control objects.
-            self.CONNECTED = False
+            return
         else:
-            self.CONNECTED = True
-
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
 
