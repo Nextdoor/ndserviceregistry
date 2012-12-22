@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright 2012 Nextdoor.com, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Commonly used functions
+"""Commonly used functions for ndServiceRegistry
 
 Copyright 2012 Nextdoor Inc."""
 

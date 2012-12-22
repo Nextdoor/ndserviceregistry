@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright 2012 Nextdoor.com, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,12 +33,14 @@ Example:
     Register a new node:
     >>> r = EphemeralNode(zk, '/services/ssh/foo:123', 'my data', True)
     >>> r.data()
-    {u'pid': 8364, u'string_value': u'my data', u'created': u'2012-12-14 21:17:50'}
+    {u'pid': 8364, u'string_value': u'my data',
+     u'created': u'2012-12-14 21:17:50'}
 
     Now change the nodes data
     >>> r.set_data('some other data')
     >>> r.data()
-    {u'pid': 8364, u'string_value': u'some other data', u'created': u'2012-12-14 21:18:26'}
+    {u'pid': 8364, u'string_value': u'some other data',
+     u'created': u'2012-12-14 21:18:26'}
 
     De-register the node
     >>> r.set_state(False)
@@ -122,7 +122,7 @@ class Registration(object):
             self.log.error('No authorization to set node.')
             pass
         except Exception, e:
-            self.log.error('Received exception. Moving on, will re-attempt ' \
+            self.log.error('Received exception. Moving on, will re-attempt '
                            'when Watcher notifies us of a state change: %s '
                            % e)
             pass
@@ -130,7 +130,7 @@ class Registration(object):
     def stop(self):
         """Disables our registration of the node."""
         self.set_state(False)
-        
+
     def start(self):
         """Enables our registration of the node."""
         self.set_state(True)
@@ -156,7 +156,7 @@ class Registration(object):
         self._update_state(self._state)
 
     def _update_state(self, state):
-        if state == True:
+        if state is True:
             # Register our connection with zookeeper
             try:
                 self.log.debug('Registering...')
@@ -173,25 +173,25 @@ class Registration(object):
                 self.log.error('No authorization to create node.')
                 pass
             except Exception, e:
-                self.log.error('Received exception. Moving on, will ' \
-                               're-attempt when Watcher notifies us of a ' \
+                self.log.error('Received exception. Moving on, will '
+                               're-attempt when Watcher notifies us of a '
                                'state change: %s ' % e)
                 pass
             pass
-        elif state == False:
+        elif state is False:
             # Try to delete the node
             self.log.debug('Attempting de-registration...')
             try:
                 self._zk.retry(self._zk.delete, self._path)
             except kazoo.exceptions.NoAuthError, e:
                 # The node exists, but we don't even have authorization to read
-                # it. We certainly will not have access then to change it below,
+                # it. We certainly will not have access then to change it below
                 # so return false. We'll retry again very soon.
                 self.log.error('No authorization to delete node.')
                 pass
             except Exception, e:
-                self.log.error('Received exception. Moving on, will ' \
-                               're-attempt when Watcher notifies us of a ' \
+                self.log.error('Received exception. Moving on, will '
+                               're-attempt when Watcher notifies us of a '
                                'state change: %s ' % e)
                 pass
             return
@@ -220,11 +220,11 @@ class Registration(object):
         self.log.debug('Called with data: %s' % data)
         self.log.debug('Wanted state: %s' % self.state())
 
-        if self.state() is False and data['stat'] != None:
+        if self.state() is False and data['stat'] is not None:
             # THe node exists because data['stat'] has data, but our
             # desired state is False. De-register the node.
             self._update_state(False)
-        elif self.state() is True and data['stat'] == None:
+        elif self.state() is True and data['stat'] is None:
             # The node does NOT exist because data['stat'] is None,
             # but our desired state is True. Register the node.
             self._update_state(True)
