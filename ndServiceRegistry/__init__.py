@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright 2012 Nextdoor.com, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -447,7 +445,6 @@ class KazooServiceRegistry(ndServiceRegistry):
             if not self._zk.connected:
                 e = 'Service is down. Try again later.'
                 raise exceptions.NoConnection(e)
-
 
             return func(self, *args, **kwargs)
         return _health_check_decorator
