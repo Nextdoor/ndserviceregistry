@@ -2,9 +2,6 @@
 ndServiceRegistry
 =================
 
-**DISCLAIMER: This module is not yet ready for use. Its under heavy development
-right now and is changing daily.**
-
 *`ndServiceRegistry`* is a Python module that provides a simple way to leverage
 *`Apache Zookeeper`* as a dynamic configuration and service registry.
 
