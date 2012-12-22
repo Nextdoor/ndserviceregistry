@@ -97,6 +97,7 @@ import os
 import logging
 import exceptions
 from os.path import split
+from functools import wraps
 
 # Our own classes
 from ndServiceRegistry.registration import EphemeralNode
@@ -428,6 +429,7 @@ class KazooServiceRegistry(ndServiceRegistry):
         If we detect that we've been forked, then we re-create our connection
         to the Zookeeper backend and move on with our health check."""
 
+        @wraps(func)
         def _health_check_decorator(self, *args, **kwargs):
             self.log.debug('Running healthcheck...')
             pid = os.getpid()
@@ -446,7 +448,7 @@ class KazooServiceRegistry(ndServiceRegistry):
                 e = 'Service is down. Try again later.'
                 raise exceptions.NoConnection(e)
 
-            # Nope, we're good
+
             return func(self, *args, **kwargs)
         return _health_check_decorator
 

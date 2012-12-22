@@ -26,6 +26,7 @@ import time
 import logging
 import tempfile
 import cPickle as pickle
+from functools import wraps
 
 # logger name
 LOGGER = 'ndServiceRegistry.funcs'
@@ -206,6 +207,7 @@ def rate_limiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
 
     # Main decorwator wrapper
     def _decorate(func):
+        @wraps(func)
         def _rate_limited_function(*args, **kwargs):
             # Start out assuming we will not throttle the frequency
             # of the function
