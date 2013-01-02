@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Exceptions for ndServiceRegistry
+"""Exceptions for nd_service_registry
 
 Copyright 2012 Nextdoor Inc."""
 

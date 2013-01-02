@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ndServiceRegistry Zookeeper Client Library
+"""nd_service_registry Zookeeper Client Library
 
 Copyright 2012 Nextdoor Inc."""
 
@@ -20,7 +20,7 @@ __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
 from kazoo.client import KazooClient
-from ndServiceRegistry.funcs import rate_limiter
+from nd_service_registry.funcs import rate_limiter
 
 # Our default variables
 from version import __version__ as VERSION

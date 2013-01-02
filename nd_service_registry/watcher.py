@@ -24,7 +24,7 @@ import time
 import sys
 from os.path import split
 
-from ndServiceRegistry import funcs
+from nd_service_registry import funcs
 
 # For KazooServiceRegistry Class
 import kazoo.exceptions
@@ -59,7 +59,7 @@ class Watcher(object):
         }
     """
 
-    LOGGING = 'ndServiceRegistry.Watcher'
+    LOGGING = 'nd_service_registry.Watcher'
 
     def __init__(self, zk, path, callback=None, watch_children=True):
         # Create our logger
@@ -194,7 +194,7 @@ class DummyWatcher(Watcher):
     want to be able to return valid data.
     """
 
-    LOGGING = 'ndServiceRegistry.DummyWatcher'
+    LOGGING = 'nd_service_registry.DummyWatcher'
 
     def __init__(self, path, data, callback=None):
         # Create our logger

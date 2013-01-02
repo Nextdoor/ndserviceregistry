@@ -14,12 +14,12 @@
 
 """Simple service registration class for managing lists of servers.
 
-The ndServiceRegistry model at Nextdoor is geared around simplicity and
+The nd_service_registry model at Nextdoor is geared around simplicity and
 reliability. This model provides a few core features that allow you to
 register and unregister nodes that provide certain services, and to monitor
 particular service paths for lists of nodes.
 
-Although the service structure is up to you, the ndServiceRegistry model is
+Although the service structure is up to you, the nd_service_registry model is
 largely designed around this model:
 
   /production
@@ -37,7 +37,7 @@ largely designed around this model:
 
 Example usage to provide the above service list:
 
-    >>> from ndServiceRegistry import KazooServiceRegistry
+    >>> from nd_service_registry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
     >>> nd.set_node('/production/ssh/server1:22')
     >>> nd.set_node('/production/ssh/server2:22')
@@ -61,7 +61,7 @@ Example of getting a static list of nodes from /production/ssh:
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=3, pzxid=45)}
 
-When you call get(), the ndServiceRegistry module goes out and creates a
+When you call get(), the nd_service_registry module goes out and creates a
 Watcher object for the path you provided. This object caches all of the state
 data for the supplied path in a local dict. This dict is updated any time the
 Zookeeper service sees a change to that path.
@@ -90,7 +90,7 @@ Copyright 2012 Nextdoor Inc.
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-# For ndServiceRegistry Class
+# For nd_service_registry Class
 import os
 import logging
 import exceptions
@@ -98,15 +98,15 @@ from os.path import split
 from functools import wraps
 
 # Our own classes
-from ndServiceRegistry.registration import EphemeralNode
-from ndServiceRegistry.watcher import Watcher
-from ndServiceRegistry.watcher import DummyWatcher
-from ndServiceRegistry import funcs
-from ndServiceRegistry import exceptions
+from nd_service_registry.registration import EphemeralNode
+from nd_service_registry.watcher import Watcher
+from nd_service_registry.watcher import DummyWatcher
+from nd_service_registry import funcs
+from nd_service_registry import exceptions
 
 # For KazooServiceRegistry Class
 import kazoo.security
-from ndServiceRegistry.shims import ZookeeperClient
+from nd_service_registry.shims import ZookeeperClient
 from kazoo.client import KazooState
 
 # Use Gevent as our threader (DOES NOT WORK RIGHT NOW)
@@ -125,7 +125,7 @@ TIMEOUT = 5  # seconds
 SERVER = 'localhost:2181'
 
 
-class ndServiceRegistry(object):
+class nd_service_registry(object):
     """Main Service Registry object.
 
     The ServiceRegistry object is a framework object, not meant to be
@@ -302,11 +302,11 @@ class ndServiceRegistry(object):
                     self._watchers[path] = w
 
 
-class KazooServiceRegistry(ndServiceRegistry):
+class KazooServiceRegistry(nd_service_registry):
 
     _instance = None
     _initialized = False
-    LOGGER = 'ndServiceRegistry.KazooServiceRegistry'
+    LOGGER = 'nd_service_registry.KazooServiceRegistry'
 
     def __new__(self, **kwargs):
         """Only creates a new object if one does not already exist."""
@@ -673,7 +673,7 @@ class KazooServiceRegistry(ndServiceRegistry):
                       changes.
 
         Returns:
-            ndServiceRegistry.Watcher.get() dict object
+            nd_service_registry.Watcher.get() dict object
         """
 
         # Return the object from our cache, if it's there
@@ -707,7 +707,6 @@ class KazooServiceRegistry(ndServiceRegistry):
                            'try again later: %s' % (path, e))
         return False
 
-
     @_health_check
     def _get_watcher(self, path, callback=None):
         """Creates a Watcher object for the supplid path.
@@ -725,7 +724,7 @@ class KazooServiceRegistry(ndServiceRegistry):
                       changes.
 
         Returns:
-            ndServiceRegistry.Watcher object
+            nd_service_registry.Watcher object
         """
 
         # Ok, so the cache is missing the key. Lets look for it in Zookeeper

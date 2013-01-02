@@ -1,8 +1,8 @@
-=================
-ndServiceRegistry
-=================
+===================
+nd_service_registry
+===================
 
-*`ndServiceRegistry`* is a Python module that provides a simple way to leverage
+*`nd_service_registry`* is a Python module that provides a simple way to leverage
 *`Apache Zookeeper`* as a dynamic configuration and service registry.
 
 The goal of the package is to provide a single foundational class that can be
@@ -28,7 +28,7 @@ To install, run ::
 
 or ::
 
-    pip install ndServiceRegistry
+    pip install nd_service_registry
 
 Instantiating a KazooServiceRegistry module
 -------------------------------------------
@@ -43,10 +43,10 @@ Create a logger object::
 
 To create your initial connection object::
 
-    >>> from ndServiceRegistry import KazooServiceRegistry
+    >>> from nd_service_registry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
 
-The KazooServiceRegistry object is a child of ndServiceRegistry that conforms 
+The KazooServiceRegistry object is a child of nd_service_registry that conforms 
 to our ServiceRegistry specs, whlie leveraging Kazoo as the backend. The
 object handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
@@ -83,7 +83,7 @@ can though, we instead just *return False* as a way of indicating that we were
 unable to perform your command now ... but that we will take care of it later.
 Whenever we do this, we throw a WARNING log message as well.
 
-ndServiceRegistry.exceptions.NoConnection
+nd_service_registry.exceptions.NoConnection
     Thrown if you attempt any operation that requires immediate access to the
     backend Zookeeper service. Either a *set()* operation, or a *get()*
     operation on a path for the first time.
@@ -94,7 +94,7 @@ ndServiceRegistry.exceptions.NoConnection
     if Zookeeper is down. This allows the service to fail temporarily in the
     background but your app is still able to get the 'last known' results.)
 
-ndServiceRegistry.exceptions.ReadOnly
+nd_service_registry.exceptions.ReadOnly
     If *readonly=True*, any operation that would result in a 'write' will throw
     this exception. Most notably, a *set()* operation will fail with this
     exception if *readonly=True*.

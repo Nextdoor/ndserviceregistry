@@ -56,8 +56,8 @@ import logging
 import time
 import sys
 
-from ndServiceRegistry import funcs
-from ndServiceRegistry.watcher import Watcher
+from nd_service_registry import funcs
+from nd_service_registry.watcher import Watcher
 
 # For KazooServiceRegistry Class
 import kazoo.exceptions
@@ -71,7 +71,7 @@ TIMEOUT = 30
 class Registration(object):
     """An object that registers a znode with ZooKeeper."""
 
-    LOGGING = 'ndServiceRegistry.Registration'
+    LOGGING = 'nd_service_registry.Registration'
 
     def __init__(self, zk, path, data=None, state=True):
         # Create our logger
@@ -242,7 +242,7 @@ class EphemeralNode(Registration):
     The node registered with Zookeeper is ephemeral, so if we lose our
     connection to the service, we have to re-register the data."""
 
-    LOGGING = 'ndServiceRegistry.Registration.EphemeralNode'
+    LOGGING = 'nd_service_registry.Registration.EphemeralNode'
 
     def __init__(self, zk, path, data, state=True):
         """Sets the ZooKeeper registration up to be ephemeral.

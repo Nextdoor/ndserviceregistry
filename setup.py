@@ -20,7 +20,7 @@ from distutils.command.clean import clean
 from distutils.command.sdist import sdist
 from setuptools import setup
 
-PACKAGE = 'ndServiceRegistry'
+PACKAGE = 'nd_service_registry'
 __version__ = None
 execfile(os.path.join(PACKAGE, 'version.py'))  # set __version__
 
@@ -46,19 +46,19 @@ class CleanHook(clean):
             if os.path.exists(path):
                 shutil.rmtree(path)
         if self.all:
-            maybe_rm('ndServiceRegistry.egg-info')
+            maybe_rm('nd_service_registry.egg-info')
             maybe_rm('dist')
 
 
 setup(
-    name='ndServiceRegistry',
+    name='nd_service_registry',
     version=__version__,
     description='Nextdoor ServiceRegistry module for interacting with Apache Zookeeper.',
     long_description=open('README.rst').read(),
     author='Matt Wise',
     author_email='matt@nextdoor.com',
-    url='https://github.com/Nextdoor/ndServiceRegistry',
-    download_url='http://pypi.python.org/pypi/ndServiceRegistry#downloads',
+    url='https://github.com/Nextdoor/ndserviceregistry',
+    download_url='http://pypi.python.org/pypi/nd_service_registry#downloads',
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
     packages=[PACKAGE],

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Commonly used functions for ndServiceRegistry
+"""Commonly used functions for nd_service_registry
 
 Copyright 2012 Nextdoor Inc."""
 
@@ -27,7 +27,7 @@ import cPickle as pickle
 from functools import wraps
 
 # logger name
-LOGGER = 'ndServiceRegistry.funcs'
+LOGGER = 'nd_service_registry.funcs'
 
 
 def encode(data=None):
