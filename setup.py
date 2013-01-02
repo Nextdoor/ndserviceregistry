@@ -61,6 +61,7 @@ setup(
     download_url='http://pypi.python.org/pypi/nd_service_registry#downloads',
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
+    obsoletes='ndServiceRegistry',
     packages=[PACKAGE],
     install_requires=[
         'kazoo',
