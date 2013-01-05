@@ -94,6 +94,7 @@ __author__ = 'matt@nextdoor.com (Matt Wise)'
 import os
 import logging
 import exceptions
+import atexit
 from os.path import split
 from functools import wraps
 
@@ -416,9 +417,25 @@ class KazooServiceRegistry(nd_service_registry):
         # up things like authentication)
         self._connect(lazy)
 
+        # On python interpreter shutdown, cleanly disconnect our connections
+        atexit.register(self._shutdown)
+
         # Mark us as initialized
         self._initialized = True
         self.log.info('Initialization Done!')
+
+    def _shutdown(self):
+        """Cleanly shut down our connections."""
+
+        self.log.info('Shutting down...')
+
+        # Quiet down the loggers to only show major errors during the shutdown
+        # process.
+        self.log.setLevel(logging.ERROR)
+        logging.getLogger('kazoo').setLevel(logging.ERROR)
+
+        # Now disconnect our connection
+        self.stop()
 
     def _health_check(func):
         """Decorator used to heathcheck the Zookeeper connection.
