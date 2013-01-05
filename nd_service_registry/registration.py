@@ -71,11 +71,9 @@ TIMEOUT = 30
 class Registration(object):
     """An object that registers a znode with ZooKeeper."""
 
-    LOGGING = 'nd_service_registry.Registration'
-
     def __init__(self, zk, path, data=None, state=True):
         # Create our logger
-        self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
+        self.log = logging.getLogger('%s.Registration.%s' % (__name__, path))
 
         # Set our local variables
         self._zk = zk

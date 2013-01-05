@@ -307,7 +307,6 @@ class KazooServiceRegistry(nd_service_registry):
 
     _instance = None
     _initialized = False
-    LOGGER = 'nd_service_registry.KazooServiceRegistry'
 
     def __new__(self, **kwargs):
         """Only creates a new object if one does not already exist."""
@@ -372,7 +371,7 @@ class KazooServiceRegistry(nd_service_registry):
             return
 
         # Create our logger
-        self.log = logging.getLogger(self.LOGGER)
+        self.log = logging.getLogger('%s.KazooServiceRegistry' % __name__)
         self.log.info('Initializing ServiceRegistry object')
 
         # Quiet down the Kazoo connection logger no matter what

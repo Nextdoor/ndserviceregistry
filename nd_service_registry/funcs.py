@@ -26,9 +26,8 @@ import tempfile
 import cPickle as pickle
 from functools import wraps
 
-# logger name
-LOGGER = 'nd_service_registry.funcs'
-
+# Get a default logger
+log = logging.getLogger(__name__)
 
 def encode(data=None):
     """Converts a data dict into a storable string.
@@ -127,7 +126,6 @@ def save_dict(data, path):
         raise Exception('No \'path\' path was supplied to save dict to.')
 
     # Get a logger
-    log = logging.getLogger(LOGGER)
     log.info('Saving supplied data to pickle file [%s]' % path)
 
     # Get a copy of our existing saved-dictionary first. Append our current
@@ -167,9 +165,6 @@ def load_dict(file):
     if not file:
         raise Exception('No \'file\' path was supplied to save dict to.')
 
-    # Get a logger
-    log = logging.getLogger(LOGGER)
-
     log.info('Loading up dictionary from file [%s]' % file)
     cache = {}
     try:
@@ -201,7 +196,6 @@ def rate_limiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
     """
 
     calls = [time.time()]
-    log = logging.getLogger('rateLimiter')
 
     # Main decorwator wrapper
     def _decorate(func):

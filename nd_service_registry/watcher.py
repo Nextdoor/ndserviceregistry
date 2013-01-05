@@ -59,11 +59,9 @@ class Watcher(object):
         }
     """
 
-    LOGGING = 'nd_service_registry.Watcher'
-
     def __init__(self, zk, path, callback=None, watch_children=True):
         # Create our logger
-        self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
+        self.log = logging.getLogger('%s.Watcher.%s' % (__name__, path))
 
         # Set our local variables
         self._zk = zk
@@ -194,11 +192,9 @@ class DummyWatcher(Watcher):
     want to be able to return valid data.
     """
 
-    LOGGING = 'nd_service_registry.DummyWatcher'
-
     def __init__(self, path, data, callback=None):
         # Create our logger
-        self.log = logging.getLogger('%s.%s' % (self.LOGGING, path))
+        self.log = logging.getLogger('%s.DummyWatcher.%s' % (__name__, path))
 
         # Set our local variables
         self._path = path
