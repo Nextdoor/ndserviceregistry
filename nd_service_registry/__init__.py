@@ -426,12 +426,13 @@ class KazooServiceRegistry(nd_service_registry):
     def _shutdown(self):
         """Cleanly shut down our connections."""
 
-        self.log.info('Shutting down...')
+        self.log.debug('Shutting down...')
 
         # Quiet down the loggers to only show major errors during the shutdown
         # process.
         self.log.setLevel(logging.ERROR)
         logging.getLogger('kazoo').setLevel(logging.ERROR)
+        logging.getLogger('kazoo.protocol.connection').setLevel(logging.ERROR)
 
         # Now disconnect our connection
         self.stop()
