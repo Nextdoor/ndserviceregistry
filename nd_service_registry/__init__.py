@@ -302,6 +302,69 @@ class nd_service_registry(object):
 
                     self._watchers[path] = w
 
+    def rebuild(self):
+        """Rebuild our internal object and recreate all connections.
+
+        In the event that our object has been forked (or some other
+        catastrophic event), we rebuild our Zookeeper connection and
+        re-create all of our Watcher/Registration child objects.
+        
+        If lazy=True, this is a non-blocking operation that can run in
+        the background. If lazy=False, this is a blocking operation and
+        no other work will proceed until this has finished."""
+        
+        # First recreate our zookeeper connection. Attempt to shut it down
+        # cleanly, then go ahead and rebuild a whole new self._zk object.
+        self.stop()
+        self._zk = None
+        self._connect(lazy=self._lazy)
+        self._rebuild_watchers()
+        self._rebuild_registrations()
+
+    def _rebuild_watchers(self):
+        """Completely rebuild all of our Watcher objects."""
+
+        # Run through all of our Watcher objects (that are locally owned by
+        # the ServiceRegistry object) and re-create them.
+        if self._watchers:
+            # Temporarily back up our dict of Watcher objects
+            watchers = self._watchers
+ 
+            # Wipe out the class watcher dict
+            self._watchers = {}
+ 
+            # Now, for each Watcher object in our original list... 
+            for w in watchers:
+                # Create a new Watcher object
+                self.get(path=watchers[w]._path)
+
+                # Walk through all of the callbacks that were
+                # in the original Watcher object, and add them to
+                # the new object.
+                for c in watchers[w]._callbacks:
+                    self.add_callback(path=watchers[w]._path,
+                                      callback=c)
+            
+    def _rebuild_registrations(self):
+        """Completely rebuild all of our Registration objects."""
+
+        # Run through all of our Registration objects (that are locally ownedj
+        # by the ServiceRegistry object) and re-create them.
+        if self._registrations:
+            # Temporarily back up our dict of Watcher objects
+            registrations = self._registrations
+ 
+            # Wipe out the class watcher dict
+            self._registrations = {}
+ 
+            # Now, for each Registration object in our original list... 
+            for r in registrations:
+                # Create a new Registration object
+                self.set(node=r,
+                         data=registrations[r]._data,
+                         state=registrations[r]._state,
+                         type=registrations[r].__class__)
+
 
 class KazooServiceRegistry(nd_service_registry):
 
@@ -386,6 +449,7 @@ class KazooServiceRegistry(nd_service_registry):
         self._server = server
         self._lazy = lazy
         self._pid = os.getpid()
+        self._zk = None
 
         # Store all of our Registration objects here
         self._registrations = {}
@@ -397,22 +461,6 @@ class KazooServiceRegistry(nd_service_registry):
         # get_nodes/get_node_data calls.
         self._cachefile = cachefile
 
-        # Define our zookeeper client here so that it never gets overwritten
-        self._zk = ZookeeperClient(hosts=self._server,
-                                   timeout=self._timeout,
-                                   read_only=self._readonly,
-                                   handler=EventHandler(),
-                                   retry_delay=0.1,
-                                   retry_backoff=2,
-                                   retry_max_delay=10)
-
-        # Get a lock handler
-        self._run_lock = self._zk.handler.lock_object()
-
-        # Watch for any connection state changes
-        self._zk.add_listener(self._state_listener)
-
-        # Connect (once we're connected, our state listener will handle setting
         # up things like authentication)
         self._connect(lazy)
 
@@ -451,12 +499,7 @@ class KazooServiceRegistry(nd_service_registry):
             if pid != self._pid:
                 self.log.warning('Fork detected!')
                 self._pid = pid
-                try:
-                    self.stop()
-                except:
-                    # Allow this to fail.. we'll just restart the conn anyways
-                    pass
-                self._connect(lazy=False)
+                self.rebuild()
 
             # check if our connection is up or not
             if not self._zk.connected:
@@ -466,7 +509,6 @@ class KazooServiceRegistry(nd_service_registry):
             return func(self, *args, **kwargs)
         return _health_check_decorator
 
-    @_health_check
     def stop(self):
         """Cleanly stops our Zookeeper connection.
 
@@ -474,7 +516,10 @@ class KazooServiceRegistry(nd_service_registry):
         is re-established, they will automatically re-create their
         connections."""
 
-        self._zk.stop()
+        try:
+            self._zk.stop()
+        except:
+            pass
 
     def start(self):
         """Starts up our ZK connection again.
@@ -539,6 +584,30 @@ class KazooServiceRegistry(nd_service_registry):
 
         self.log.info('Registration for %s stopped.' % node)
 
+    def _create_connection(self):
+        """Create our 'zk' connection object.
+
+        If the object does not exist, create it. If it does exist, just move on.
+        """
+
+        if self._zk:
+            return
+
+        # Define our zookeeper client here so that it never gets overwritten
+        self._zk = ZookeeperClient(hosts=self._server,
+                                   timeout=self._timeout,
+                                   read_only=self._readonly,
+                                   handler=EventHandler(),
+                                   retry_delay=0.1,
+                                   retry_backoff=2,
+                                   retry_max_delay=10)
+
+        # Get a lock handler
+        self._run_lock = self._zk.handler.lock_object()
+
+        # Watch for any connection state changes
+        self._zk.add_listener(self._state_listener)
+
     def _connect(self, lazy):
         """Connect to Zookeeper.
 
@@ -553,6 +622,9 @@ class KazooServiceRegistry(nd_service_registry):
         """
 
         self.log.info('Connecting to Zookeeper Service (%s)' % self._server)
+
+        # Create our zookeeper connection object
+        self._create_connection()
 
         # Start our connection asynchronously
         self.event = self._zk.start_async()

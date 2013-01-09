@@ -71,8 +71,38 @@ Getting a list of servers at a path::
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
 
-Failure Handling
-----------------
+Connection Handling
+-------------------
+
+The ServiceRegistry object tries everything that it can to make sure that
+the backend Zookeeper connection is always up and running.
+
+Fork Behavior
+  In the event that your code has created an ServiceRegistry object but then
+  gone and forked the process (celery, as an example), we do our best to
+  detect this and re-create the connection, watchers and registrations.
+
+  When we detect a fork (more on that below), we re-create our Zookeeper
+  connection, and then re-create all Watcher and Registration objects as well.
+
+Fork Detection
+  Detecting the fork is extremely tricky... we can only really detect it when
+  you call the module for new data. This means that if you have created a
+  Watcher or Registration object, those objects will not be aware of the fork
+  (and thus the loss of their connection to Zookeeper) until you make another
+  call to them.
+
+  Because of this, I strongly recommend that if you can detect the fork from
+  within your application (Django signals perhaps?), you should immediately call
+  the *rebuild()* method on your ServiceRegistry object.::
+
+      >>> from nd_service_registry import KazooServiceRegistry
+      >>> k = KazooServiceRegistry()
+      >>> do_fork()
+      >>> k.rebuild()
+
+Exceptions
+----------
 
 The goal of this module is to be as self-contained as possible and require
 as little code in your app as possible. To that end, we *almost never* raise
