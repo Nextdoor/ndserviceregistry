@@ -313,9 +313,10 @@ class nd_service_registry(object):
         the background. If lazy=False, this is a blocking operation and
         no other work will proceed until this has finished."""
         
-        # First recreate our zookeeper connection. Attempt to shut it down
-        # cleanly, then go ahead and rebuild a whole new self._zk object.
-        self.stop()
+        # When a fork occurs, Python leaves us with a reference to the
+        # PARENT's KazooClient object. We (as the FORKED process), cannot
+        # call any functions from that object, so we wipe out our references
+        # to it and create an all new connection.
         self._zk = None
         self._connect(lazy=self._lazy)
         self._rebuild_watchers()
