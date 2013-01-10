@@ -10,9 +10,9 @@ leveraged by any Python program for registering and monitoring services through
 Zookeeper.
 
 The current use cases are:
-- Register a server providing a service
-- Retrieve a list of servers providing a particular service
-- Execute callback methods whenever a service list changes
+* Register a server providing a service
+* Retrieve a list of servers providing a particular service
+* Execute callback methods whenever a service list changes
 
 The main benefit of using this module is if you have several different tools
 in your network that all need to interact with Zookeeper in a common way. The
