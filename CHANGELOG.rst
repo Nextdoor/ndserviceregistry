@@ -1,4 +1,4 @@
-Version 0.2.2 (work in progress)
+Version 0.2.2
 ============================================================
 
 *    Bug Fix: Fix funcs.save_dict() when permissions are incorrect (Issue #8)
