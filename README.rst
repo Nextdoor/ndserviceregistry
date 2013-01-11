@@ -111,6 +111,7 @@ of the module we use in Django to simplify use of 'nd_service_registry'.
         return get_service_registry().get(path, callback=callback)
 
 Example use in your code::
+
     >>> from nextdoor import service_registry_utils
     >>> def do_something(data):
     ...     print "New server data: %s" % data
