@@ -85,7 +85,7 @@ of the module we use in Django to simplify use of 'nd_service_registry'.
     _service_registry = None
     
     def get_service_registry():
-    global _service_registry
+        global _service_registry
         if not _service_registry:
             server = "%s:%s" % (settings.SERVICEREGISTRY_PARAMS['SERVER'],
                                 settings.SERVICEREGISTRY_PARAMS['PORT'])
