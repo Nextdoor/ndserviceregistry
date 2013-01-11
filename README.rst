@@ -141,6 +141,10 @@ Warning: LC_ALL and LANG settings
 
   If you use uWSGI, set them in your uWSGI config file.
 
+  Running the Django shell::
+
+      # unset LC_ALL; LANG=en_US:UTF-8 python manage.py shell 
+
 
 Connection Handling
 -------------------
