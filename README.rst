@@ -71,6 +71,76 @@ Getting a list of servers at a path::
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
 
+Django use
+----------
+
+We wrote this code to be easy to use in Django. Here's a (very brief) version
+of the module we use in Django to simplify use of 'nd_service_registry'.
+
+<your django tree>/foo/service_registry_utils.py::
+
+    import nd_service_registry
+    from django.conf import settings
+    
+    _service_registry = None
+    
+    def get_service_registry():
+    global _service_registry
+        if not _service_registry:
+            server = "%s:%s" % (settings.SERVICEREGISTRY_PARAMS['SERVER'],
+                                settings.SERVICEREGISTRY_PARAMS['PORT'])
+            _service_registry = nd_service_registry.KazooServiceRegistry(
+                server=server,
+                lazy=True,
+                readonly=True,
+                timeout=settings.SERVICEREGISTRY_PARAMS['TIMEOUT'],
+                cachefile=settings.SERVICEREGISTRY_PARAMS['CACHEFILE'])
+        return _service_registry
+    
+    def get(path, callback=None, wait=None):
+        if not wait:
+            return get_service_registry().get(path, callback=callback)
+        begin = time.time()
+        while time.time() - begin <= wait:
+            data = get_service_registry().get(path)
+            if len(data['children']) > 0:
+                if callback:
+                    get_service_registry().add_callback(path, callback=callback)
+                return data
+            time.sleep(0.1)
+        return get_service_registry().get(path, callback=callback)
+
+Example use in your code::
+    >>> from nextdoor import service_registry_utils
+    >>> def do_something(data):
+    ...     print "New server data: %s" % data
+    ... 
+    >>> service_registry_utils.get('/services/staging/uswest2/memcache',
+    ...                            callback=do_something)
+    New server data: { 'path': '/services/staging/uswest2/memcache',
+                       'stat': ZnodeStat(czxid=8589934751, mzxid=8589934751,
+                                         ctime=1354785240728, mtime=1354785240728,
+                                         version=0, cversion=45, aversion=0,
+                                         ephemeralOwner=0, dataLength=0, numChildren=1,
+                                         pzxid=30064903926),
+                       'data': None,
+                       'children': { u'ec2-123-123-123-123.us-west-2.compute.amazonaws.com:11211':
+                                       {u'created': u'2013-01-08 16:51:12', u'pid': 3246, }
+                                   }
+                       }
+
+Warning: LC_ALL and LANG settings
+  Due to an unknown bug, if Django cannot find your LC_ALL LOCALE settings
+  (which often default to 'C'), 'nd_service_registry' or 'kazoo' crash and
+  burn during the init phase. Its uknown why at this point, but we've found
+  that its best to 'unset LC_ALL' and set 'LANG=en_US:UTF-8' (or some other
+  valid setting) before you start up your Django app.
+
+  If you use Celery, set these options in */etc/default/celeryd*.
+
+  If you use uWSGI, set them in your uWSGI config file.
+
+
 Connection Handling
 -------------------
 
