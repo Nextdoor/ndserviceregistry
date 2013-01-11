@@ -79,7 +79,7 @@ of the module we use in Django to simplify use of 'nd_service_registry'.
 
 <your django tree>/foo/service_registry_utils.py::
 
-    import nd_service_registry
+    import nd_service_registry, time
     from django.conf import settings
     
     _service_registry = None
