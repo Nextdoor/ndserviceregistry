@@ -143,11 +143,16 @@ def save_dict(data, path):
 
     # Create a random file and save our cache to it. This should avoid the race
     # condition of multiple processes saving to the same file at the same time.
-    fileno, filename = tempfile.mkstemp()
-    fd = os.fdopen(fileno, 'wb')
-    pickle.dump(cache, fd)
-    fd.close()
-    os.rename(filename, path)
+    try:
+        fileno, filename = tempfile.mkstemp()
+        fd = os.fdopen(fileno, 'wb')
+        pickle.dump(cache, fd)
+        fd.close()
+        os.rename(filename, path)
+    except Exception, e:
+        log.warning('Could not save cache (%s): %s' %
+                (path, e))
+        return False
 
     return True
 
