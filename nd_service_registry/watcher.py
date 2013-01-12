@@ -116,8 +116,8 @@ class Watcher(object):
         """Add a callback when watch is updated."""
         for existing_callback in self._callbacks:
             if callback == existing_callback:
-                self.log.warning('Callback [%s] already exists. Not '
-                                 'triggering again.' % callback)
+                self.log.debug('Callback [%s] already exists. Not '
+                               'triggering again.' % callback)
                 return
 
         self._callbacks.append(callback)

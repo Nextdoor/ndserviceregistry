@@ -707,18 +707,21 @@ class KazooServiceRegistry(nd_service_registry):
         the rest of the code know to not try to run any Zookeeper commands
         until the service is back up."""
 
-        self.log.warning('Zookeeper connection state changed: %s' % state)
+        message='Zookeeper connection state changed'
         if state == KazooState.SUSPENDED:
             # In this state, just mark that we can't handle any 'writes' right
             # now but that we might come back to life soon.
+            self.log.warning('%s: %s' % (message,state))
             return
         elif state == KazooState.LOST:
             # If we enter the LOST state, we've started a whole new session
             # with the Zookeeper server. Watches are re-established auto-
             # magically. Registered paths are re-established by their own
             # Registration control objects.
+            self.log.warning('%s: %s' % (message,state))
             return
         else:
+            self.log.info('%s: %s' % (message,state))
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
 
