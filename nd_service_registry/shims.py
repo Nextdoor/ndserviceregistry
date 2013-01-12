@@ -29,22 +29,22 @@ from version import __version__ as VERSION
 class ZookeeperClient(KazooClient):
     """Shim-layer that provides some safety controls"""
 
-    @rate_limiter(targetAvgTimeBetweenCalls=1)
+    @rate_limiter(targetAvgTimeBetweenCalls=1, numCallsToAverage=50)
     def retry(self, *args, **kwargs):
         return super(ZookeeperClient, self).retry(*args, **kwargs)
 
-    @rate_limiter(targetAvgTimeBetweenCalls=1)
+    @rate_limiter(targetAvgTimeBetweenCalls=1, numCallsToAverage=50)
     def get(self, *args, **kwargs):
         return super(ZookeeperClient, self).get(*args, **kwargs)
 
-    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=50)
     def set(self, *args, **kwargs):
         return super(ZookeeperClient, self).set(*args, **kwargs)
 
-    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=50)
     def create(self, *args, **kwargs):
         return super(ZookeeperClient, self).create(*args, **kwargs)
 
-    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=30)
+    @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=50)
     def delete(self, *args, **kwargs):
         return super(ZookeeperClient, self).delete(*args, **kwargs)
