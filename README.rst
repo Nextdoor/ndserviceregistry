@@ -2,14 +2,15 @@
 nd_service_registry
 ===================
 
-*`nd_service_registry`* is a Python module that provides a simple way to leverage
-*`Apache Zookeeper`* as a dynamic configuration and service registry.
+*nd_service_registry* is a Python module that provides a simple way to leverage
+*Apache Zookeeper* as a dynamic configuration and service registry.
 
 The goal of the package is to provide a single foundational class that can be
 leveraged by any Python program for registering and monitoring services through
 Zookeeper.
 
 The current use cases are:
+
 * Register a server providing a service
 * Retrieve a list of servers providing a particular service
 * Execute callback methods whenever a service list changes
@@ -75,7 +76,7 @@ Django use
 ----------
 
 We wrote this code to be easy to use in Django. Here's a (very brief) version
-of the module we use in Django to simplify use of 'nd_service_registry'.
+of the module we use in Django to simplify use of *nd_service_registry*.
 
 <your django tree>/foo/service_registry_utils.py::
 
@@ -132,9 +133,9 @@ Example use in your code::
 
 Warning: LC_ALL and LANG settings
   Due to an unknown bug, if Django cannot find your LC_ALL LOCALE settings
-  (which often default to 'C'), 'nd_service_registry' or 'kazoo' crash and
+  (which often default to 'C'), *nd_service_registry* or *kazoo* crash and
   burn during the init phase. Its uknown why at this point, but we've found
-  that its best to 'unset LC_ALL' and set 'LANG=en_US:UTF-8' (or some other
+  that its best to *unset LC_ALL* and set *LANG=en_US:UTF-8* (or some other
   valid setting) before you start up your Django app.
 
   If you use Celery, set these options in */etc/default/celeryd*.
@@ -197,10 +198,10 @@ nd_service_registry.exceptions.NoConnection
 
     (It should be noted, a *get()* will actually return the cached results even
     if Zookeeper is down. This allows the service to fail temporarily in the
-    background but your app is still able to get the 'last known' results.)
+    background but your app is still able to get the *last known* results.)
 
 nd_service_registry.exceptions.ReadOnly
-    If *readonly=True*, any operation that would result in a 'write' will throw
+    If *readonly=True*, any operation that would result in a *write* will throw
     this exception. Most notably, a *set()* operation will fail with this
     exception if *readonly=True*.
 
