@@ -438,8 +438,8 @@ class KazooServiceRegistry(nd_service_registry):
         self.log = logging.getLogger('%s.KazooServiceRegistry' % __name__)
         self.log.info('Initializing ServiceRegistry object')
 
-        # Quiet down the Kazoo connection logger no matter what
-        logging.getLogger('kazoo.protocol.connection').setLevel(logging.INFO)
+        # Quiet down the Kazoo connection ping messages
+        logging.getLogger('kazoo.protocol.connection').addFilter(shims.KazooFilter())
 
         # Record the supplied settings
         self._timeout = timeout

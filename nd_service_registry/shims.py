@@ -48,3 +48,15 @@ class ZookeeperClient(KazooClient):
     @rate_limiter(targetAvgTimeBetweenCalls=10, numCallsToAverage=50)
     def delete(self, *args, **kwargs):
         return super(ZookeeperClient, self).delete(*args, **kwargs)
+
+
+class KazooFilter(logging.Filter):
+    """Filters out certain Kazoo messages that we do not want to see."""
+    def filter(self, record):
+        retval = True
+
+        # Filter out the PING messages
+        if record.getMessage().find('PING') > -1:
+            retval = False
+
+        return retval
