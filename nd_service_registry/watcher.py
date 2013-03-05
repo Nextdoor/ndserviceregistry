@@ -133,14 +133,13 @@ class Watcher(object):
 
             # Since we set allow_missing_node to True, the 'data' passed back
             # is ALWAYS 'None'. This means that we need to actually go out and
-            # explicitly get the data whenever this function is called. As
-            # long as 'stat' is not None, we know the node exists so this will
-            # succeed.
-            if stat:
-                self.log.debug('Node is registered.')
+            # explicitly get the data whenever this function is called. Try to
+            # get the data with zk.get(). If a NoNodeError is thrown, then
+            # we know the host is not registered.
+            try:
                 data, self._stat = self._zk.retry(self._zk.get, self._path)
-            else:
-                # Just a bit of logging
+                self.log.debug('Node is registered.')
+            except kazoo.exceptions.NoNodeError:
                 self.log.debug('Node is not registered.')
 
             self._data = funcs.decode(data)
