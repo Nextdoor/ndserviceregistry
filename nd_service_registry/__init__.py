@@ -498,7 +498,7 @@ class KazooServiceRegistry(nd_service_registry):
             self.log.debug('Running healthcheck...')
             pid = os.getpid()
             if pid != self._pid:
-                self.log.warning('Fork detected!')
+                self.log.info('Fork detected!')
                 self._pid = pid
                 self.rebuild()
 
