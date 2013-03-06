@@ -210,3 +210,48 @@ API Documentation
 
 Detailed implementation details and instructions are in the individual
 library files.
+
+Contributing to this code
+-------------------------
+
+Code contributions can be made through the *Nextdoor Gerrit Code Review* system.
+In order to contribute, you will want to follow these instructions:
+
+`Nextdoor Code Review System <http://review.opensource.nextdoor.com>`_
+
+Place the following lines into ~/.ssh/config:
+
+    Host review.opensource.nextdoor.com
+    Port 29418
+    User <YOUR LDAP USERNAME>
+
+    Then verify that you can connect to Gerrit:
+
+    $ ssh review.opensource.nextdoor.com
+    ****    Welcome to Gerrit Code Review    ****
+
+    Hi Matt Wise, you have successfully connected over SSH.
+
+    Unfortunately, interactive shells are disabled.
+    To clone a hosted Git repository, use:
+
+    git clone ssh://<YOUR LDAP USERNAME>@review.opensource.nextdoor.com:29418/REPOSITORY_NAME.git
+
+    Connection to review.nextdoortest.com closed.
+
+Install and configure git-change:
+
+    $ sudo easy_install pip
+    $ sudo pip install git-change
+
+Clone the repo and setup your hooks:
+
+    $ git clone review.opensource.nextdoor.com:ndserviceregistry
+    $ cd ndserviceregistry
+    $ etc/install-git-hooks.sh
+
+Make your change, and submit it:
+
+    $ touch MyFile
+    $ git add MyFile
+    $ git change create
