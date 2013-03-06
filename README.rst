@@ -219,13 +219,13 @@ In order to contribute, you will want to follow these instructions:
 
 `Nextdoor Code Review System <http://review.opensource.nextdoor.com>`_
 
-Place the following lines into ~/.ssh/config:
+Place the following lines into ~/.ssh/config:::
 
     Host review.opensource.nextdoor.com
     Port 29418
     User <YOUR LDAP USERNAME>
 
-    Then verify that you can connect to Gerrit:
+Then verify that you can connect to Gerrit:::
 
     $ ssh review.opensource.nextdoor.com
     ****    Welcome to Gerrit Code Review    ****
@@ -239,18 +239,18 @@ Place the following lines into ~/.ssh/config:
 
     Connection to review.nextdoortest.com closed.
 
-Install and configure git-change:
+Install and configure git-change:::
 
     $ sudo easy_install pip
     $ sudo pip install git-change
 
-Clone the repo and setup your hooks:
+Clone the repo and setup your hooks:::
 
     $ git clone review.opensource.nextdoor.com:ndserviceregistry
     $ cd ndserviceregistry
     $ etc/install-git-hooks.sh
 
-Make your change, and submit it:
+Make your change, and submit it:::
 
     $ touch MyFile
     $ git add MyFile
