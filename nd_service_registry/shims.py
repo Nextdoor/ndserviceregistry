@@ -56,7 +56,7 @@ class KazooFilter(logging.Filter):
         retval = True
 
         # Filter out the PING messages
-        if record.getMessage().find('PING') > -1:
+        if record.getMessage().lower().find('ping') > -1:
             retval = False
 
         return retval
