@@ -47,7 +47,7 @@ To create your initial connection object::
     >>> from nd_service_registry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
 
-The KazooServiceRegistry object is a child of nd_service_registry that conforms 
+The KazooServiceRegistry object is a child of nd_service_registry that conforms
 to our ServiceRegistry specs, whlie leveraging Kazoo as the backend. The
 object handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
@@ -71,6 +71,27 @@ Getting a list of servers at a path::
                        mtime=1355532303688, version=0, cversion=1,
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
+
+
+Locks
+-----
+
+One of Zookeepers great features is using it as a global lock manager. We provide
+two models for getting a lock. In one model, your lock is only active as long as
+your code is running::
+
+    >>> with nd.get_lock('/foo', simultaneous=1):
+    ...      <do some work>
+    ...
+    >>>
+
+Another example is explicitly locking a path for some period of time, then
+releasing it explicitly (eg, locking during one method, and waiting for an
+entirely different method to handle the unlock)::
+
+    >>> nd.acquire_lock('/foo', simultaneous=1)
+    >>> <do your work... >
+    >>> nd.release_lock('/foo')
 
 Django use
 ----------
@@ -116,7 +137,7 @@ Example use in your code::
     >>> from nextdoor import service_registry_utils
     >>> def do_something(data):
     ...     print "New server data: %s" % data
-    ... 
+    ...
     >>> service_registry_utils.get('/services/staging/uswest2/memcache',
     ...                            callback=do_something)
     New server data: { 'path': '/services/staging/uswest2/memcache',
@@ -144,7 +165,7 @@ Warning: LC_ALL and LANG settings
 
   Running the Django shell::
 
-      # unset LC_ALL; LANG=en_US:UTF-8 python manage.py shell 
+      # unset LC_ALL; LANG=en_US:UTF-8 python manage.py shell
 
 
 Connection Handling
