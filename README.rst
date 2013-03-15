@@ -72,6 +72,26 @@ Getting a list of servers at a path::
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
 
+
+Locks
+-----
+
+One of Zookeepers great features is using it as a global Lock manager. We provide
+two models for getting a lock. In one model, your Lock is only active as long as
+your code is running::
+
+    >>> with nd.lock('/foo', simultaneous=1): 
+    ...      <do some work>
+    ...
+    >>>
+
+Another example is explicitly locking a path for some long period of time, then
+releasing it explicitly as well::
+
+    >>> nd.acquire_lock('/foo', simultaneous=1)
+    >>> <do your work... >
+    >>> nd.release_lock('/foo')
+
 Django use
 ----------
 
