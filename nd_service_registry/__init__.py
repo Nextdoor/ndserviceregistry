@@ -95,6 +95,7 @@ import os
 import logging
 import exceptions
 import atexit
+
 from os.path import split
 from functools import wraps
 
@@ -124,6 +125,8 @@ from version import __version__ as VERSION
 # Defaults
 TIMEOUT = 5  # seconds
 SERVER = 'localhost:2181'
+
+log = logging.getLogger(__name__)
 
 
 class nd_service_registry(object):
@@ -183,7 +186,7 @@ class nd_service_registry(object):
             return
 
         self._username = username
-        self.log.debug('Triggering setup_auth')
+        log.debug('Triggering setup_auth')
         self._setup_auth()
 
     def password(self):
@@ -199,7 +202,7 @@ class nd_service_registry(object):
             return
 
         self._password = password
-        self.log.debug('Triggering setup_auth')
+        log.debug('Triggering setup_auth')
         self._setup_auth()
 
     def _save_watcher_to_dict(self, data):
@@ -229,7 +232,7 @@ class nd_service_registry(object):
             return
 
         cache = {data['path']: data}
-        self.log.debug('Saving Watcher object to cache: %s' % cache)
+        log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
 
     def _get_dummywatcher(self, path, callback=None):
@@ -248,14 +251,14 @@ class nd_service_registry(object):
         """
 
         # Initial startup checks
-        self.log.debug('[%s] Creating DummyWatcher object...' % path)
+        log.debug('[%s] Creating DummyWatcher object...' % path)
         if not self._cachefile:
-            self.log.debug('[%s] No cachefile supplied...' % path)
+            log.debug('[%s] No cachefile supplied...' % path)
             raise exceptions.ServiceRegistryException(
                 'No cachefile supplied, unable to restore item from cache.')
 
         # Make sure we can load the cache file properly
-        self.log.debug('Getting cachefile data...')
+        log.debug('Getting cachefile data...')
         try:
             cache = funcs.load_dict(self._cachefile)
         except (IOError, EOFError), e:
@@ -269,7 +272,7 @@ class nd_service_registry(object):
 
         # Lastly, try to create an object from the data in the cache.
         try:
-            self.log.debug('Creating DummyWatcher object for %s' % path)
+            log.debug('Creating DummyWatcher object for %s' % path)
             watcher = DummyWatcher(path=path,
                                    data=cache[path],
                                    callback=callback)
@@ -287,13 +290,13 @@ class nd_service_registry(object):
 
         for path in self._watchers:
             if isinstance(self._watchers[path], DummyWatcher):
-                self.log.debug('Found DummyWatcher for %s' % path)
+                log.debug('Found DummyWatcher for %s' % path)
                 w = None
                 try:
                     w = self._get_watcher(path)
                 except Exception, e:
-                    self.log.warning('Could not create Watcher '
-                                     'object for %s: %s' % (path, e))
+                    log.warning('Could not create Watcher '
+                                'object for %s: %s' % (path, e))
                 if w:
                     # Get a list of all callbacks associated with
                     # the DummyWatcher
@@ -308,11 +311,11 @@ class nd_service_registry(object):
         In the event that our object has been forked (or some other
         catastrophic event), we rebuild our Zookeeper connection and
         re-create all of our Watcher/Registration child objects.
-        
+
         If lazy=True, this is a non-blocking operation that can run in
         the background. If lazy=False, this is a blocking operation and
         no other work will proceed until this has finished."""
-        
+
         # When a fork occurs, Python leaves us with a reference to the
         # PARENT's KazooClient object. We (as the FORKED process), cannot
         # call any functions from that object, so we wipe out our references
@@ -330,11 +333,11 @@ class nd_service_registry(object):
         if self._watchers:
             # Temporarily back up our dict of Watcher objects
             watchers = self._watchers
- 
+
             # Wipe out the class watcher dict
             self._watchers = {}
- 
-            # Now, for each Watcher object in our original list... 
+
+            # Now, for each Watcher object in our original list...
             for w in watchers:
                 # Create a new Watcher object
                 self.get(path=watchers[w]._path)
@@ -345,7 +348,7 @@ class nd_service_registry(object):
                 for c in watchers[w]._callbacks:
                     self.add_callback(path=watchers[w]._path,
                                       callback=c)
-            
+
     def _rebuild_registrations(self):
         """Completely rebuild all of our Registration objects."""
 
@@ -354,11 +357,11 @@ class nd_service_registry(object):
         if self._registrations:
             # Temporarily back up our dict of Watcher objects
             registrations = self._registrations
- 
+
             # Wipe out the class watcher dict
             self._registrations = {}
- 
-            # Now, for each Registration object in our original list... 
+
+            # Now, for each Registration object in our original list...
             for r in registrations:
                 # Create a new Registration object
                 self.set(node=r,
@@ -435,8 +438,7 @@ class KazooServiceRegistry(nd_service_registry):
             return
 
         # Create our logger
-        self.log = logging.getLogger('%s.KazooServiceRegistry' % __name__)
-        self.log.info('Initializing ServiceRegistry object')
+        log.info('Initializing ServiceRegistry object')
 
         # Quiet down the Kazoo connection ping messages
         logging.getLogger('kazoo.protocol.connection').addFilter(shims.KazooFilter())
@@ -470,16 +472,16 @@ class KazooServiceRegistry(nd_service_registry):
 
         # Mark us as initialized
         self._initialized = True
-        self.log.info('Initialization Done!')
+        log.info('Initialization Done!')
 
     def _shutdown(self):
         """Cleanly shut down our connections."""
 
-        self.log.debug('Shutting down...')
+        log.debug('Shutting down...')
 
         # Quiet down the loggers to only show major errors during the shutdown
         # process.
-        self.log.setLevel(logging.ERROR)
+        log.setLevel(logging.ERROR)
         logging.getLogger('kazoo').setLevel(logging.ERROR)
         logging.getLogger('kazoo.protocol.connection').setLevel(logging.ERROR)
 
@@ -495,10 +497,10 @@ class KazooServiceRegistry(nd_service_registry):
 
         @wraps(func)
         def _health_check_decorator(self, *args, **kwargs):
-            self.log.debug('Running healthcheck...')
+            log.debug('Running healthcheck...')
             pid = os.getpid()
             if pid != self._pid:
-                self.log.info('Fork detected!')
+                log.info('Fork detected!')
                 self._pid = pid
                 self.rebuild()
 
@@ -555,18 +557,18 @@ class KazooServiceRegistry(nd_service_registry):
         # figure out if we were the ones who registered it or not. If we are,
         # we leave it alone. If not, we attempt to delete it and register our
         # own. If we cannot do that, we throw an error.
-        self.log.debug('Looking for Registration object for [%s] with [%s].'
-                       % (node, data))
+        log.debug('Looking for Registration object for [%s] with [%s].'
+                  % (node, data))
         if node in self._registrations:
             # The Registration objects can stop themselves in the event of
             # a failure. If they do, lets throw a message, toss the object,
             # and then let a new one be created.
-            self.log.debug('[%s] already has Registration object.' % node)
+            log.debug('[%s] already has Registration object.' % node)
             self._registrations[node].update(data=data, state=state)
             return True
 
         # Create a new registration object
-        self.log.debug('Creating Registration object for [%s]' % node)
+        log.debug('Creating Registration object for [%s]' % node)
         self._registrations[node] = type(zk=self._zk, path=node,
                                          data=data, state=state)
         return True
@@ -580,10 +582,10 @@ class KazooServiceRegistry(nd_service_registry):
         try:
             self._registrations[node].stop()
         except:
-            self.log.warning('Node object for %s not found.' % node)
+            log.warning('Node object for %s not found.' % node)
             return
 
-        self.log.info('Registration for %s stopped.' % node)
+        log.info('Registration for %s stopped.' % node)
 
     def _create_connection(self):
         """Create our 'zk' connection object.
@@ -622,7 +624,7 @@ class KazooServiceRegistry(nd_service_registry):
                   to connect in the background if the initial connection fails.
         """
 
-        self.log.info('Connecting to Zookeeper Service (%s)' % self._server)
+        log.info('Connecting to Zookeeper Service (%s)' % self._server)
 
         # Create our zookeeper connection object
         self._create_connection()
@@ -638,7 +640,7 @@ class KazooServiceRegistry(nd_service_registry):
             # theres a locally cached dict() file that we can grab some data
             # from so that we can function partially.
             if lazy:
-                self.log.warning(
+                log.warning(
                     'Could not reach Zookeeper server. '
                     'Starting up in crippled mode. '
                     'Will continue to try to connect in the background.')
@@ -688,7 +690,7 @@ class KazooServiceRegistry(nd_service_registry):
                                                        read=True,
                                                        admin=False)
 
-                self.log.debug('Credentials were supplied, adding auth.')
+                log.debug('Credentials were supplied, adding auth.')
                 self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
                               (self._username, self._password))
 
@@ -707,21 +709,21 @@ class KazooServiceRegistry(nd_service_registry):
         the rest of the code know to not try to run any Zookeeper commands
         until the service is back up."""
 
-        message='Zookeeper connection state changed'
+        message = 'Zookeeper connection state changed'
         if state == KazooState.SUSPENDED:
             # In this state, just mark that we can't handle any 'writes' right
             # now but that we might come back to life soon.
-            self.log.warning('%s: %s' % (message,state))
+            log.warning('%s: %s' % (message, state))
             return
         elif state == KazooState.LOST:
             # If we enter the LOST state, we've started a whole new session
             # with the Zookeeper server. Watches are re-established auto-
             # magically. Registered paths are re-established by their own
             # Registration control objects.
-            self.log.warning('%s: %s' % (message,state))
+            log.warning('%s: %s' % (message, state))
             return
         else:
-            self.log.info('%s: %s' % (message,state))
+            log.info('%s: %s' % (message, state))
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
 
@@ -747,11 +749,10 @@ class KazooServiceRegistry(nd_service_registry):
         """
 
         if path in self._watchers:
-            self.log.debug('Found [%s] in watchers. Adding callback.' % path)
+            log.debug('Found [%s] in watchers. Adding callback.' % path)
             self._watchers[path].add_callback(callback)
         else:
-            self.log.debug('No existing watcher for [%s] exists. Creating.' %
-                           path)
+            log.debug('No existing watcher for [%s] exists. Creating.' % path)
             self.get(path, callback=callback)
 
     def get(self, path, callback=None):
@@ -770,10 +771,10 @@ class KazooServiceRegistry(nd_service_registry):
         """
 
         # Return the object from our cache, if it's there
-        self.log.debug('[%s] Checking for existing object...' % path)
+        log.debug('[%s] Checking for existing object...' % path)
         if path in self._watchers:
-            self.log.debug('Found [%s] in cache: %s' %
-                          (path, str(self._watchers[path].get())))
+            log.debug('Found [%s] in cache: %s' %
+                      (path, str(self._watchers[path].get())))
             # If a callback was suplied, but we already have a Watcher object,
             # add that callback to the existing object.
             if callback:
@@ -788,16 +789,16 @@ class KazooServiceRegistry(nd_service_registry):
             return self._watchers[path].get()
         except exceptions.NoConnection, e:
             # Get a DummyWatcher cached object instead
-            self.log.warning('Health Check failed: %s' % e)
+            log.warning('Health Check failed: %s' % e)
 
         try:
-            self.log.info('[%s] Loading from cache instead' % path)
+            log.info('[%s] Loading from cache instead' % path)
             self._watchers[path] = self._get_dummywatcher(path, callback)
             return self._watchers[path].get()
         except exceptions.ServiceRegistryException, e:
             # Ugh. Total failure. Return false
-            self.log.error('Unable to retrieve [%s] from Zookeeper or cache - '
-                           'try again later: %s' % (path, e))
+            log.error('Unable to retrieve [%s] from Zookeeper or cache - '
+                      'try again later: %s' % (path, e))
         return False
 
     @_health_check
@@ -821,7 +822,7 @@ class KazooServiceRegistry(nd_service_registry):
         """
 
         # Ok, so the cache is missing the key. Lets look for it in Zookeeper
-        self.log.debug('[%s] Creating Watcher object...' % path)
+        log.debug('[%s] Creating Watcher object...' % path)
         watcher = Watcher(self._zk,
                           path,
                           watch_children=True,
