@@ -131,6 +131,8 @@ class Watcher(object):
         def _update_root_data(data, stat):
             self.log.debug('Data change detected')
 
+            # NOTE: Applies to Kazoo <= 0.9, fixed in >= 1.0
+            #
             # Since we set allow_missing_node to True, the 'data' passed back
             # is ALWAYS 'None'. This means that we need to actually go out and
             # explicitly get the data whenever this function is called. Try to
