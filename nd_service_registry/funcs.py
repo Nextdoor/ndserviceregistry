@@ -24,10 +24,11 @@ import time
 import logging
 import tempfile
 import cPickle as pickle
+
 from functools import wraps
 
-# Get a default logger
 log = logging.getLogger(__name__)
+
 
 def encode(data=None):
     """Converts a data dict into a storable string.
@@ -150,8 +151,7 @@ def save_dict(data, path):
         fd.close()
         os.rename(filename, path)
     except Exception, e:
-        log.warning('Could not save cache (%s): %s' %
-                (path, e))
+        log.warning('Could not save cache (%s): %s' % (path, e))
         return False
 
     return True

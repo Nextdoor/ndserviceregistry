@@ -22,6 +22,7 @@ import logging
 import threading
 import time
 import sys
+
 from os.path import split
 
 from nd_service_registry import funcs
@@ -33,6 +34,8 @@ import kazoo.exceptions
 from version import __version__ as VERSION
 
 TIMEOUT = 30
+
+log = logging.getLogger(__name__)
 
 
 class Watcher(object):
@@ -60,9 +63,6 @@ class Watcher(object):
     """
 
     def __init__(self, zk, path, callback=None, watch_children=True):
-        # Create our logger
-        self.log = logging.getLogger('%s.Watcher.%s' % (__name__, path))
-
         # Set our local variables
         self._zk = zk
         self._path = path
@@ -116,8 +116,8 @@ class Watcher(object):
         """Add a callback when watch is updated."""
         for existing_callback in self._callbacks:
             if callback == existing_callback:
-                self.log.debug('Callback [%s] already exists. Not '
-                               'triggering again.' % callback)
+                log.debug('[%s] Callback [%s] already exists. Not triggering '
+                          'again.' % (self._path, callback))
                 return
 
         self._callbacks.append(callback)
@@ -125,11 +125,11 @@ class Watcher(object):
 
     def _begin(self):
         # First, register a watch on the data for the path supplied.
-        self.log.debug('Registering watch on data changes')
+        log.debug('[%s] Registering watch on data changes' % self._path)
 
         @self._zk.DataWatch(self._path, allow_missing_node=True)
         def _update_root_data(data, stat):
-            self.log.debug('Data change detected')
+            log.debug('[%s] Data change detected' % self._path)
 
             # Since we set allow_missing_node to True, the 'data' passed back
             # is ALWAYS 'None'. This means that we need to actually go out and
@@ -138,25 +138,26 @@ class Watcher(object):
             # we know the host is not registered.
             try:
                 data, self._stat = self._zk.retry(self._zk.get, self._path)
-                self.log.debug('Node is registered.')
+                log.debug('[%s] Node is registered.' % self._path)
             except kazoo.exceptions.NoNodeError:
-                self.log.debug('Node is not registered.')
+                log.debug('[%s] Node is not registered.' % self._path)
 
             self._data = funcs.decode(data)
             self._stat = stat
 
-            self.log.debug('Data: %s, Stat: %s' % (self._data, self._stat))
+            log.debug('[%s] Data: %s, Stat: %s' %
+                      (self._path, self._data, self._stat))
             self._execute_callbacks()
 
         # Only register a watch on the children if this path exists. If
         # it doesnt, we're assuming that you're watching a specific node
         # that may or may not be registered.
         if self._zk.exists(self._path) and self._watch_children:
-            self.log.debug('Registering watch on child changes')
+            log.debug('[%s] Registering watch on child changes' % self._path)
 
             @self._zk.ChildrenWatch(self._path)
             def _update_child_list(data):
-                self.log.debug('New children: %s' % sorted(data))
+                log.debug('[%s] New children: %s' % (self._path, sorted(data)))
                 children = {}
                 for child in data:
                     fullpath = '%s/%s' % (self._path, child)
@@ -171,14 +172,15 @@ class Watcher(object):
         Args:
             path: A string value of the 'path' that has been updated. This
                   triggers the callbacks registered for that path only."""
-        self.log.debug('execute_callbacks triggered')
+        log.debug('[%s] execute_callbacks triggered' % self._path)
 
         if not self.state():
-            self.log.debug('self.state() is False - not executing callbacks.')
+            log.debug('[%s] self.state() is False - not executing callbacks.'
+                      % self._path)
             return
 
         for callback in self._callbacks:
-            self.log.debug('Executing callback %s' % callback)
+            log.debug('[%s] Executing callback %s' % (self._path, callback))
             callback(self.get())
 
 
@@ -192,9 +194,6 @@ class DummyWatcher(Watcher):
     """
 
     def __init__(self, path, data, callback=None):
-        # Create our logger
-        self.log = logging.getLogger('%s.DummyWatcher.%s' % (__name__, path))
-
         # Set our local variables
         self._path = path
         self._data = data['data']

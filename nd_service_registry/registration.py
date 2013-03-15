@@ -67,14 +67,13 @@ from version import __version__ as VERSION
 
 TIMEOUT = 30
 
+log = logging.getLogger(__name__)
+
 
 class Registration(object):
     """An object that registers a znode with ZooKeeper."""
 
     def __init__(self, zk, path, data=None, state=True):
-        # Create our logger
-        self.log = logging.getLogger('%s.Registration.%s' % (__name__, path))
-
         # Set our local variables
         self._zk = zk
         self._path = path
@@ -115,14 +114,15 @@ class Registration(object):
     def _update_data(self):
         try:
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
-            self.log.debug('Updated with data: %s' % self._encoded_data)
+            log.debug('[%s] Updated with data: %s' %
+                      (self._path, self._encoded_data))
         except kazoo.exceptions.NoAuthError, e:
-            self.log.error('No authorization to set node.')
+            log.error('[%s] No authorization to set node.' % self._path)
             pass
         except Exception, e:
-            self.log.error('Received exception. Moving on, will re-attempt '
-                           'when Watcher notifies us of a state change: %s '
-                           % e)
+            log.error('[%s] Received exception. Moving on, will re-attempt '
+                      'when Watcher notifies us of a state change: %s ' %
+                      (self._path, e))
             pass
 
     def stop(self):
@@ -157,40 +157,41 @@ class Registration(object):
         if state is True:
             # Register our connection with zookeeper
             try:
-                self.log.debug('Registering...')
+                log.debug('[%s] Registering...' % self._path)
                 self._zk.retry(self._zk.create, self._path,
                                value=self._encoded_data,
                                ephemeral=self._ephemeral, makepath=True)
-                self.log.info('Registered with data: %s' % self._encoded_data)
+                log.info('[%s] Registered with data: %s' %
+                         (self._path, self._encoded_data))
                 pass
             except kazoo.exceptions.NodeExistsError, e:
                 # Node exists ... possible this callback got claled multiple
                 # times
                 pass
             except kazoo.exceptions.NoAuthError, e:
-                self.log.error('No authorization to create node.')
+                log.error('[%s] No authorization to create node.' % self._path)
                 pass
             except Exception, e:
-                self.log.error('Received exception. Moving on, will '
-                               're-attempt when Watcher notifies us of a '
-                               'state change: %s ' % e)
+                log.error('[%s] Received exception. Moving on, will '
+                          're-attempt when Watcher notifies us of a '
+                          'state change: %s ' % (self._path, e))
                 pass
             pass
         elif state is False:
             # Try to delete the node
-            self.log.debug('Attempting de-registration...')
+            log.debug('[%s] Attempting de-registration...' % self._path)
             try:
                 self._zk.retry(self._zk.delete, self._path)
             except kazoo.exceptions.NoAuthError, e:
                 # The node exists, but we don't even have authorization to read
                 # it. We certainly will not have access then to change it below
                 # so return false. We'll retry again very soon.
-                self.log.error('No authorization to delete node.')
+                log.error('[%s] No authorization to delete node.' % self._path)
                 pass
             except Exception, e:
-                self.log.error('Received exception. Moving on, will '
-                               're-attempt when Watcher notifies us of a '
-                               'state change: %s ' % e)
+                log.error('[%s] Received exception. Moving on, will '
+                          're-attempt when Watcher notifies us of a '
+                          'state change: %s ' % (self._path, e))
                 pass
             return
 
@@ -215,8 +216,8 @@ class Registration(object):
         """Registers a supplied node (full path and nodename)."""
 
         # Try to delete the node
-        self.log.debug('Called with data: %s' % data)
-        self.log.debug('Wanted state: %s' % self.state())
+        log.debug('[%s] Called with data: %s' % (self._path, data))
+        log.debug('[%s] Wanted state: %s' % (self._path, self.state()))
 
         if self.state() is False and data['stat'] is not None:
             # THe node exists because data['stat'] has data, but our
@@ -230,7 +231,7 @@ class Registration(object):
         elif self.state() is True and not data['data'] == self._decoded_data:
             # Lastly, the node is registered, and we want it to be. However,
             # the data with the node is incorrect. Change it.
-            self.log.warning('Registered node had different data.')
+            log.warning('[%s] Registered node had different data.' % self._path)
             self._update_data()
 
 
