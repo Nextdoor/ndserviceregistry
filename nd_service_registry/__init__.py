@@ -85,42 +85,35 @@ to the get() function.
                       u'created': u'2012-12-12 15:26:24'}
     }
 
+Example of doing some work with a lock in place:
+
+    >>> with nd.get_lock('/myjob'):
+    ...     print "I got a lock!"
+    ...
+    I got a lock!
+
 Copyright 2012 Nextdoor Inc.
 """
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-# For nd_service_registry Class
-import os
-import logging
-import exceptions
-import atexit
-
-from os.path import split
 from functools import wraps
+import atexit
+import logging
+import os
 
-# Our own classes
-from nd_service_registry.registration import EphemeralNode
-from nd_service_registry.watcher import Watcher
-from nd_service_registry.watcher import DummyWatcher
-from nd_service_registry import funcs
-from nd_service_registry import exceptions
-
-# For KazooServiceRegistry Class
-import kazoo.security
-from nd_service_registry.shims import ZookeeperClient
 from kazoo.client import KazooState
-
-# Use Gevent as our threader (DOES NOT WORK RIGHT NOW)
-#from kazoo.handlers.gevent import SequentialGeventHandler as EventHandler
-#from gevent.event import Timeout as TimeoutException
-
-# Use standard threading library as our threader
 from kazoo.handlers.threading import SequentialThreadingHandler as EventHandler
-from kazoo.handlers.threading import TimeoutError as TimeoutException
+import kazoo.security
 
-# Our default variables
-from version import __version__ as VERSION
+from nd_service_registry import shims
+from nd_service_registry import exceptions
+from nd_service_registry import funcs
+from nd_service_registry.lock import Lock
+from nd_service_registry.registration import EphemeralNode
+from nd_service_registry.shims import ZookeeperClient
+from nd_service_registry.watcher import DummyWatcher
+from nd_service_registry.watcher import Watcher
 
 # Defaults
 TIMEOUT = 5  # seconds
@@ -172,6 +165,66 @@ class nd_service_registry(object):
     def get(self, path, callback=None):
         """Retrieves a Watcher.get() dict for a given path."""
         raise NotImplementedError('Not implemented. Use one of my subclasses.')
+
+    def get_lock(self, path, name=None, simultaneous=1):
+        """Retrieves a lock from the supplied path.
+
+        Lock objects can be used either directly with their own methods, or as
+        a semaphore-style locking object. Eg:
+
+            >>> with lock_object:
+            >>>     <do something>
+
+        args:
+            path: String representing the lock path
+            name: Optional string representing the name of the client
+            simultaneous: Optional integer indicating how many clients can
+                          lock this path at once. (default: 1)
+        returns:
+            nd_service_registry.Lock object
+        """
+        return self._get_lock(path, name, simultaneous)
+
+    def acquire_lock(self, path, name=None, simultaneous=1, wait=0):
+        """Asynchronously starts a lock and holds it.
+
+        Retrieves a Lock object for a particular path and 'acquires' the lock.
+        It returns True if the lock is successful. If the lock path is busy,
+        waits until the the lock can be acquired.
+
+        args:
+            path: String representing the lock path
+            name: Optional string representing the name of the client
+            simultaneous: Optional integer indicating how many clients can lock
+                          this path at once. (default: 1)
+        returns:
+            True: The lock has been acquired.
+            False: Could not acquire the lock.
+        """
+        lock = self._get_lock(path, name, simultaneous)
+        lock.acquire()
+        return lock.status()
+
+    def release_lock(self, path):
+        """Releases a lock.
+
+        Retrieves a Lock object for a particular path and releases the lock on
+        that path.
+
+        args:
+            path: String representing the lock path
+
+        returns:
+            True: The lock has been released
+            False: The lock is still in place
+        """
+        lock = self._get_lock(path)
+        lock.release()
+
+        if not lock.status():
+            return True
+        else:
+            return False
 
     def username(self):
         """Returns self._username"""
@@ -261,7 +314,7 @@ class nd_service_registry(object):
         log.debug('Getting cachefile data...')
         try:
             cache = funcs.load_dict(self._cachefile)
-        except (IOError, EOFError), e:
+        except (IOError, EOFError):
             raise exceptions.ServiceRegistryException(
                 'Unable to load cachefile.')
 
@@ -460,6 +513,9 @@ class KazooServiceRegistry(nd_service_registry):
         # Store all of our Watcher objects here
         self._watchers = {}
 
+        # Store our Lock objects here
+        self._locks = {}
+
         # Create a local 'dict' that we'll use to store the results of our
         # get_nodes/get_node_data calls.
         self._cachefile = cachefile
@@ -590,7 +646,7 @@ class KazooServiceRegistry(nd_service_registry):
     def _create_connection(self):
         """Create our 'zk' connection object.
 
-        If the object does not exist, create it. If it does exist, just move on.
+        If the object does not exist, create it. If it does exist, move on.
         """
 
         if self._zk:
@@ -832,3 +888,35 @@ class KazooServiceRegistry(nd_service_registry):
         # whatever our user has supplied
         watcher.add_callback(self._save_watcher_to_dict)
         return watcher
+
+    @_health_check
+    def _get_lock(self, path, name=None, simultaneous=1):
+        """Retrieves a lock semaphore-style object from the supplied path.
+
+        This method creates our Lock object and returns it. It is not meant
+        to be used directly though.
+
+        Args:
+            path: A string representing the path for the lock.
+            name: Optional string representing the server identifier.
+            simultaneous: Int representing how many concurrent locks can
+                          occur on this path.
+        Returns:
+            nd_service_registry.Lock object
+        """
+
+        # Return the object from our cache, if it's there
+        log.debug('[%s] Checking for existing object...' % path)
+        if path in self._locks:
+            log.debug('Found [%s] in cache: %s' %
+                      (path, str(self._locks[path])))
+            return self._locks[path]
+
+        # Go create a Lock object and store it
+        log.debug('[%s] Creating Lock object...' % path)
+        self._locks[path] = Lock(self._zk,
+                                 path,
+                                 name,
+                                 simultaneous)
+
+        return self._locks[path]
