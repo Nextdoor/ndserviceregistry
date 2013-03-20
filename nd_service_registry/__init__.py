@@ -382,7 +382,8 @@ class KazooServiceRegistry(nd_service_registry):
 
     def __init__(self, server=SERVER, readonly=False, timeout=TIMEOUT,
                  cachefile=None, username=None, password=None,
-                 acl=None, lazy=False):
+                 acl=None, lazy=False, rate_limit_time=2,
+                 rate_limit_calls=50):
         """Initialize the KazooServiceRegistry object.
 
         Generally speaking, you can initialize the object with no explicit
@@ -418,6 +419,15 @@ class KazooServiceRegistry(nd_service_registry):
                    prevent any accidental data changes. Good idea for your
                    data consumers.
 
+        'rate_limit_calls' indicates the number of calls to the Zookeeper API
+                           that we will allow to pass through unimpeded
+                           before we consider whether or not to rate limit
+                           them for safety. If None, then this is disabled.
+
+        'rate_limit_time' is the average time in seconds you would like to try
+                          to maintain between Zookeeper calls. This is only
+                          used if 'rate_limit_calls' above is set.
+
         Args:
             server: String in the format of 'localhost:2181'
             readonly: Boolean that sets whether our connection to Zookeeper
@@ -428,6 +438,10 @@ class KazooServiceRegistry(nd_service_registry):
             username: Username to create Digest Auth with
             password: Password to create Digest Auth with
             acl: A Kazoo ACL-object if special ACLs are desired
+            rate_limit_time: Target 'sleep' time between Zookeeper API calls.
+                             (integer)
+            rate_limit_calls: Minimum number of calls before we begin
+                              throttling API calls. (integer)
         """
 
         # See if we're already initialized. If we are, just break out quickly.
@@ -449,6 +463,8 @@ class KazooServiceRegistry(nd_service_registry):
         self._acl = acl
         self._server = server
         self._lazy = lazy
+        self._rate_limit_time = rate_limit_time
+        self._rate_limit_calls = rate_limit_calls
         self._pid = os.getpid()
         self._zk = None
 
@@ -602,6 +618,10 @@ class KazooServiceRegistry(nd_service_registry):
                                    retry_delay=0.1,
                                    retry_backoff=2,
                                    retry_max_delay=10)
+
+        # Set up our rate limiting
+        self._zk.set_rate_limiter(time=self._rate_limit_time,
+                                  calls=self._rate_limit_calls)
 
         # Get a lock handler
         self._run_lock = self._zk.handler.lock_object()
