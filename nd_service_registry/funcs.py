@@ -18,14 +18,12 @@ Copyright 2012 Nextdoor Inc."""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-import json
-import os
-import time
-import logging
-import tempfile
 import cPickle as pickle
-
-from functools import wraps
+import json
+import logging
+import os
+import tempfile
+import time
 
 log = logging.getLogger(__name__)
 
@@ -181,70 +179,3 @@ def load_dict(file):
 
     log.info('Dict object file loaded properly [%s]' % file)
     return cache
-
-
-def rate_limiter(targetAvgTimeBetweenCalls=30, numCallsToAverage=10):
-    """Provides a decorator for rate-limiting function.
-
-    This allows you to decorate your function and rate-limit the number
-    of times a function can be called within a time frame. The time is
-    averaged over the last numCallsToAverage, and a dynamic 'sleep' time
-    is generated based on that average. This allows a sudden burst of
-    calls to run through, before being rate-limited.
-
-    The rate-limiting is blocking. Your code will not complete until
-    the sleep timer is finished.
-
-    Args:
-        targetAvgTimeBetweenCalls: Target average-time between calls
-        numCallsToAverage: Number of calls to average the above time across
-    """
-
-    calls = [time.time()]
-
-    # Main decorwator wrapper
-    def _decorate(func):
-        @wraps(func)
-        def _rate_limited_function(*args, **kwargs):
-            # Start out assuming we will not throttle the frequency
-            # of the function
-            throttle = False
-
-            # Have there even been enough calls to trigger the timing check?
-            if len(calls) > numCallsToAverage:
-                # Get the time elapsed between now and the last
-                # 'numCallsToAverage' calls. eg. If numCallsToAverage
-                # is 10, check how much time has elapsed between this
-                # call, and the call 10-calls ago.
-                elapsed = time.time() - calls[-numCallsToAverage]
-                avgTimeBetweenCalls = elapsed / numCallsToAverage
-                log.debug('Average time between last %s calls: %s, target: %s'
-                          % (numCallsToAverage, avgTimeBetweenCalls,
-                             targetAvgTimeBetweenCalls))
-
-                # If the average time between each call is less than the
-                # targetAvgTimeBetweenCalls then we trigger throttling.
-                if avgTimeBetweenCalls < targetAvgTimeBetweenCalls:
-                    log.warning('Too little time between last %s calls '
-                                'for func %s. Throttling.' %
-                                (numCallsToAverage, func))
-                    throttle = True
-
-            # If we're going to throttle, determine how long to wait
-            if throttle:
-                sleep = targetAvgTimeBetweenCalls - avgTimeBetweenCalls
-                log.debug('Sleeping: %s' % sleep)
-                time.sleep(sleep)
-
-            # Now go ahead adn run our function
-            log.debug('Calling [%s] with args[%s] and kwargs[%s]' %
-                      (func, args, kwargs))
-            ret = func(*args, **kwargs)
-
-            # Record the last time we ran the function
-            calls.append(time.time())
-            log.debug('Last %s calls: %s' %
-                      (numCallsToAverage, calls[-numCallsToAverage:]))
-            return ret
-        return _rate_limited_function
-    return _decorate
