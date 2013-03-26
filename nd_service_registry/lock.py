@@ -63,8 +63,8 @@ class Lock(object):
         """Request to release the Lock
 
         returns:
-          True: Lock was acquired
-          False: Lock was unable to be acquired
+          True: Lock was released sucessfully
+          False: Lock release failed
         """
 
         log.debug('[%s] Releasing the lock...' % self._path)
@@ -74,8 +74,8 @@ class Lock(object):
         """Return lock status
 
         returns:
-          True: Lock was acquired
-          False: Lock was unable to be acquired
+          True: Lock is acquired
+          False: Lock is not acquired
         """
 
         return self._lock.is_acquired
