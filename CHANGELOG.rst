@@ -1,3 +1,7 @@
+Version 0.2.4 (in development)
+============================================================
+...
+
 Version 0.2.3
 ============================================================
 
@@ -17,6 +21,6 @@ Version 0.2.2
 
 *    Quiet down 'shutdown' function
 *    Clean up the logging object names
-*    Bug Fix: Fix funcs.save_dict() when permissions are incorrect (Issue #8)
-*    Bug Fix: Fix 'on fork' behavior (Issue #6)
+*    #8: Fix funcs.save_dict() when permissions are incorrect
+*    #6: Fix 'on fork' behavior
 
