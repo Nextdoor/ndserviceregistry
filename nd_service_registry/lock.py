@@ -19,6 +19,7 @@ Copyright 2013 Nextdoor Inc."""
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
+import time
 
 from kazoo import exceptions
 
@@ -28,12 +29,22 @@ log = logging.getLogger(__name__)
 class Lock(object):
     """Creates a Kazoo Lock object for a given path."""
 
-    def __init__(self, zk, path, name=None, simultaneous=1):
+    def __init__(self, zk, path, name=None, simultaneous=1, wait=300):
+        """Initializes our Lock object.
+
+        args:
+            zk: Kazoo Zookeeper Connection Object
+            path: String path of the lock to get
+            name: Optional string name of the final lock object
+            simultaneous: Int number of simultaneous locks to allow at this path
+            wait: Int number of seconds to wait for lock before returning
+        """
         # Set our local variables
         self._zk = zk
         self._path = path
         self._name = name
         self._simultaneous = simultaneous
+        self._wait = wait
 
         # Create the Lock object in Kazoo. This lock object is used later
         # by our methods, but does not actively lock anything right away.
@@ -49,15 +60,31 @@ class Lock(object):
           False: Lock was unable to be acquired
         """
 
-        log.debug('[%s] Acquiring the lock... (waiting indefinitely)' %
-                  self._path)
+        log.debug('[%s] Acquiring the lock... (waiting %s seconds)' %
+                  (self._path, self._wait))
+
         try:
-            return self._lock.acquire()
+            self._lock.acquire(blocking=False)
         except exceptions.CancelledError:
             # This means that the Lock was canceled somewhere manually,
             # which can happen for a lot of reasons. Simplest thing here
             # is to just return False
             return False
+
+        # Begin waiting for the lock to be acquired. Wait as long as we've been
+        # asked to, and every tenth of as econd check the status of the lock.
+        begin = time.time()
+        while time.time() - begin <= self._wait:
+            if self._lock.is_acquired:
+                log.info('[%s] Lock acquired after %s(s)...' %
+                         (self._path, int(time.time() - begin)))
+                return self._lock.is_acquired
+            time.sleep(0.1)
+
+        # We're done waiting. Return the current status of the lock and move on.
+        log.info('[%s] Waited %s(s). Returning lock status %s...' %
+                 (self._path, int(time.time() - begin), self._lock.is_acquired))
+        return self._lock.is_acquired
 
     def release(self):
         """Request to release the Lock
@@ -82,7 +109,7 @@ class Lock(object):
 
     def __enter__(self):
         """Provides 'with <lock object>:' support"""
-        self.acquire()
+        return self.acquire()
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Provides 'with <lock object>:' support"""

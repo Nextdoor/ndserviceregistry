@@ -64,7 +64,7 @@ setup(
     obsoletes='ndServiceRegistry',
     packages=[PACKAGE],
     install_requires=[
-        'kazoo',
+        'kazoo>=1.1',
         'setuptools',
     ],
     classifiers=[
