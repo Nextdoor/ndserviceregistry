@@ -87,8 +87,9 @@ to the get() function.
 
 Example of doing some work with a lock in place:
 
-    >>> with nd.get_lock('/myjob'):
-    ...     print "I got a lock!"
+    >>> with nd.get_lock('/myjob') as status:
+    ...     if status:
+    ...         print "I got a lock!"
     ...
     I got a lock!
 
@@ -118,6 +119,7 @@ from nd_service_registry.watcher import Watcher
 # Defaults
 TIMEOUT = 5  # seconds
 SERVER = 'localhost:2181'
+LOCK_WAIT = 300  # seconds
 
 log = logging.getLogger(__name__)
 
@@ -166,26 +168,29 @@ class nd_service_registry(object):
         """Retrieves a Watcher.get() dict for a given path."""
         raise NotImplementedError('Not implemented. Use one of my subclasses.')
 
-    def get_lock(self, path, name=None, simultaneous=1):
+    def get_lock(self, path, name=None, simultaneous=1, wait=LOCK_WAIT):
         """Retrieves a lock from the supplied path.
 
         Lock objects can be used either directly with their own methods, or as
         a semaphore-style locking object. Eg:
 
-            >>> with lock_object:
-            >>>     <do something>
+            >>> with lock_object as status:
+            ...     if status:
+            ...         <do something>
 
         args:
             path: String representing the lock path
             name: Optional string representing the name of the client
             simultaneous: Optional integer indicating how many clients can
                           lock this path at once. (default: 1)
+            wait: Optional integer indicating how long to wait for the lock
+                  to be acquired. (default: LOCK_WAIT seconds)
         returns:
             nd_service_registry.Lock object
         """
-        return self._get_lock(path, name, simultaneous)
+        return self._get_lock(path, name, simultaneous, wait)
 
-    def acquire_lock(self, path, name=None, simultaneous=1, wait=0):
+    def acquire_lock(self, path, name=None, simultaneous=1, wait=LOCK_WAIT):
         """Asynchronously starts a lock and holds it.
 
         Retrieves a Lock object for a particular path and 'acquires' the lock.
@@ -197,11 +202,13 @@ class nd_service_registry(object):
             name: Optional string representing the name of the client
             simultaneous: Optional integer indicating how many clients can lock
                           this path at once. (default: 1)
+            wait: Optional integer indicating how long to wait for the lock
+                  to be acquired. (default: LOCK_WAIT seconds)
         returns:
             True: The lock has been acquired.
             False: Could not acquire the lock.
         """
-        lock = self._get_lock(path, name, simultaneous)
+        lock = self._get_lock(path, name, simultaneous, wait)
         lock.acquire()
         return lock.status()
 
@@ -910,7 +917,7 @@ class KazooServiceRegistry(nd_service_registry):
         return watcher
 
     @_health_check
-    def _get_lock(self, path, name=None, simultaneous=1):
+    def _get_lock(self, path, name, simultaneous, wait):
         """Retrieves a lock semaphore-style object from the supplied path.
 
         This method creates our Lock object and returns it. It is not meant
@@ -937,6 +944,7 @@ class KazooServiceRegistry(nd_service_registry):
         self._locks[path] = Lock(self._zk,
                                  path,
                                  name,
-                                 simultaneous)
+                                 simultaneous,
+                                 wait)
 
         return self._locks[path]
