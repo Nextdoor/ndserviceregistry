@@ -79,7 +79,7 @@ class Lock(object):
                 log.info('[%s] Lock acquired after %s(s)...' %
                          (self._path, int(time.time() - begin)))
                 return self._lock.is_acquired
-            time.sleep(0.1)
+            self._zk.handler.sleep_func(0.1)
 
         # We're done waiting. Return the current status of the lock and move on.
         log.info('[%s] Waited %s(s). Returning lock status %s...' %
