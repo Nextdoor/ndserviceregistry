@@ -1,5 +1,6 @@
 Version 0.2.4 (in development)
 ============================================================
+*   #17: Replace time.sleep() with client.handler.sleep_func()
 *   #16: Add 'wait=X' option to Lock objects
 
 Version 0.2.3

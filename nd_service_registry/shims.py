@@ -105,7 +105,7 @@ class ZookeeperClient(KazooClient):
             if throttle:
                 sleep = self.target_avg_between_calls - avg_between_calls
                 log.debug('[%s] Sleeping: %s' % (func.__name__, sleep))
-                time.sleep(sleep)
+                self.handler.sleep_func(sleep)
 
             # Now go ahead and run our function
             log.debug('[%s] Calling with args[%s] and kwargs[%s]' %
