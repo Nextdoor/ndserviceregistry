@@ -59,6 +59,24 @@ class Lock(object):
             # is to just return False
             return False
 
+<<<<<<< Updated upstream
+=======
+        # Begin waiting for the lock to be acquired. Wait as long as we've been
+        # asked to, and every tenth of as econd check the status of the lock.
+        begin = time.time()
+        while time.time() - begin <= self._wait:
+            if self._lock.is_acquired:
+                log.info('[%s] Lock acquired after %s(s)...' %
+                         (self._path, int(time.time() - begin)))
+                return self._lock.is_acquired
+            self._zk.handler.sleep_func(0.1)
+
+        # We're done waiting. Return the current status of the lock and move on.
+        log.info('[%s] Waited %s(s). Returning lock status %s...' %
+                 (self._path, int(time.time() - begin), self._lock.is_acquired))
+        return self._lock.is_acquired
+
+>>>>>>> Stashed changes
     def release(self):
         """Request to release the Lock
 
