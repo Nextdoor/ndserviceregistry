@@ -225,7 +225,13 @@ class nd_service_registry(object):
             True: The lock has been released
             False: The lock is still in place
         """
-        lock = self._get_lock(path)
+        if not path in self._locks:
+            log.debug('Did not find [%s] in our stored lock cache: %s' %
+                      (path, str(self._locks[path])))
+            return True
+
+        # Get our lock object and release it
+        lock = self._locks[path]
         lock.release()
 
         if not lock.status():
