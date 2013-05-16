@@ -95,6 +95,7 @@ class Lock(object):
         """
 
         log.debug('[%s] Releasing the lock...' % self._path)
+        self._lock.cancel()
         return self._lock.release()
 
     def status(self):
