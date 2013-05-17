@@ -66,10 +66,10 @@ class Lock(object):
         try:
             self._lock.acquire(blocking=False)
         except exceptions.CancelledError:
-            # This means that the Lock was canceled somewhere manually,
-            # which can happen for a lot of reasons. Simplest thing here
-            # is to just return False
-            return False
+            # This means that the Lock was canceled somewhere manually.
+            # In this case we just retry because retrying will clear out
+            # the canceled state within the kazoo.Semaphore object.
+            self._lock.acquire(blocking=False)
 
         # Begin waiting for the lock to be acquired. Wait as long as we've been
         # asked to, and every tenth of as econd check the status of the lock.
