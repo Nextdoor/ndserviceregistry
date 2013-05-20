@@ -1,5 +1,8 @@
-Version 0.2.4 (in development)
+Version 0.2.4
 ============================================================
+*   Bugfix: If kazoo.Semaophore() is in canceled state, retry the lock.
+*   Bugfix: release_lock() was calling _get_lock() with missing parameters
+*   Bugfix: Cancel a pending lock when Lock.release() is called
 *   #17: Replace time.sleep() with client.handler.sleep_func()
 *   #16: Add 'wait=X' option to Lock objects
 
