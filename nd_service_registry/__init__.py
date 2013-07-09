@@ -226,8 +226,7 @@ class nd_service_registry(object):
             False: The lock is still in place
         """
         if not path in self._locks:
-            log.debug('Did not find [%s] in our stored lock cache: %s' %
-                      (path, str(self._locks[path])))
+            log.debug('Did not find [%s] in our stored lock cache.' % path)
             return True
 
         # Get our lock object and release it
