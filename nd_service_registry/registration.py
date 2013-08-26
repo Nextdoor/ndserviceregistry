@@ -209,7 +209,7 @@ class Registration(object):
         if data:
             self.set_data(data)
 
-        if state:
+        if state is bool:
             self.set_state(state)
 
     def _update(self, data):
