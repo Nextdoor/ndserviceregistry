@@ -1,3 +1,8 @@
+Version 0.2.5
+============================================================
+*   #18: Fix bogus log.debug() statement that caused KeyError exception.
+*   #19: Make sure we call set_state any time 'state' is a boolean.
+
 Version 0.2.4
 ============================================================
 *   Bugfix: If kazoo.Semaophore() is in canceled state, retry the lock.
