@@ -1,3 +1,7 @@
+Version 0.2.6
+============================================================
+*   Quiet down the Kazoo logger
+
 Version 0.2.5
 ============================================================
 *   #18: Fix bogus log.debug() statement that caused KeyError exception.
