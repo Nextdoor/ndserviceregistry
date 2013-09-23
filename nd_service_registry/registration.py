@@ -207,9 +207,11 @@ class Registration(object):
         """
 
         if data:
+            log.debug('[%s] Got updated data: %s' % (self._path, data))
             self.set_data(data)
 
-        if state is bool:
+        if type(state) is bool:
+            log.debug('[%s] Got updated state: %s' % (self._path, state))
             self.set_state(state)
 
     def _update(self, data):

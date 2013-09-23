@@ -1,3 +1,7 @@
+Version 0.2.7
+============================================================
+*   #20: Fix Registration.update() method - check that type(state) is bool.
+
 Version 0.2.6
 ============================================================
 *   Quiet down the Kazoo logger
