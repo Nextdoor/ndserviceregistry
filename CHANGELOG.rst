@@ -1,3 +1,7 @@
+Version 0.2.8
+============================================================
+*   Fix Registration.registration - set _ephemeral = False in __init__.
+
 Version 0.2.7
 ============================================================
 *   #20: Fix Registration.update() method - check that type(state) is bool.
