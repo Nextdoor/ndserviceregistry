@@ -73,9 +73,9 @@ log = logging.getLogger(__name__)
 class Registration(object):
     """An object that registers a znode with ZooKeeper."""
 
-    def __init__(self, zk, path, data=None, state=True):
+    def __init__(self, zk, path, data=None, state=True, ephemeral=False):
         # Set our local variables
-        self._ephemeral = False
+        self._ephemeral = ephemeral
         self._zk = zk
         self._path = path
         self._state = state
@@ -253,8 +253,7 @@ class EphemeralNode(Registration):
         initiates a simple thread that monitors whether or not our node
         registration has been lost. If it has, it re-registers it."""
 
-        Registration.__init__(self, zk, path, data, state=state)
-        self._ephemeral = True
+        Registration.__init__(self, zk, path, data, state=state, ephemeral=True)
 
     def stop(self):
         """De-registers from Zookeeper, then calls SuperClass stop() method."""

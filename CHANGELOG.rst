@@ -1,3 +1,7 @@
+Version 0.2.9
+============================================================
+*   Fix Registration.registration again - set the 'ephemeral' setting at construction time.
+
 Version 0.2.8
 ============================================================
 *   Fix Registration.registration - set _ephemeral = False in __init__.
