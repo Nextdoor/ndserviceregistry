@@ -9,6 +9,10 @@ from nd_service_registry.lock import Lock
 
 
 class LockTests(unittest.TestCase):
+
+    # A flag for filtering nose tests
+    integration = True
+
     def setUp(self):
         self.server = 'localhost:2182'
         self.sandbox = "/tests/locks-%s" % uuid.uuid4().hex

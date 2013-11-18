@@ -63,9 +63,13 @@ setup(
     keywords='zookeeper apache zk',
     obsoletes='ndServiceRegistry',
     packages=[PACKAGE],
+    entry_points={
+        'console_scripts': ['ndsr = ndsr.ndsr'],
+    },
     install_requires=[
         'kazoo>=1.1',
         'setuptools',
+        'python-gflags',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
