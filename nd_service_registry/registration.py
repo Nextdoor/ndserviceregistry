@@ -262,3 +262,29 @@ class EphemeralNode(Registration):
 
         # Call our super class stop()
         return super(EphemeralNode, self).stop()
+
+class RegularNode(Registration):
+    """This is a node-specific object that we register and monitor.
+
+    The node registered with Zookeeper is not ephemeral, so if we
+    lose our connection to the service, we have nothing to do."""
+
+    LOGGING = 'nd_service_registry.Registration.RegularNode'
+
+    def __init__(self, zk, path, data, state=True):
+        """Sets the ZooKeeper registration up to be static.
+
+        Sets ephemeral=False when we register the Zookeeper node, and
+        initiates a simple thread that monitors whether or not our node
+        registration has been lost. If it has, it re-registers it."""
+
+        self._ephemeral = False
+        Registration.__init__(self, zk, path, data, state=state)
+
+    def stop(self):
+        """De-registers from Zookeeper, then calls SuperClass stop() method."""
+        # Set our state to disabled to force the de-registration of our node
+        self.set_state(False)
+
+        # Call our super class stop()
+        return super(RegularNode, self).stop()
