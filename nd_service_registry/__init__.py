@@ -112,6 +112,7 @@ from nd_service_registry import exceptions
 from nd_service_registry import funcs
 from nd_service_registry.lock import Lock
 from nd_service_registry.registration import EphemeralNode
+from nd_service_registry.registration import RegularNode
 from nd_service_registry.shims import ZookeeperClient
 from nd_service_registry.watcher import DummyWatcher
 from nd_service_registry.watcher import Watcher
