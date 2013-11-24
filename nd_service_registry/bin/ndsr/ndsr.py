@@ -32,24 +32,26 @@ from nd_service_registry.exceptions import ServiceRegistryException
 
 log = logging.getLogger(__name__)
 
-gflags.DEFINE_string('server', None, "Server:Port string eg. 'localhost:2181'",
+gflags.DEFINE_string('server', 'localhost:2181',
+                     "Server:Port string eg. 'localhost:2181'",
                      short_name='s')
 gflags.DEFINE_string('username', None, 'Your Zookeeper username',
                      short_name='u')
 gflags.DEFINE_string('password', None, 'Your Zookeeper password',
                      short_name='p')
-gflags.DEFINE_bool('quiet', False, "When set, ndsr will not print out any \
-                                   useful status messages, but will only \
-                                   output the results of the command.",
+gflags.DEFINE_bool('quiet', False,
+                   "When set, ndsr will not print out any useful status \
+                   messages, but will only output the results of the command.",
                    short_name='q')
-gflags.DEFINE_integer('loglevel', logging.INFO, "The python logging level in \
-                                                integer form. 50-0 in \
-                                                increments of 10 descending \
-                                                from CRITICAL to NOTSET")
-gflags.DEFINE_string('outputformat', 'yaml', 'The desired output format for \
-                                             queries.  One of (yaml,json)')
-gflags.DEFINE_bool('data', False, "Show data associated with each node path \
-                                  listed (if exists)", short_name='d')
+gflags.DEFINE_integer('loglevel', logging.INFO,
+                      "The python logging level in integer form. 50-0 in \
+                      increments of 10 descending from CRITICAL to NOTSET")
+gflags.DEFINE_string('outputformat', 'yaml',
+                     'The desired output format for queries.  One of \
+                     (yaml,json)')
+gflags.DEFINE_bool('data', False,
+                   "Show data associated with each node listed (if exists)",
+                   short_name='d')
 gflags.DEFINE_bool('recursive', False, "Recursively list all children",
                    short_name='r')
 
@@ -60,7 +62,9 @@ def main(argv):
     """Determines which subcommand is being called, dynamically instantiates
     the correct class and executes it
     """
-    command = argv[1]
+    command = 'get'
+    if len(argv) > 1:
+        command = argv[1]
     capd_command = command.capitalize()
     if capd_command in ['Get']:
         # This works because we've already imported the class above.
