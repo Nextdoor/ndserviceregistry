@@ -87,7 +87,7 @@ def console_entry_point():
         FLAGS.UseGnuGetOpt(True)
         argv = FLAGS(sys.argv)
     except gflags.FlagsError, e:
-        print "%s\nUsage: %s get [<path>] ARGS\n%s" % (e, sys.argv[0], FLAGS)
+        print "%s\nUsage: %s [get] [<path>] ARGS\n%s" % (e, sys.argv[0], FLAGS)
         sys.exit(1)
 
     try:
