@@ -26,9 +26,24 @@ class Get(object):
     __ndsr = None
 
     def set_ndsr(self, ndsr):
+        """Dependency injection point for nd_service_registry object
+
+        Args:
+            ndsr: An object implementing nd_service_registry
+        """
         self.__ndsr = ndsr
 
     def __process_node(self, node, data=False, recursive=False):
+        """Converts a raw dictionary response from nd_service_registry into a condensed dictionary used for CLI output
+
+        Args:
+            node: A dictionary result from nd_service_registry.get
+            data: A boolean indicating whether data should be included in the result
+            recursive: A boolean indicating whether child nodes should be recursed
+
+        Returns:
+            A dictionary with a display friendly format.  Contains data or child nodes based on the provided arguments
+        """
         output = {}
         output.update({node['path']: {}})
 
@@ -49,6 +64,17 @@ class Get(object):
         return output
 
     def execute(self, argv, gflags):
+        """Makes the appropriate nd_service_registry query for the provided path and returns a string in the
+        requested format.
+
+        Args:
+            argv: The CLI arguments, used to determine the path
+            gflags: A gflags object with parsed CLI flags
+
+        Returns:
+            A string in the specified format or "No output format selected"
+        """
+
         path = '/'
         if len(argv) > 2:
             path = argv[2]

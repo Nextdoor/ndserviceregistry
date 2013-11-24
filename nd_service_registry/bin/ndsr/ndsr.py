@@ -36,17 +36,19 @@ gflags.DEFINE_string('server', None, "Server:Port string eg. 'localhost:2181'", 
 gflags.DEFINE_string('username', None, 'Your Zookeeper username', short_name='u')
 gflags.DEFINE_string('password', None, 'Your Zookeeper password', short_name='p')
 gflags.DEFINE_bool('quiet', False, "When set, ndsr will not print out any useful status messages, but will only output \
-                                   the results of the command.")
+                                   the results of the command.", short_name='q')
 gflags.DEFINE_integer('loglevel', logging.INFO, "The python logging level in integer form. 50-0 in increments of 10 \
                                                 descending from CRITICAL to NOTSET")
 gflags.DEFINE_string('outputformat', 'yaml', 'The desired output format for queries.  One of (yaml,json)')
-gflags.DEFINE_bool('data', False, "Show data associated with each node path listed (if exists)")
-gflags.DEFINE_bool('recursive', False, "Recursively list all children")
+gflags.DEFINE_bool('data', False, "Show data associated with each node path listed (if exists)", short_name='d')
+gflags.DEFINE_bool('recursive', False, "Recursively list all children", short_name='r')
 
 FLAGS = gflags.FLAGS
 
 
 def main(argv):
+    """Determines which subcommand is being called, dynamically instantiates the correct class and executes it
+    """
     command = argv[1]
     capd_command = command.capitalize()
     if capd_command in ['Get']:
@@ -63,17 +65,19 @@ def main(argv):
 
 
 def console_entry_point():
+    """A console entry point publicized by setuptools.  Parses flags, sets up logging, and executes the command
+    """
     try:
         FLAGS.UseGnuGetOpt(True)
         argv = FLAGS(sys.argv)
     except gflags.FlagsError, e:
-        print '%s\\nUsage: %s ARGS\\n%s' % (e, sys.argv[0], FLAGS)
+        print "%s\nUsage: %s get [<path>] ARGS\n%s" % (e, sys.argv[0], FLAGS)
         sys.exit(1)
 
     try:
         if not FLAGS.quiet:
             root_logger = logging.getLogger()
-            root_logger.setLevel(logging.INFO)
+            root_logger.setLevel(FLAGS.loglevel)
             stdout_handler = logging.StreamHandler(sys.stdout)
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             stdout_handler.setFormatter(formatter)
