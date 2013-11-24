@@ -23,31 +23,42 @@ import sys
 import gflags
 import logging
 
-# Import the possible sub commands. If I were a more experienced Python programmer
-# I'd dymanically load the module with reflection, but I got stuck trying to do that
-# elegantly.
+# Import the possible sub commands. If I were a more experienced Python
+# programmer I'd dynamically load the module with reflection, but I got stuck
+# trying to do that elegantly.
 from nd_service_registry.bin.ndsr.get import Get
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.exceptions import ServiceRegistryException
 
 log = logging.getLogger(__name__)
 
-gflags.DEFINE_string('server', None, "Server:Port string eg. 'localhost:2181'", short_name='s')
-gflags.DEFINE_string('username', None, 'Your Zookeeper username', short_name='u')
-gflags.DEFINE_string('password', None, 'Your Zookeeper password', short_name='p')
-gflags.DEFINE_bool('quiet', False, "When set, ndsr will not print out any useful status messages, but will only output \
-                                   the results of the command.", short_name='q')
-gflags.DEFINE_integer('loglevel', logging.INFO, "The python logging level in integer form. 50-0 in increments of 10 \
-                                                descending from CRITICAL to NOTSET")
-gflags.DEFINE_string('outputformat', 'yaml', 'The desired output format for queries.  One of (yaml,json)')
-gflags.DEFINE_bool('data', False, "Show data associated with each node path listed (if exists)", short_name='d')
-gflags.DEFINE_bool('recursive', False, "Recursively list all children", short_name='r')
+gflags.DEFINE_string('server', None, "Server:Port string eg. 'localhost:2181'",
+                     short_name='s')
+gflags.DEFINE_string('username', None, 'Your Zookeeper username',
+                     short_name='u')
+gflags.DEFINE_string('password', None, 'Your Zookeeper password',
+                     short_name='p')
+gflags.DEFINE_bool('quiet', False, "When set, ndsr will not print out any \
+                                   useful status messages, but will only \
+                                   output the results of the command.",
+                   short_name='q')
+gflags.DEFINE_integer('loglevel', logging.INFO, "The python logging level in \
+                                                integer form. 50-0 in \
+                                                increments of 10 descending \
+                                                from CRITICAL to NOTSET")
+gflags.DEFINE_string('outputformat', 'yaml', 'The desired output format for \
+                                             queries.  One of (yaml,json)')
+gflags.DEFINE_bool('data', False, "Show data associated with each node path \
+                                  listed (if exists)", short_name='d')
+gflags.DEFINE_bool('recursive', False, "Recursively list all children",
+                   short_name='r')
 
 FLAGS = gflags.FLAGS
 
 
 def main(argv):
-    """Determines which subcommand is being called, dynamically instantiates the correct class and executes it
+    """Determines which subcommand is being called, dynamically instantiates
+    the correct class and executes it
     """
     command = argv[1]
     capd_command = command.capitalize()
@@ -65,7 +76,8 @@ def main(argv):
 
 
 def console_entry_point():
-    """A console entry point publicized by setuptools.  Parses flags, sets up logging, and executes the command
+    """A console entry point publicized by setuptools.  Parses flags, sets up
+    logging, and executes the command
     """
     try:
         FLAGS.UseGnuGetOpt(True)
@@ -79,14 +91,17 @@ def console_entry_point():
             root_logger = logging.getLogger()
             root_logger.setLevel(FLAGS.loglevel)
             stdout_handler = logging.StreamHandler(sys.stdout)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
             stdout_handler.setFormatter(formatter)
             root_logger.addHandler(stdout_handler)
 
         main(argv)
     except ServiceRegistryException, e:
-        # Would recommend that Zookeeper/Kazoo specific error codes be passed through
-        # so the exit code could be better evaluated by tools consuming ndsr
+        # Would recommend that Zookeeper/Kazoo specific error codes be passed
+        # through so the exit code could be better evaluated by tools consuming
+        # ndsr
         sys.exit(e.value)
 
 if __name__ == '__main__':

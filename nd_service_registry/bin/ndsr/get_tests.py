@@ -31,13 +31,14 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo'}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "yaml",
-                           "data": False,
-                           "recursive": False
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "yaml",
+                          "data": False,
+                          "recursive": False
                           })
         expected = {"/foo": {}}
         get = Get()
@@ -50,32 +51,35 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo'}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "json",
-                           "data": False,
-                           "recursive": False
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "json",
+                          "data": False,
+                          "recursive": False
                           })
         expected = {"/foo": {}}
         get = Get()
         get.set_ndsr(mock_kazoo_class)
         output = get.execute([], fauxGflags)
-        assert output == json.dumps(expected, sort_keys=True, indent=4, separators=(',', ': '))
+        assert output == json.dumps(expected, sort_keys=True, indent=4,
+                                    separators=(',', ': '))
 
     @patch('nd_service_registry.KazooServiceRegistry')
     def test_yaml_includes_data_on_data_flag(self, mock_kazoo_class):
         retval = {'path': '/foo', 'data': {'foo': 'bar'}}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "yaml",
-                           "data": True,
-                           "recursive": False
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "yaml",
+                          "data": True,
+                          "recursive": False
                           })
         expected = {"/foo": {"data": {"foo": "bar"}}}
         get = Get()
@@ -88,33 +92,41 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo', 'data': {'foo': 'bar'}}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "json",
-                           "data": True,
-                           "recursive": False
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "json",
+                          "data": True,
+                          "recursive": False
                           })
         expected = {"/foo": {"data": {"foo": "bar"}}}
         get = Get()
         get.set_ndsr(mock_kazoo_class)
         output = get.execute([], fauxGflags)
-        assert output == json.dumps(expected, sort_keys=True, indent=4, separators=(',', ': '))
+        assert output == json.dumps(expected, sort_keys=True, indent=4,
+                                    separators=(',', ': '))
 
     @patch('nd_service_registry.KazooServiceRegistry')
     def test_yaml_includes_children_on_recursive_flag(self, mock_kazoo_class):
-        foo = {'path': '/foo', 'data': {'foo': 'bar'}, 'children': {'bar': {'foo': 'bar'}}}
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
         foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}}
-        mock_kazoo_class.get.side_effect = lambda x: {'/': foo, '/foo/bar': foobar}[x]
+        mock_kazoo_class.get.side_effect = lambda x: \
+            {'/': foo, '/foo/bar': foobar}[x]
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "yaml",
-                           "data": False,
-                           "recursive": True
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "yaml",
+                          "data": False,
+                          "recursive": True
                           })
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
         get = Get()
@@ -124,62 +136,116 @@ class GetTests(unittest.TestCase):
 
     @patch('nd_service_registry.KazooServiceRegistry')
     def test_json_includes_children_on_recursive_flag(self, mock_kazoo_class):
-        foo = {'path': '/foo', 'data': {'foo': 'bar'}, 'children': {'bar': {'foo': 'bar'}}}
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
         foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}}
-        mock_kazoo_class.get.side_effect = lambda x: {'/': foo, '/foo/bar': foobar}[x]
+        mock_kazoo_class.get.side_effect = lambda x: \
+            {'/': foo, '/foo/bar': foobar}[x]
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "json",
-                           "data": False,
-                           "recursive": True
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "json",
+                          "data": False,
+                          "recursive": True
                           })
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
         get = Get()
         get.set_ndsr(mock_kazoo_class)
         output = get.execute([], fauxGflags)
-        assert output == json.dumps(expected, sort_keys=True, indent=4, separators=(',', ': '))
+        assert output == json.dumps(expected, sort_keys=True, indent=4,
+                                    separators=(',', ': '))
 
     @patch('nd_service_registry.KazooServiceRegistry')
-    def test_yaml_includes_grandchildren_on_recursive_flag(self, mock_kazoo_class):
-        foo = {'path': '/foo', 'data': {'foo': 'bar'}, 'children': {'bar': {'foo': 'bar'}}}
-        foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}, 'children': {'baz': 'foo'}}
+    def test_yaml_includes_grandchildren_on_recursive_flag(self,
+                                                           mock_kazoo_class):
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
+        foobar = {
+            'path': '/foo/bar',
+            'data': {'bar': 'baz'},
+            'children': {'baz': 'foo'}
+        }
         foobarbaz = {'path': '/foo/bar/baz'}
-        mock_kazoo_class.get.side_effect = lambda x: {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
+        mock_kazoo_class.get.side_effect = lambda x: \
+            {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "yaml",
-                           "data": False,
-                           "recursive": True
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "yaml",
+                          "data": False,
+                          "recursive": True
                           })
-        expected = {"/foo": {"children": [{"/foo/bar": {"children": [{"/foo/bar/baz": {}}]}}]}}
+        expected = {
+            "/foo": {
+                "children": [
+                    {
+                        "/foo/bar": {
+                            "children": [
+                                {"/foo/bar/baz": {}}
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
         get = Get()
         get.set_ndsr(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == yaml.safe_dump(expected, default_flow_style=False)
 
     @patch('nd_service_registry.KazooServiceRegistry')
-    def test_json_includes_grandchildren_on_recursive_flag(self, mock_kazoo_class):
-        foo = {'path': '/foo', 'data': {'foo': 'bar'}, 'children': {'bar': {'foo': 'bar'}}}
-        foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}, 'children': {'baz': 'foo'}}
+    def test_json_includes_grandchildren_on_recursive_flag(self,
+                                                           mock_kazoo_class):
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
+        foobar = {
+            'path': '/foo/bar',
+            'data': {'bar': 'baz'},
+            'children': {'baz': 'foo'}
+        }
         foobarbaz = {'path': '/foo/bar/baz'}
-        mock_kazoo_class.get.side_effect = lambda x: {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
+        mock_kazoo_class.get.side_effect = lambda x: \
+            {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
         fauxGflags = type('foo', (object,),
-                          {"quiet": True,
-                           "server": None,
-                           "username": None,
-                           "password": None,
-                           "outputformat": "json",
-                           "data": False,
-                           "recursive": True
+                          {
+                          "quiet": True,
+                          "server": None,
+                          "username": None,
+                          "password": None,
+                          "outputformat": "json",
+                          "data": False,
+                          "recursive": True
                           })
-        expected = {"/foo": {"children": [{"/foo/bar": {"children": [{"/foo/bar/baz": {}}]}}]}}
+        expected = {
+            "/foo": {
+                "children": [
+                    {
+                        "/foo/bar": {
+                            "children": [
+                                {"/foo/bar/baz": {}}
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
         get = Get()
         get.set_ndsr(mock_kazoo_class)
         output = get.execute([], fauxGflags)
-        assert output == json.dumps(expected, sort_keys=True, indent=4, separators=(',', ': '))
+        assert output == json.dumps(expected, sort_keys=True, indent=4,
+                                    separators=(',', ': '))

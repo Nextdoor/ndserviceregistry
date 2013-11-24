@@ -34,15 +34,19 @@ class Get(object):
         self.__ndsr = ndsr
 
     def __process_node(self, node, data=False, recursive=False):
-        """Converts a raw dictionary response from nd_service_registry into a condensed dictionary used for CLI output
+        """Converts a raw dictionary response from nd_service_registry into a
+        condensed dictionary used for CLI output
 
         Args:
             node: A dictionary result from nd_service_registry.get
-            data: A boolean indicating whether data should be included in the result
-            recursive: A boolean indicating whether child nodes should be recursed
+            data: A boolean indicating whether data should be included in the
+            result
+            recursive: A boolean indicating whether child nodes should be
+            recursed
 
         Returns:
-            A dictionary with a display friendly format.  Contains data or child nodes based on the provided arguments
+            A dictionary with a display friendly format.  Contains data or
+            child nodes based on the provided arguments
         """
         output = {}
         output.update({node['path']: {}})
@@ -56,15 +60,18 @@ class Get(object):
         if recursive:
             children = []
             if 'children' in node.keys():
-                for key,val in node['children'].items():
+                for key, val in node['children'].items():
                     child = self.__ndsr.get(node['path']+"/"+key)
-                    children.append(self.__process_node(child, data, recursive))
+                    children.append(
+                        self.__process_node(child, data, recursive)
+                    )
                 output[node['path']].update({'children': children})
 
         return output
 
     def execute(self, argv, gflags):
-        """Makes the appropriate nd_service_registry query for the provided path and returns a string in the
+        """Makes the appropriate nd_service_registry query for the provided
+        path and returns a string in the
         requested format.
 
         Args:
@@ -86,6 +93,7 @@ class Get(object):
         if gflags.outputformat == 'yaml':
             return yaml.safe_dump(output, default_flow_style=False)
         elif gflags.outputformat == 'json':
-            return json.dumps(output, sort_keys=True, indent=4, separators=(',', ': '))
+            return json.dumps(output, sort_keys=True, indent=4,
+                              separators=(',', ': '))
         else:
             return "No output format selected"

@@ -30,7 +30,8 @@ class LockTests(unittest.TestCase):
         lock1.release()
 
     def test_non_blocking_lock_with(self):
-        """Make sure that the enter/exit functionality works in non-blocking mode."""
+        """Make sure that the enter/exit functionality works in non-blocking
+        mode."""
         nd = KazooServiceRegistry(server=self.server)
         lock1 = Lock(zk=nd._zk, path=self.sandbox, name='lock1',
                      simultaneous=1, wait=1)
@@ -50,12 +51,14 @@ class LockTests(unittest.TestCase):
         nd = KazooServiceRegistry(server=self.server)
 
         # Get our first lock object at our path and acquire it.
-        lock1 = Lock(zk=nd._zk, path=self.sandbox, name='lock1', simultaneous=1, wait=0)
+        lock1 = Lock(zk=nd._zk, path=self.sandbox, name='lock1',
+                     simultaneous=1, wait=0)
         lock1.acquire()
         self.assertTrue(lock1.status())
 
         # Get our first lock object at our path and acquire it.
-        lock2 = Lock(zk=nd._zk, path=self.sandbox, name='lock2', simultaneous=1, wait=0)
+        lock2 = Lock(zk=nd._zk, path=self.sandbox, name='lock2',
+                     simultaneous=1, wait=0)
         lock2.acquire()
         self.assertFalse(lock2.status())
 
@@ -67,17 +70,19 @@ class LockTests(unittest.TestCase):
         nd = KazooServiceRegistry(server=self.server)
 
         # Get our first lock object at our path and acquire it.
-        lock1 = Lock(zk=nd._zk, path=self.sandbox, name='lock1', simultaneous=1, wait=0)
+        lock1 = Lock(zk=nd._zk, path=self.sandbox, name='lock1',
+                     simultaneous=1, wait=0)
         lock1.acquire()
         self.assertTrue(lock1.status())
 
         # Get our first lock object at our path and try to acquire it.
         begin = time.time()
-        lock2 = Lock(zk=nd._zk, path=self.sandbox, name='lock2', simultaneous=1, wait=2)
+        lock2 = Lock(zk=nd._zk, path=self.sandbox, name='lock2',
+                     simultaneous=1, wait=2)
         lock2.acquire()
 
-        # Make sure that the lock was not sucessful, and returned within 1 second
-        # of our requested wait time.
+        # Make sure that the lock was not successful, and returned within 1
+        # second of our requested wait time.
         self.assertFalse(lock2.status())
         self.assertTrue((time.time() - begin) >= 2)
 

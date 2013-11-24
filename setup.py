@@ -53,7 +53,8 @@ class CleanHook(clean):
 setup(
     name='nd_service_registry',
     version=__version__,
-    description='Nextdoor ServiceRegistry module for interacting with Apache Zookeeper.',
+    description="Nextdoor ServiceRegistry module for interacting with Apache \
+                Zookeeper.",
     long_description=open('README.rst').read(),
     author='Matt Wise',
     author_email='matt@nextdoor.com',
@@ -62,9 +63,11 @@ setup(
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
     obsoletes='ndServiceRegistry',
-    packages=[PACKAGE,PACKAGE+'.bin',PACKAGE+'.bin.ndsr'],
+    packages=[PACKAGE, PACKAGE+'.bin', PACKAGE+'.bin.ndsr'],
     entry_points={
-        'console_scripts': ['ndsr = nd_service_registry.bin.ndsr.ndsr:console_entry_point'],
+        'console_scripts': [
+            'ndsr = nd_service_registry.bin.ndsr.ndsr:console_entry_point'
+        ],
     },
     install_requires=[
         'kazoo>=1.1',
