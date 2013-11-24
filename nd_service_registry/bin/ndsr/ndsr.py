@@ -67,15 +67,14 @@ def main(argv):
         command = argv[1]
     capd_command = command.capitalize()
     if capd_command in ['Get']:
-        # This works because we've already imported the class above.
-        class_ = globals()[capd_command]
-        instance = class_()
         log.info("Connecting to server %s" % FLAGS.server)
         nd = KazooServiceRegistry(server=FLAGS.server)
         if FLAGS.username is not None and FLAGS.password is not None:
             nd.set_username(FLAGS.username)
             nd.set_password(FLAGS.password)
-        instance.set_ndsr(nd)
+        # This works because we've already imported the class above.
+        class_ = globals()[capd_command]
+        instance = class_(nd)
         print instance.execute(argv, FLAGS)
 
 

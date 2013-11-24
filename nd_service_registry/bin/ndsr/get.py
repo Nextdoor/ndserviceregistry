@@ -25,8 +25,9 @@ class Get(object):
 
     __ndsr = None
 
-    def set_ndsr(self, ndsr):
-        """Dependency injection point for nd_service_registry object
+    def __init__(self, ndsr):
+        """
+        Initializer
 
         Args:
             ndsr: An object implementing nd_service_registry
