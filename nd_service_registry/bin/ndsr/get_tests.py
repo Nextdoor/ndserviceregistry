@@ -41,8 +41,7 @@ class GetTests(unittest.TestCase):
                           "recursive": False
                           })
         expected = {"/foo": {}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == yaml.dump(expected, default_flow_style=False)
 
@@ -61,8 +60,7 @@ class GetTests(unittest.TestCase):
                           "recursive": False
                           })
         expected = {"/foo": {}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
@@ -82,8 +80,7 @@ class GetTests(unittest.TestCase):
                           "recursive": False
                           })
         expected = {"/foo": {"data": {"foo": "bar"}}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == yaml.dump(expected, default_flow_style=False)
 
@@ -102,8 +99,7 @@ class GetTests(unittest.TestCase):
                           "recursive": False
                           })
         expected = {"/foo": {"data": {"foo": "bar"}}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
@@ -129,8 +125,7 @@ class GetTests(unittest.TestCase):
                           "recursive": True
                           })
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == yaml.safe_dump(expected, default_flow_style=False)
 
@@ -155,8 +150,7 @@ class GetTests(unittest.TestCase):
                           "recursive": True
                           })
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
@@ -200,8 +194,7 @@ class GetTests(unittest.TestCase):
                 ]
             }
         }
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == yaml.safe_dump(expected, default_flow_style=False)
 
@@ -244,8 +237,7 @@ class GetTests(unittest.TestCase):
                 ]
             }
         }
-        get = Get()
-        get.set_ndsr(mock_kazoo_class)
+        get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
