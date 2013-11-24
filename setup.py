@@ -62,14 +62,15 @@ setup(
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
     obsoletes='ndServiceRegistry',
-    packages=[PACKAGE],
+    packages=[PACKAGE,PACKAGE+'.bin',PACKAGE+'.bin.ndsr'],
     entry_points={
-        'console_scripts': ['ndsr = ndsr.ndsr'],
+        'console_scripts': ['ndsr = nd_service_registry.bin.ndsr.ndsr:console_entry_point'],
     },
     install_requires=[
         'kazoo>=1.1',
         'setuptools',
         'python-gflags',
+        'pyyaml'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
