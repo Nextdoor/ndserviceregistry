@@ -76,6 +76,9 @@ def main(argv):
         class_ = globals()[capd_command]
         instance = class_(nd)
         print instance.execute(argv, FLAGS)
+    else:
+        sys.stderr.write("Unknown command %s" % command)
+        exit(1)
 
 
 def console_entry_point():

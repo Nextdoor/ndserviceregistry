@@ -54,15 +54,15 @@ class Get(object):
 
         if data:
             dataval = None
-            if 'data' in node.keys():
+            if 'data' in node:
                 dataval = node['data']
             output[node['path']].update({'data': dataval})
 
         if recursive:
             children = []
-            if 'children' in node.keys():
-                for key, val in node['children'].items():
-                    child = self.__ndsr.get(node['path']+"/"+key)
+            if 'children' in node:
+                for key, val in node['children'].iteritems():
+                    child = self.__ndsr.get("%s/%s" % (node['path'], key))
                     children.append(
                         self.__process_node(child, data, recursive)
                     )
