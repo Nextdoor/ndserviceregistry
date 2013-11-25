@@ -9,7 +9,10 @@ Vagrant.configure("2") do |config|
   config.vm.network :forwarded_port, guest: 8080, host: 8080
 
   config.vm.provision :shell,
-    inline: "yum -y install patch"
+    inline: <<SCRIPT
+  yum -y install patch
+  mkdir -p /var/chef/cache
+SCRIPT
 
   config.vm.provision :chef_solo do |chef|
     chef.json = {
