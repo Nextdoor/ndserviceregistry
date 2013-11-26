@@ -23,8 +23,6 @@ log = logging.getLogger(__name__)
 
 class Get(object):
 
-    __ndsr = None
-
     def __init__(self, ndsr):
         """
         Initializer
