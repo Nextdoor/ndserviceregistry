@@ -112,8 +112,12 @@ class GetTests(unittest.TestCase):
             'children': {'bar': {'foo': 'bar'}}
         }
         foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}}
-        mock_kazoo_class.get.side_effect = lambda x: \
-            {'/': foo, '/foo/bar': foobar}[x]
+
+        def side_effect(arg):
+            arg_value_dict = {'/': foo, '/foo/bar': foobar}
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
                           {
                           "quiet": True,
@@ -137,8 +141,12 @@ class GetTests(unittest.TestCase):
             'children': {'bar': {'foo': 'bar'}}
         }
         foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}}
-        mock_kazoo_class.get.side_effect = lambda x: \
-            {'/': foo, '/foo/bar': foobar}[x]
+
+        def side_effect(arg):
+            arg_value_dict = {'/': foo, '/foo/bar': foobar}
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
                           {
                           "quiet": True,
@@ -169,8 +177,16 @@ class GetTests(unittest.TestCase):
             'children': {'baz': 'foo'}
         }
         foobarbaz = {'path': '/foo/bar/baz'}
-        mock_kazoo_class.get.side_effect = lambda x: \
-            {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
+
+        def side_effect(arg):
+            arg_value_dict = {
+                '/': foo,
+                '/foo/bar': foobar,
+                '/foo/bar/baz': foobarbaz
+            }
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
                           {
                           "quiet": True,
@@ -212,8 +228,16 @@ class GetTests(unittest.TestCase):
             'children': {'baz': 'foo'}
         }
         foobarbaz = {'path': '/foo/bar/baz'}
-        mock_kazoo_class.get.side_effect = lambda x: \
-            {'/': foo, '/foo/bar': foobar, '/foo/bar/baz': foobarbaz}[x]
+
+        def side_effect(arg):
+            arg_value_dict = {
+                '/': foo,
+                '/foo/bar': foobar,
+                '/foo/bar/baz': foobarbaz
+            }
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
                           {
                           "quiet": True,
