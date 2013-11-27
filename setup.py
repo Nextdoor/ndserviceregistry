@@ -152,9 +152,9 @@ setup(
     #packages=[PACKAGE, PACKAGE+'.bin', PACKAGE+'.bin.ndsr'],
     packages=find_packages(),
     test_suite='nose.collector',
-    tests_require=[i for i in open('requirements.test.txt').readlines()],
-    setup_requires=[i for i in open('requirements.txt').readlines()],
-    install_requires=[i for i in open('requirements.txt').readlines()],
+    tests_require=open('requirements.test.txt').readlines(),
+    setup_requires=open('requirements.txt').readlines(),
+    install_requires=open('requirements.txt').readlines(),
     entry_points={
         'console_scripts': [
             'ndsr = nd_service_registry.bin.ndsr.ndsr:console_entry_point'
