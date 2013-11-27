@@ -13,20 +13,120 @@
 # limitations under the License.
 
 import os
+import sys
 import shutil
 import subprocess
 
+import nose
+
 from distutils.command.clean import clean
 from distutils.command.sdist import sdist
+from setuptools import Command
 from setuptools import setup
+from setuptools import find_packages
 
 PACKAGE = 'nd_service_registry'
 __version__ = None
 execfile(os.path.join(PACKAGE, 'version.py'))  # set __version__
 
 
-class SourceDistHook(sdist):
+def maybe_rm(path):
+    """Simple method for removing a file/dir if it exists"""
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+        except:
+            os.remove(path)
 
+
+class Pep8Command(Command):
+    description = 'Pep8 Lint Checks'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # Don't import the pep8 module until now because setup.py needs to be
+        # able to instlal Pep8 if its missing.
+        #if subprocess.call(['pep8', '--max-line-length=100', PACKAGE]):
+        #    sys.exit('ERROR: failed pep8 checks')
+        import pep8
+        pep8style = pep8.StyleGuide(parse_argv=True, config_file='pep8.cfg')
+        report = pep8style.check_files([PACKAGE])
+        if report.total_errors:
+            sys.exit('ERROR: Pep8 failed with exit %d errors' %
+                     report.total_errors)
+
+
+class PyflakesCommand(Command):
+    description = 'Pyflakes Checks'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # Don't import the pyflakes code until now because setup.py needs to be
+        # able to install Pyflakes if its missing. This localizes thei mport to
+        # only after the setuptools code has run and verified everything is
+        # installed.
+        from pyflakes import api
+        from pyflakes import reporter
+
+        # Run the Pyflakes check against our package and check its output
+        val = api.checkRecursive([PACKAGE], reporter._makeDefaultReporter())
+        if val > 0:
+            sys.exit('ERROR: Pyflakes failed with exit code %d' % val)
+
+
+class UnitTestCommand(Command):
+    description = 'Run unit tests'
+    user_options = []
+    args = ['--with-coverage',
+            '--cover-package=nd_status_dashboard',
+            '-v']
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        maybe_rm('.coverage')
+        val = nose.run(argv=self.args)
+
+        if not val:
+            sys.exit('ERROR:Integration tests failed')
+
+
+class IntegrationTestCommand(UnitTestCommand):
+    description = 'Run full integration tests and unit tests'
+    args = ['--with-coverage',
+            '--cover-package=nd_status_dashboard',
+            '-v',
+            '--include=integration']
+
+
+class CleanHook(clean):
+    def run(self):
+        clean.run(self)
+
+        maybe_rm('%s.egg-info' % PACKAGE)
+        maybe_rm('dist')
+        maybe_rm('.coverage')
+        maybe_rm('version.rst')
+        maybe_rm('MANIFEST')
+
+
+class SourceDistHook(sdist):
     def run(self):
         with open('version.rst', 'w') as f:
             f.write(':Version: %s\n' % __version__)
@@ -37,44 +137,29 @@ class SourceDistHook(sdist):
         os.unlink('version.rst')
 
 
-class CleanHook(clean):
-
-    def run(self):
-        clean.run(self)
-
-        def maybe_rm(path):
-            if os.path.exists(path):
-                shutil.rmtree(path)
-        if self.all:
-            maybe_rm('nd_service_registry.egg-info')
-            maybe_rm('dist')
-
-
 setup(
-    name='nd_service_registry',
+    name=PACKAGE,
     version=__version__,
-    description="Nextdoor ServiceRegistry module for interacting with Apache \
-                Zookeeper.",
+    description='Nextdoor Service Registry Module',
     long_description=open('README.rst').read(),
-    author='Matt Wise',
-    author_email='matt@nextdoor.com',
+    author='Nextdoor Engineering',
+    author_email='eng@nextdoor.com',
     url='https://github.com/Nextdoor/ndserviceregistry',
-    download_url='http://pypi.python.org/pypi/nd_service_registry#downloads',
+    download_url='http://pypi.python.org/pypi/%s#downloads' % PACKAGE,
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
     obsoletes='ndServiceRegistry',
-    packages=[PACKAGE, PACKAGE+'.bin', PACKAGE+'.bin.ndsr'],
+    #packages=[PACKAGE, PACKAGE+'.bin', PACKAGE+'.bin.ndsr'],
+    packages=find_packages(),
+    test_suite='nose.collector',
+    tests_require=[i for i in open('requirements.test.txt').readlines()],
+    setup_requires=[i for i in open('requirements.txt').readlines()],
+    install_requires=[i for i in open('requirements.txt').readlines()],
     entry_points={
         'console_scripts': [
             'ndsr = nd_service_registry.bin.ndsr.ndsr:console_entry_point'
         ],
     },
-    install_requires=[
-        'kazoo>=1.1',
-        'setuptools',
-        'python-gflags',
-        'pyyaml'
-    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Topic :: Software Development',
@@ -84,5 +169,12 @@ setup(
         'Operating System :: POSIX',
         'Natural Language :: English',
     ],
-    cmdclass={'sdist': SourceDistHook, 'clean': CleanHook},
+    cmdclass={
+        'sdist': SourceDistHook,
+        'clean': CleanHook,
+        'pep8': Pep8Command,
+        'pyflakes': PyflakesCommand,
+        'integration': IntegrationTestCommand,
+        'test': UnitTestCommand,
+    },
 )

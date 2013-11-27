@@ -231,3 +231,21 @@ API Documentation
 
 Detailed implementation details and instructions are in the individual
 library files.
+
+Development
+-----------
+
+Unit Tests:
+
+    $ python setup.py test
+    running test
+    test_creates_simple_json_outputformat (nd_service_registry.bin.ndsr.get_tests.GetTests) ... ok
+    ...
+    ...
+    test_default_data_produces_expected_dict (nd_service_registry.funcs_tests.FuncsTests) ... ok
+    test_encode_creates_dict_from_single_string (nd_service_registry.funcs_tests.FuncsTests) ... ok
+    
+    ----------------------------------------------------------------------
+    Ran 15 tests in 0.108s
+
+    OK
