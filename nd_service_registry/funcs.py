@@ -90,7 +90,7 @@ def decode(data):
     elif s.startswith('{') and s.endswith('}'):
         try:
             data = json.loads(s)
-        except Exception, e:
+        except Exception:
             data = dict(string_value=data)
     else:
         data = dict(string_value=data)

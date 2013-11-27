@@ -39,25 +39,25 @@ class ZookeeperClient(KazooClient):
         # Finish object initialization
         super(ZookeeperClient, self).__init__(*args, **kwargs)
 
-    def set_rate_limiter(self, time=0, calls=0):
+    def set_rate_limiter(self, delay=0, calls=0):
         """Set rate limiting settings.
 
         args:
-            time: Number of seconds to average between ZK requests (int)
+            delay: Number of seconds to average between ZK requests (int)
             calls: Number of calls to determine averages over (int)
         """
 
         # Make sure that if the values are None or False, reset them
-        if not isinstance(time, int):
-            time = 0
+        if not isinstance(delay, int):
+            delay = 0
         if not isinstance(calls, int):
             calls = 0
 
         log.debug('Set up rate limiting. Max %s avg between last %s calls.' %
-                  (calls, time))
+                  (calls, delay))
         self.previous_calls = []
         self.num_calls_to_average_over = calls
-        self.target_avg_between_calls = time
+        self.target_avg_between_calls = delay
 
     def rate_limiter(func):
         """Provides a decorator for rate-limiting function.

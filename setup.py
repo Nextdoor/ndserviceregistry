@@ -74,7 +74,7 @@ class PyflakesCommand(Command):
 
     def run(self):
         # Don't import the pyflakes code until now because setup.py needs to be
-        # able to install Pyflakes if its missing. This localizes thei mport to
+        # able to install Pyflakes if its missing. This localizes the import to
         # only after the setuptools code has run and verified everything is
         # installed.
         from pyflakes import api

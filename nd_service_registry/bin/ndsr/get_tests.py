@@ -18,7 +18,7 @@ import json
 import yaml
 import unittest
 
-from mock import patch, Mock
+from mock import patch
 from nd_service_registry.bin.ndsr.get import Get
 
 
