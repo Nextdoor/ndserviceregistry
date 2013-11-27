@@ -235,7 +235,7 @@ library files.
 Development
 -----------
 
-Unit Tests:
+Unit Tests ::
 
     $ python setup.py test
     running test
