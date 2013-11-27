@@ -31,15 +31,13 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo'}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "yaml",
-                          "data": False,
-                          "recursive": False
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "yaml",
+                           "data": False,
+                           "recursive": False})
         expected = {"/foo": {}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -50,15 +48,13 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo'}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "json",
-                          "data": False,
-                          "recursive": False
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "json",
+                           "data": False,
+                           "recursive": False})
         expected = {"/foo": {}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -70,15 +66,13 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo', 'data': {'foo': 'bar'}}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "yaml",
-                          "data": True,
-                          "recursive": False
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "yaml",
+                           "data": True,
+                           "recursive": False})
         expected = {"/foo": {"data": {"foo": "bar"}}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -89,15 +83,13 @@ class GetTests(unittest.TestCase):
         retval = {'path': '/foo', 'data': {'foo': 'bar'}}
         mock_kazoo_class.get.return_value = retval
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "json",
-                          "data": True,
-                          "recursive": False
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "json",
+                           "data": True,
+                           "recursive": False})
         expected = {"/foo": {"data": {"foo": "bar"}}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -119,15 +111,13 @@ class GetTests(unittest.TestCase):
 
         mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "yaml",
-                          "data": False,
-                          "recursive": True
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "yaml",
+                           "data": False,
+                           "recursive": True})
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -148,15 +138,13 @@ class GetTests(unittest.TestCase):
 
         mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "json",
-                          "data": False,
-                          "recursive": True
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "json",
+                           "data": False,
+                           "recursive": True})
         expected = {"/foo": {"children": [{"/foo/bar": {}}]}}
         get = Get(mock_kazoo_class)
         output = get.execute([], fauxGflags)
@@ -188,15 +176,13 @@ class GetTests(unittest.TestCase):
 
         mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "yaml",
-                          "data": False,
-                          "recursive": True
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "yaml",
+                           "data": False,
+                           "recursive": True})
         expected = {
             "/foo": {
                 "children": [
@@ -239,15 +225,13 @@ class GetTests(unittest.TestCase):
 
         mock_kazoo_class.get.side_effect = side_effect
         fauxGflags = type('foo', (object,),
-                          {
-                          "quiet": True,
-                          "server": None,
-                          "username": None,
-                          "password": None,
-                          "outputformat": "json",
-                          "data": False,
-                          "recursive": True
-                          })
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "json",
+                           "data": False,
+                           "recursive": True})
         expected = {
             "/foo": {
                 "children": [

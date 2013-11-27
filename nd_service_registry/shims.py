@@ -49,9 +49,9 @@ class ZookeeperClient(KazooClient):
 
         # Make sure that if the values are None or False, reset them
         if not isinstance(time, int):
-            time=0
+            time = 0
         if not isinstance(calls, int):
-            calls=0
+            calls = 0
 
         log.debug('Set up rate limiting. Max %s avg between last %s calls.' %
                   (calls, time))
@@ -84,7 +84,8 @@ class ZookeeperClient(KazooClient):
                 # self.num_calls_to_average_over is 10, check how
                 # much time has elapsed between this call, and the
                 # call 10-calls ago.
-                elapsed = (time.time() -
+                elapsed = (
+                    time.time() -
                     self.previous_calls[-self.num_calls_to_average_over])
 
                 # Now get a rough average amount of time between the calls
@@ -97,8 +98,9 @@ class ZookeeperClient(KazooClient):
                 # self.target_avg_between_calls then we trigger throttling.
                 if avg_between_calls < self.target_avg_between_calls:
                     log.warning('[%s] Too little time between last %s calls '
-                                'for func. Throttling.' % (func.__name__,
-                                self.num_calls_to_average_over))
+                                'for func. Throttling.' %
+                                (func.__name__,
+                                 self.num_calls_to_average_over))
                     throttle = True
 
             # If we're going to throttle, determine how long to wait

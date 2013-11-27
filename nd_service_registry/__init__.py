@@ -519,10 +519,11 @@ class KazooServiceRegistry(nd_service_registry):
         # Create our logger
         log.info('Initializing ServiceRegistry object')
 
-        # Kazoo is very noisy by default. We quiet it down and only pay attention
-        # to the most important messages.
+        # Kazoo is very noisy by default. We quiet it down and only pay
+        # attention to the most important messages.
         logging.getLogger('kazoo').setLevel(logging.WARNING)
-        logging.getLogger('kazoo.protocol.connection').addFilter(shims.KazooFilter())
+        logging.getLogger('kazoo.protocol.connection').addFilter(
+            shims.KazooFilter())
 
         # Record the supplied settings
         self._timeout = timeout

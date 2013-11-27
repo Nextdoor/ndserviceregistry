@@ -166,7 +166,7 @@ class Registration(object):
                          (self._path, self._encoded_data))
                 pass
             except kazoo.exceptions.NodeExistsError, e:
-                # Node exists ... possible this callback got claled multiple
+                # Node exists ... possible this callback got called multiple
                 # times
                 pass
             except kazoo.exceptions.NoAuthError, e:
@@ -234,7 +234,8 @@ class Registration(object):
         elif self.state() is True and not data['data'] == self._decoded_data:
             # Lastly, the node is registered, and we want it to be. However,
             # the data with the node is incorrect. Change it.
-            log.warning('[%s] Registered node had different data.' % self._path)
+            log.warning('[%s] Registered node had different data.' %
+                        self._path)
             self._update_data()
 
 
@@ -253,7 +254,8 @@ class EphemeralNode(Registration):
         initiates a simple thread that monitors whether or not our node
         registration has been lost. If it has, it re-registers it."""
 
-        Registration.__init__(self, zk, path, data, state=state, ephemeral=True)
+        Registration.__init__(self, zk, path, data,
+                              state=state, ephemeral=True)
 
     def stop(self):
         """De-registers from Zookeeper, then calls SuperClass stop() method."""
