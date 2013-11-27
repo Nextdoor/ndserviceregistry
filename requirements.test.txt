@@ -1,2 +1,4 @@
 nose
 mock
+pep8
+pyflakes
