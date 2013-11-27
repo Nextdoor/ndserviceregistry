@@ -5,4 +5,4 @@ python:
 install:
   - python setup.py install
   - pip install -r requirements.test.txt
-script: python setup.py test pep8
+script: python setup.py test pep8 pyflakes

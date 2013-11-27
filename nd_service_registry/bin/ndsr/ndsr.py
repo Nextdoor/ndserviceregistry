@@ -19,16 +19,13 @@ A CLI tool for interacting with ZooKeeper using ndserviceregistry.
 
 __author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
-import sys
 import gflags
 import logging
+import sys
 
-# Import the possible sub commands. If I were a more experienced Python
-# programmer I'd dynamically load the module with reflection, but I got stuck
-# trying to do that elegantly.
-from nd_service_registry.bin.ndsr.get import Get
-from nd_service_registry import KazooServiceRegistry
-from nd_service_registry.exceptions import ServiceRegistryException
+from nd_service_registry.bin.ndsr import get
+from nd_service_registry import exceptions
+import nd_service_registry
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +54,9 @@ gflags.DEFINE_bool('recursive', False, "Recursively list all children",
 
 FLAGS = gflags.FLAGS
 
+# Mapping of valid commands to their classes
+COMMANDS = {'Get': get.Get}
+
 
 def main(argv):
     """Determines which subcommand is being called, dynamically instantiates
@@ -65,16 +65,16 @@ def main(argv):
     command = 'get'
     if len(argv) > 1:
         command = argv[1]
-    capd_command = command.capitalize()
-    if capd_command in ['Get']:
+    command = command.capitalize()
+    if command in COMMANDS:
         log.info("Connecting to server %s" % FLAGS.server)
-        nd = KazooServiceRegistry(server=FLAGS.server)
+        nd = nd_service_registry.KazooServiceRegistry(server=FLAGS.server)
         if FLAGS.username is not None and FLAGS.password is not None:
             nd.set_username(FLAGS.username)
             nd.set_password(FLAGS.password)
         # This works because we've already imported the class above.
-        class_ = globals()[capd_command]
-        instance = class_(nd)
+        command_class = COMMANDS[command]
+        instance = command_class(nd)
         print instance.execute(argv, FLAGS)
     else:
         sys.stderr.write("Unknown command %s" % command)
@@ -104,7 +104,7 @@ def console_entry_point():
             root_logger.addHandler(stdout_handler)
 
         main(argv)
-    except ServiceRegistryException, e:
+    except exceptions.ServiceRegistryException, e:
         # Would recommend that Zookeeper/Kazoo specific error codes be passed
         # through so the exit code could be better evaluated by tools consuming
         # ndsr
