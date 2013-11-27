@@ -48,7 +48,7 @@ To create your initial connection object::
     >>> nd = KazooServiceRegistry()
 
 The KazooServiceRegistry object is a child of nd_service_registry that conforms
-to our ServiceRegistry specs, whlie leveraging Kazoo as the backend. The
+to our ServiceRegistry specs, while leveraging Kazoo as the backend. The
 object handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
 
@@ -155,7 +155,7 @@ Example use in your code::
 Warning: LC_ALL and LANG settings
   Due to an unknown bug, if Django cannot find your LC_ALL LOCALE settings
   (which often default to 'C'), *nd_service_registry* or *kazoo* crash and
-  burn during the init phase. Its uknown why at this point, but we've found
+  burn during the init phase. Its unknown why at this point, but we've found
   that its best to *unset LC_ALL* and set *LANG=en_US:UTF-8* (or some other
   valid setting) before you start up your Django app.
 
@@ -235,7 +235,10 @@ library files.
 Development
 -----------
 
-Unit Tests ::
+Unit Tests
+==========
+
+Running them ::
 
     $ python setup.py test
     running test
@@ -245,5 +248,29 @@ Unit Tests ::
     test_default_data_produces_expected_dict (nd_service_registry.funcs_tests.FuncsTests) ... ok
     test_encode_creates_dict_from_single_string (nd_service_registry.funcs_tests.FuncsTests) ... ok
     Ran 15 tests in 0.108s
+
+    OK
+
+Integration Tests
+=================
+
+Integration tests require you have a Vagrant VM up and running with Zookeeper available. This VM can be easily setup ::
+
+    $ vagrant plugin install vagrant-berkshelf
+    Installing the 'vagrant-berkshelf' plugin. This can take a few minutes...
+    Installed the plugin 'vagrant-berkshelf (1.3.4)'!
+    $ vagrant up
+    ...
+    $ python setup.py integration
+    ...
+    $
+    running integration
+    ...
+    Make sure that the enter/exit functionality works in non-blocking ... ok
+    Test that a blocking Lock works ... ok
+    test_decode_converts_json_to_dict (nd_service_registry.funcs_tests.FuncsTests) ... ok
+
+    ----------------------------------------------------------------------
+    Ran 19 tests in 3.360s
 
     OK
