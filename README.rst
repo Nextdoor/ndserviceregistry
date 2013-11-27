@@ -244,8 +244,6 @@ Unit Tests:
     ...
     test_default_data_produces_expected_dict (nd_service_registry.funcs_tests.FuncsTests) ... ok
     test_encode_creates_dict_from_single_string (nd_service_registry.funcs_tests.FuncsTests) ... ok
-    
-    ----------------------------------------------------------------------
     Ran 15 tests in 0.108s
 
     OK
