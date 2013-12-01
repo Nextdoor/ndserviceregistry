@@ -149,7 +149,6 @@ setup(
     license='Apache License, Version 2.0',
     keywords='zookeeper apache zk',
     obsoletes='ndServiceRegistry',
-    #packages=[PACKAGE, PACKAGE+'.bin', PACKAGE+'.bin.ndsr'],
     packages=find_packages(),
     test_suite='nose.collector',
     tests_require=open('requirements.test.txt').readlines(),

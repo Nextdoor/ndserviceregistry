@@ -1,2 +1,4 @@
 include README.rst
+include requirements.txt
+include requirements.test.txt
 recursive-include extras *
