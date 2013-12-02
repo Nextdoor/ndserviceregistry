@@ -51,9 +51,7 @@ class Pep8Command(Command):
 
     def run(self):
         # Don't import the pep8 module until now because setup.py needs to be
-        # able to instlal Pep8 if its missing.
-        #if subprocess.call(['pep8', '--max-line-length=100', PACKAGE]):
-        #    sys.exit('ERROR: failed pep8 checks')
+        # able to install Pep8 if its missing.
         import pep8
         pep8style = pep8.StyleGuide(parse_argv=True, config_file='pep8.cfg')
         report = pep8style.check_files([PACKAGE])
