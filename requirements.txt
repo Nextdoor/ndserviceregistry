@@ -1,0 +1,4 @@
+kazoo>=1.1
+setuptools
+python-gflags
+pyyaml

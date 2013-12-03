@@ -174,9 +174,10 @@ class nd_service_registry(object):
         Lock objects can be used either directly with their own methods, or as
         a semaphore-style locking object. Eg:
 
+            >>> lock_object = KazooServiceRegistry.get_lock('/foo')
             >>> with lock_object as status:
             ...     if status:
-            ...         <do something>
+            ...         print "got lock"
 
         args:
             path: String representing the lock path
@@ -519,10 +520,11 @@ class KazooServiceRegistry(nd_service_registry):
         # Create our logger
         log.info('Initializing ServiceRegistry object')
 
-        # Kazoo is very noisy by default. We quiet it down and only pay attention
-        # to the most important messages.
+        # Kazoo is very noisy by default. We quiet it down and only pay
+        # attention to the most important messages.
         logging.getLogger('kazoo').setLevel(logging.WARNING)
-        logging.getLogger('kazoo.protocol.connection').addFilter(shims.KazooFilter())
+        logging.getLogger('kazoo.protocol.connection').addFilter(
+            shims.KazooFilter())
 
         # Record the supplied settings
         self._timeout = timeout
@@ -692,7 +694,7 @@ class KazooServiceRegistry(nd_service_registry):
                                    retry_max_delay=10)
 
         # Set up our rate limiting
-        self._zk.set_rate_limiter(time=self._rate_limit_time,
+        self._zk.set_rate_limiter(delay=self._rate_limit_time,
                                   calls=self._rate_limit_calls)
 
         # Get a lock handler

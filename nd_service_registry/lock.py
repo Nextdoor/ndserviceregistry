@@ -36,7 +36,8 @@ class Lock(object):
             zk: Kazoo Zookeeper Connection Object
             path: String path of the lock to get
             name: Optional string name of the final lock object
-            simultaneous: Int number of simultaneous locks to allow at this path
+            simultaneous: Int number of simultaneous locks to allow at
+                          this path
             wait: Int number of seconds to wait for lock before returning
         """
         # Set our local variables
@@ -48,7 +49,10 @@ class Lock(object):
 
         # Create the Lock object in Kazoo. This lock object is used later
         # by our methods, but does not actively lock anything right away.
-        self._lock = self._zk.Semaphore(self._path, self._name, self._simultaneous)
+        self._lock = self._zk.Semaphore(
+            self._path,
+            self._name,
+            self._simultaneous)
 
     def acquire(self):
         """Returns the actual Lock object for direct use by a client.
@@ -81,9 +85,10 @@ class Lock(object):
                 return self._lock.is_acquired
             self._zk.handler.sleep_func(0.1)
 
-        # We're done waiting. Return the current status of the lock and move on.
+        # We're done waiting. Return the current status of the lock and move on
         log.info('[%s] Waited %s(s). Returning lock status %s...' %
-                 (self._path, int(time.time() - begin), self._lock.is_acquired))
+                 (self._path, int(time.time() - begin),
+                  self._lock.is_acquired))
         return self._lock.is_acquired
 
     def release(self):

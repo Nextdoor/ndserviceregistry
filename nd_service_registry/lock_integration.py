@@ -1,7 +1,5 @@
-import nose
 import uuid
 import unittest
-import logging
 import time
 
 from nd_service_registry import KazooServiceRegistry
@@ -14,7 +12,7 @@ class LockTests(unittest.TestCase):
     integration = True
 
     def setUp(self):
-        self.server = 'localhost:2182'
+        self.server = '33.33.33.100:2181'
         self.sandbox = "/tests/locks-%s" % uuid.uuid4().hex
 
     def test_blocking_lock_with(self):

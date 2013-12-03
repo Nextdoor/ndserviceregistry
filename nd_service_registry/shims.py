@@ -39,25 +39,25 @@ class ZookeeperClient(KazooClient):
         # Finish object initialization
         super(ZookeeperClient, self).__init__(*args, **kwargs)
 
-    def set_rate_limiter(self, time=0, calls=0):
+    def set_rate_limiter(self, delay=0, calls=0):
         """Set rate limiting settings.
 
         args:
-            time: Number of seconds to average between ZK requests (int)
+            delay: Number of seconds to average between ZK requests (int)
             calls: Number of calls to determine averages over (int)
         """
 
         # Make sure that if the values are None or False, reset them
-        if not isinstance(time, int):
-            time=0
+        if not isinstance(delay, int):
+            delay = 0
         if not isinstance(calls, int):
-            calls=0
+            calls = 0
 
         log.debug('Set up rate limiting. Max %s avg between last %s calls.' %
-                  (calls, time))
+                  (calls, delay))
         self.previous_calls = []
         self.num_calls_to_average_over = calls
-        self.target_avg_between_calls = time
+        self.target_avg_between_calls = delay
 
     def rate_limiter(func):
         """Provides a decorator for rate-limiting function.
@@ -84,7 +84,8 @@ class ZookeeperClient(KazooClient):
                 # self.num_calls_to_average_over is 10, check how
                 # much time has elapsed between this call, and the
                 # call 10-calls ago.
-                elapsed = (time.time() -
+                elapsed = (
+                    time.time() -
                     self.previous_calls[-self.num_calls_to_average_over])
 
                 # Now get a rough average amount of time between the calls
@@ -97,8 +98,9 @@ class ZookeeperClient(KazooClient):
                 # self.target_avg_between_calls then we trigger throttling.
                 if avg_between_calls < self.target_avg_between_calls:
                     log.warning('[%s] Too little time between last %s calls '
-                                'for func. Throttling.' % (func.__name__,
-                                self.num_calls_to_average_over))
+                                'for func. Throttling.' %
+                                (func.__name__,
+                                 self.num_calls_to_average_over))
                     throttle = True
 
             # If we're going to throttle, determine how long to wait

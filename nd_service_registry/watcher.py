@@ -19,19 +19,11 @@ Copyright 2012 Nextdoor Inc."""
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
-import threading
-import time
-import sys
-
-from os.path import split
 
 from nd_service_registry import funcs
 
 # For KazooServiceRegistry Class
 import kazoo.exceptions
-
-# Our default variables
-from version import __version__ as VERSION
 
 TIMEOUT = 30
 
