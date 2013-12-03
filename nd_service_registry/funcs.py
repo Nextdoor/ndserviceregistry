@@ -91,6 +91,7 @@ def decode(data):
         try:
             data = json.loads(s)
         except Exception:
+            # TODO(mwise): Change this to catch the expected exception only.
             data = dict(string_value=data)
     else:
         data = dict(string_value=data)
