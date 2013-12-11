@@ -62,6 +62,22 @@ class GetTests(unittest.TestCase):
                                     separators=(',', ': '))
 
     @patch('nd_service_registry.KazooServiceRegistry')
+    def test_creates_simple_dir_outputformat(self, mock_kazoo_class):
+        retval = {'path': '/foo'}
+        mock_kazoo_class.get.return_value = retval
+        fauxGflags = type('foo', (object,),
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "dir",
+                           "data": False,
+                           "recursive": False})
+        get = Get(mock_kazoo_class)
+        output = get.execute([], fauxGflags)
+        assert output == "/foo"
+
+    @patch('nd_service_registry.KazooServiceRegistry')
     def test_yaml_includes_data_on_data_flag(self, mock_kazoo_class):
         retval = {'path': '/foo', 'data': {'foo': 'bar'}}
         mock_kazoo_class.get.return_value = retval
@@ -95,6 +111,22 @@ class GetTests(unittest.TestCase):
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
+
+    @patch('nd_service_registry.KazooServiceRegistry')
+    def test_dir_includes_data_on_data_flag(self, mock_kazoo_class):
+        retval = {'path': '/foo', 'data': {'foo': 'bar'}}
+        mock_kazoo_class.get.return_value = retval
+        fauxGflags = type('foo', (object,),
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "dir",
+                           "data": True,
+                           "recursive": False})
+        get = Get(mock_kazoo_class)
+        output = get.execute([], fauxGflags)
+        assert output == "/foo"
 
     @patch('nd_service_registry.KazooServiceRegistry')
     def test_yaml_includes_children_on_recursive_flag(self, mock_kazoo_class):
@@ -150,6 +182,32 @@ class GetTests(unittest.TestCase):
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
+
+    @patch('nd_service_registry.KazooServiceRegistry')
+    def test_dir_includes_children_on_recursive_flag(self, mock_kazoo_class):
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
+        foobar = {'path': '/foo/bar', 'data': {'bar': 'baz'}}
+
+        def side_effect(arg):
+            arg_value_dict = {'/': foo, '/foo/bar': foobar}
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
+        fauxGflags = type('foo', (object,),
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "dir",
+                           "data": False,
+                           "recursive": True})
+        get = Get(mock_kazoo_class)
+        output = get.execute([], fauxGflags)
+        assert output == "/foo\n/foo/bar"
 
     @patch('nd_service_registry.KazooServiceRegistry')
     def test_yaml_includes_grandchildren_on_recursive_flag(self,
@@ -249,3 +307,39 @@ class GetTests(unittest.TestCase):
         output = get.execute([], fauxGflags)
         assert output == json.dumps(expected, sort_keys=True, indent=4,
                                     separators=(',', ': '))
+
+    @patch('nd_service_registry.KazooServiceRegistry')
+    def test_dir_includes_grandchildren_on_recursive_flag(self,
+                                                          mock_kazoo_class):
+        foo = {
+            'path': '/foo',
+            'data': {'foo': 'bar'},
+            'children': {'bar': {'foo': 'bar'}}
+        }
+        foobar = {
+            'path': '/foo/bar',
+            'data': {'bar': 'baz'},
+            'children': {'baz': 'foo'}
+        }
+        foobarbaz = {'path': '/foo/bar/baz'}
+
+        def side_effect(arg):
+            arg_value_dict = {
+                '/': foo,
+                '/foo/bar': foobar,
+                '/foo/bar/baz': foobarbaz
+            }
+            return arg_value_dict[arg]
+
+        mock_kazoo_class.get.side_effect = side_effect
+        fauxGflags = type('foo', (object,),
+                          {"quiet": True,
+                           "server": None,
+                           "username": None,
+                           "password": None,
+                           "outputformat": "dir",
+                           "data": False,
+                           "recursive": True})
+        get = Get(mock_kazoo_class)
+        output = get.execute([], fauxGflags)
+        assert output == "/foo\n/foo/bar\n/foo/bar/baz"
