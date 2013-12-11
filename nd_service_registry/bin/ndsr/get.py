@@ -70,11 +70,12 @@ class Get(object):
 
     def __extract_paths(self, d, paths=[]):
         """Extract directory paths from the given nested dicts and lists"""
-        for k, v in d.iteritems():
-            if k.startswith('/') and isinstance(v, dict):
-                paths = self.__extract_paths(v, paths + [k.replace('//', '/')])
-            elif k == 'children' and isinstance(v, list):
-                for list_item in v:
+        for key, val in d.iteritems():
+            if key.startswith('/') and isinstance(val, dict):
+                paths = self.__extract_paths(val,
+                                             paths + [key.replace('//', '/')])
+            elif key == 'children' and isinstance(val, list):
+                for list_item in val:
                     paths = self.__extract_paths(list_item, paths)
 
         return paths
