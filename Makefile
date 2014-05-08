@@ -19,10 +19,10 @@ build:
 clean:
 	rm -rf $(BUILD_DIRS)
 
-test:
+test: build
 	python setup.py test pep8 pyflakes
 
-integration: $(ZOOKEEPER)
+integration: build $(ZOOKEEPER)
 	ZOOKEEPER_PATH=$(ZOOKEEPER_PATH) python setup.py integration pep8 pyflakes
 
 $(ZOOKEEPER):
