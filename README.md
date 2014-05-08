@@ -20,17 +20,17 @@ on your own app development more.
 
 ## Installation
 
-To install, run ::
+To install, run
 
     python setup.py install
 
-or ::
+or
 
     pip install nd_service_registry
 
 ## Instantiating a KazooServiceRegistry module
 
-Create a logger object::
+Create a logger object
 
     >>> import logging
     >>> logger = logging.getLogger()
@@ -38,7 +38,7 @@ Create a logger object::
     >>> handler = logging.StreamHandler()
     >>> logger.addHandler(handler)
 
-To create your initial connection object::
+To create your initial connection object
 
     >>> from nd_service_registry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
@@ -50,11 +50,11 @@ or monitor the connection state at all.
 
 ## Basic use
 
-To register the host as providing a particular service::
+To register the host as providing a particular service
 
     >>> nd.set_node('/services/ssh/server1:22', data={ 'foo': 'bar'})
 
-Getting a list of servers at a path::
+Getting a list of servers at a path
 
     >>> nd.get('/services/ssh')
     {'children': {u'server1:22': {u'foo': u'bar',
@@ -71,7 +71,7 @@ Getting a list of servers at a path::
 
 One of Zookeepers great features is using it as a global lock manager. We provide
 two models for getting a lock. In one model, your lock is only active as long as
-your code is running::
+your code is running
 
     >>> with nd.get_lock('/foo', simultaneous=1):
     ...      <do some work>
@@ -80,7 +80,7 @@ your code is running::
 
 Another example is explicitly locking a path for some period of time, then
 releasing it explicitly (eg, locking during one method, and waiting for an
-entirely different method to handle the unlock)::
+entirely different method to handle the unlock)
 
     >>> nd.acquire_lock('/foo', simultaneous=1)
     >>> <do your work... >
@@ -91,7 +91,7 @@ entirely different method to handle the unlock)::
 We wrote this code to be easy to use in Django. Here's a (very brief) version
 of the module we use in Django to simplify use of *nd_service_registry*.
 
-<your django tree>/foo/service_registry_utils.py::
+<your django tree>/foo/service_registry_utils.py
 
     import nd_service_registry, time
     from django.conf import settings
@@ -124,7 +124,7 @@ of the module we use in Django to simplify use of *nd_service_registry*.
             time.sleep(0.1)
         return get_service_registry().get(path, callback=callback)
 
-Example use in your code ::
+Example use in your code 
 
     >>> from nextdoor import service_registry_utils
     >>> def do_something(data):
@@ -155,7 +155,7 @@ Warning: LC\_ALL and LANG settings
 
   If you use uWSGI, set them in your uWSGI config file.
 
-  Running the Django shell::
+  Running the Django shell
 
       # unset LC_ALL; LANG=en_US:UTF-8 python manage.py shell
 
@@ -184,7 +184,7 @@ call to them.
 
 Because of this, I strongly recommend that if you can detect the fork from
 within your application (Django signals perhaps?), you should immediately call
-the *rebuild()* method on your ServiceRegistry object.::
+the *rebuild()* method on your ServiceRegistry object.
 
     >>> from nd_service_registry import KazooServiceRegistry
     >>> k = KazooServiceRegistry()
@@ -229,7 +229,7 @@ library files.
 
 ### Unit Tests
 
-Running them ::
+Running them
 
     $ python setup.py test
     running test
@@ -245,7 +245,7 @@ Running them ::
 ### Integration Tests
 
 Ingegration tests download and install Zookeeper in a temporary path in your
-workspace.  They can be executed like this ::
+workspace.  They can be executed like this
 
     $ make integration
     running integration
