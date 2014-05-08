@@ -88,5 +88,5 @@ class LockTests(KazooTestHarness):
         self.assertFalse(lock2.status())
         self.assertTrue((time.time() - begin) >= 2)
 
-        #lock1.release()  # waiting for fix from Kazoo guys
+        # lock1.release()  # waiting for fix from Kazoo guys
         lock2.release()
