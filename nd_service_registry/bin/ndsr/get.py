@@ -68,6 +68,18 @@ class Get(object):
 
         return output
 
+    def __extract_paths(self, d, paths=[]):
+        """Extract directory paths from the given nested dicts and lists"""
+        for key, val in d.iteritems():
+            if key.startswith('/') and isinstance(val, dict):
+                paths = self.__extract_paths(val,
+                                             paths + [key.replace('//', '/')])
+            elif key == 'children' and isinstance(val, list):
+                for list_item in val:
+                    paths = self.__extract_paths(list_item, paths)
+
+        return paths
+
     def execute(self, argv, gflags):
         """Makes the appropriate nd_service_registry query for the provided
         path and returns a string in the
@@ -94,5 +106,7 @@ class Get(object):
         elif gflags.outputformat == 'json':
             return json.dumps(output, sort_keys=True, indent=4,
                               separators=(',', ': '))
+        elif gflags.outputformat == 'dir':
+            return '\n'.join(self.__extract_paths(output))
         else:
             return "No output format selected"
