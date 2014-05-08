@@ -1,19 +1,23 @@
 import uuid
-import unittest
 import time
 
+from kazoo.testing import KazooTestHarness
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.lock import Lock
 
 
-class LockTests(unittest.TestCase):
+class LockTests(KazooTestHarness):
 
     # A flag for filtering nose tests
     integration = True
 
     def setUp(self):
-        self.server = '33.33.33.100:2181'
+        self.setup_zookeeper()
+        self.server = 'localhost:20000'
         self.sandbox = "/tests/locks-%s" % uuid.uuid4().hex
+
+    def tearDown(self):
+        self.teardown_zookeeper()
 
     def test_blocking_lock_with(self):
         """Make sure that the enter/exit functionality works."""

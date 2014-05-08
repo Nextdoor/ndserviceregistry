@@ -88,7 +88,7 @@ class UnitTestCommand(Command):
     description = 'Run unit tests'
     user_options = []
     args = ['--with-coverage',
-            '--cover-package=nd_status_dashboard',
+            '--cover-package=nd_service_registry',
             '-v']
 
     def initialize_options(self):
@@ -108,7 +108,7 @@ class UnitTestCommand(Command):
 class IntegrationTestCommand(UnitTestCommand):
     description = 'Run full integration tests and unit tests'
     args = ['--with-coverage',
-            '--cover-package=nd_status_dashboard',
+            '--cover-package=nd_service_registry',
             '-v',
             '--include=integration']
 

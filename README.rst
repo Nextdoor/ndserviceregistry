@@ -254,16 +254,10 @@ Running them ::
 Integration Tests
 =================
 
-Integration tests require you have a Vagrant VM up and running with Zookeeper available. This VM can be easily setup ::
+Ingegration tests download and install Zookeeper in a temporary path in your
+workspace.  They can be executed like this ::
 
-    $ vagrant plugin install vagrant-berkshelf
-    Installing the 'vagrant-berkshelf' plugin. This can take a few minutes...
-    Installed the plugin 'vagrant-berkshelf (1.3.4)'!
-    $ vagrant up
-    ...
-    $ python setup.py integration
-    ...
-    $
+    $ make integration
     running integration
     ...
     Make sure that the enter/exit functionality works in non-blocking ... ok
