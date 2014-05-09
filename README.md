@@ -1,6 +1,4 @@
-===================
-nd_service_registry
-===================
+# nd_service_registry
 
 *nd_service_registry* is a Python module that provides a simple way to leverage
 *Apache Zookeeper* as a dynamic configuration and service registry.
@@ -11,30 +9,28 @@ Zookeeper.
 
 The current use cases are:
 
-* Register a server providing a service
-* Retrieve a list of servers providing a particular service
-* Execute callback methods whenever a service list changes
+ * Register a server providing a service
+ * Retrieve a list of servers providing a particular service
+ * Execute callback methods whenever a service list changes
 
 The main benefit of using this module is if you have several different tools
 in your network that all need to interact with Zookeeper in a common way. The
 most common functions are handled in this singular module allowing you to focus
 on your own app development more.
 
-Installation
-------------
+## Installation
 
-To install, run ::
+To install, run
 
     python setup.py install
 
-or ::
+or
 
     pip install nd_service_registry
 
-Instantiating a KazooServiceRegistry module
--------------------------------------------
+## Instantiating a KazooServiceRegistry module
 
-Create a logger object::
+Create a logger object
 
     >>> import logging
     >>> logger = logging.getLogger()
@@ -42,7 +38,7 @@ Create a logger object::
     >>> handler = logging.StreamHandler()
     >>> logger.addHandler(handler)
 
-To create your initial connection object::
+To create your initial connection object
 
     >>> from nd_service_registry import KazooServiceRegistry
     >>> nd = KazooServiceRegistry()
@@ -52,14 +48,13 @@ to our ServiceRegistry specs, while leveraging Kazoo as the backend. The
 object handles all of your connection states - there is no need to start/stop
 or monitor the connection state at all.
 
-Basic use
----------
+## Basic use
 
-To register the host as providing a particular service::
+To register the host as providing a particular service
 
     >>> nd.set_node('/services/ssh/server1:22', data={ 'foo': 'bar'})
 
-Getting a list of servers at a path::
+Getting a list of servers at a path
 
     >>> nd.get('/services/ssh')
     {'children': {u'server1:22': {u'foo': u'bar',
@@ -72,13 +67,11 @@ Getting a list of servers at a path::
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=1, pzxid=7)}
 
-
-Locks
------
+## Locks
 
 One of Zookeepers great features is using it as a global lock manager. We provide
 two models for getting a lock. In one model, your lock is only active as long as
-your code is running::
+your code is running
 
     >>> with nd.get_lock('/foo', simultaneous=1):
     ...      <do some work>
@@ -87,19 +80,18 @@ your code is running::
 
 Another example is explicitly locking a path for some period of time, then
 releasing it explicitly (eg, locking during one method, and waiting for an
-entirely different method to handle the unlock)::
+entirely different method to handle the unlock)
 
     >>> nd.acquire_lock('/foo', simultaneous=1)
     >>> <do your work... >
     >>> nd.release_lock('/foo')
 
-Django use
-----------
+## Django use
 
 We wrote this code to be easy to use in Django. Here's a (very brief) version
 of the module we use in Django to simplify use of *nd_service_registry*.
 
-<your django tree>/foo/service_registry_utils.py::
+<your django tree>/foo/service_registry_utils.py
 
     import nd_service_registry, time
     from django.conf import settings
@@ -132,7 +124,7 @@ of the module we use in Django to simplify use of *nd_service_registry*.
             time.sleep(0.1)
         return get_service_registry().get(path, callback=callback)
 
-Example use in your code::
+Example use in your code 
 
     >>> from nextdoor import service_registry_utils
     >>> def do_something(data):
@@ -152,54 +144,54 @@ Example use in your code::
                                    }
                        }
 
-Warning: LC_ALL and LANG settings
-  Due to an unknown bug, if Django cannot find your LC_ALL LOCALE settings
+Warning: LC\_ALL and LANG settings
+  Due to an unknown bug, if Django cannot find your LC\_ALL LOCALE settings
   (which often default to 'C'), *nd_service_registry* or *kazoo* crash and
   burn during the init phase. Its unknown why at this point, but we've found
-  that its best to *unset LC_ALL* and set *LANG=en_US:UTF-8* (or some other
+  that its best to *unset LC\_ALL* and set *LANG=en_US:UTF-8* (or some other
   valid setting) before you start up your Django app.
 
   If you use Celery, set these options in */etc/default/celeryd*.
 
   If you use uWSGI, set them in your uWSGI config file.
 
-  Running the Django shell::
+  Running the Django shell
 
       # unset LC_ALL; LANG=en_US:UTF-8 python manage.py shell
 
 
-Connection Handling
--------------------
+## Connection Handling
 
 The ServiceRegistry object tries everything that it can to make sure that
 the backend Zookeeper connection is always up and running.
 
-Fork Behavior
-  In the event that your code has created an ServiceRegistry object but then
-  gone and forked the process (celery, as an example), we do our best to
-  detect this and re-create the connection, watchers and registrations.
+### Fork Behavior
 
-  When we detect a fork (more on that below), we re-create our Zookeeper
-  connection, and then re-create all Watcher and Registration objects as well.
+In the event that your code has created an ServiceRegistry object but then
+gone and forked the process (celery, as an example), we do our best to
+detect this and re-create the connection, watchers and registrations.
 
-Fork Detection
-  Detecting the fork is extremely tricky... we can only really detect it when
-  you call the module for new data. This means that if you have created a
-  Watcher or Registration object, those objects will not be aware of the fork
-  (and thus the loss of their connection to Zookeeper) until you make another
-  call to them.
+When we detect a fork (more on that below), we re-create our Zookeeper
+connection, and then re-create all Watcher and Registration objects as well.
 
-  Because of this, I strongly recommend that if you can detect the fork from
-  within your application (Django signals perhaps?), you should immediately call
-  the *rebuild()* method on your ServiceRegistry object.::
+### Fork Detection
 
-      >>> from nd_service_registry import KazooServiceRegistry
-      >>> k = KazooServiceRegistry()
-      >>> do_fork()
-      >>> k.rebuild()
+Detecting the fork is extremely tricky... we can only really detect it when
+you call the module for new data. This means that if you have created a
+Watcher or Registration object, those objects will not be aware of the fork
+(and thus the loss of their connection to Zookeeper) until you make another
+call to them.
 
-Exceptions
-----------
+Because of this, I strongly recommend that if you can detect the fork from
+within your application (Django signals perhaps?), you should immediately call
+the *rebuild()* method on your ServiceRegistry object.
+
+    >>> from nd_service_registry import KazooServiceRegistry
+    >>> k = KazooServiceRegistry()
+    >>> do_fork()
+    >>> k.rebuild()
+
+## Exceptions
 
 The goal of this module is to be as self-contained as possible and require
 as little code in your app as possible. To that end, we *almost never* raise
@@ -210,35 +202,34 @@ can though, we instead just *return False* as a way of indicating that we were
 unable to perform your command now ... but that we will take care of it later.
 Whenever we do this, we throw a WARNING log message as well.
 
-nd_service_registry.exceptions.NoConnection
-    Thrown if you attempt any operation that requires immediate access to the
-    backend Zookeeper service. Either a *set()* operation, or a *get()*
-    operation on a path for the first time.
+### nd\_service\_registry.exceptions.NoConnection
 
-    Also thrown during initial connection to Zookeeper, if *lazy=False*.
+Thrown if you attempt any operation that requires immediate access to the
+backend Zookeeper service. Either a *set()* operation, or a *get()*
+operation on a path for the first time.
 
-    (It should be noted, a *get()* will actually return the cached results even
-    if Zookeeper is down. This allows the service to fail temporarily in the
-    background but your app is still able to get the *last known* results.)
+Also thrown during initial connection to Zookeeper, if *lazy=False*.
 
-nd_service_registry.exceptions.ReadOnly
-    If *readonly=True*, any operation that would result in a *write* will throw
-    this exception. Most notably, a *set()* operation will fail with this
-    exception if *readonly=True*.
+(It should be noted, a *get()* will actually return the cached results even
+if Zookeeper is down. This allows the service to fail temporarily in the
+background but your app is still able to get the *last known* results.)
 
-API Documentation
------------------
+### nd\_service\_registry.exceptions.ReadOnly
+
+If *readonly=True*, any operation that would result in a *write* will throw
+this exception. Most notably, a *set()* operation will fail with this
+exception if *readonly=True*.
+
+## API Documentation
 
 Detailed implementation details and instructions are in the individual
 library files.
 
-Development
------------
+## Development
 
-Unit Tests
-==========
+### Unit Tests
 
-Running them ::
+Running them
 
     $ python setup.py test
     running test
@@ -251,19 +242,12 @@ Running them ::
 
     OK
 
-Integration Tests
-=================
+### Integration Tests
 
-Integration tests require you have a Vagrant VM up and running with Zookeeper available. This VM can be easily setup ::
+Ingegration tests download and install Zookeeper in a temporary path in your
+workspace.  They can be executed like this
 
-    $ vagrant plugin install vagrant-berkshelf
-    Installing the 'vagrant-berkshelf' plugin. This can take a few minutes...
-    Installed the plugin 'vagrant-berkshelf (1.3.4)'!
-    $ vagrant up
-    ...
-    $ python setup.py integration
-    ...
-    $
+    $ make integration
     running integration
     ...
     Make sure that the enter/exit functionality works in non-blocking ... ok

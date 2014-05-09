@@ -135,7 +135,7 @@ def save_dict(data, path):
         cache = pickle.load(open(path, 'rb'))
     except (IOError, EOFError), e:
         log.warning('Could not load existing cache (%s): %s' %
-                   (path, e))
+                    (path, e))
 
     # Join our existing disk cache with the in-memory cache and save the whole
     # bundle.

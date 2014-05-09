@@ -226,7 +226,7 @@ class nd_service_registry(object):
             True: The lock has been released
             False: The lock is still in place
         """
-        if not path in self._locks:
+        if path not in self._locks:
             log.debug('Did not find [%s] in our stored lock cache.' % path)
             return True
 
@@ -332,7 +332,7 @@ class nd_service_registry(object):
                 'Unable to load cachefile.')
 
         # Make sure that the path was cached.
-        if not path in cache:
+        if path not in cache:
             raise exceptions.ServiceRegistryException(
                 '[%s] not found in cachefile.' % path)
 
@@ -784,7 +784,7 @@ class KazooServiceRegistry(nd_service_registry):
 
                 log.debug('Credentials were supplied, adding auth.')
                 self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
-                              (self._username, self._password))
+                               (self._username, self._password))
 
                 if not self._acl:
                     self._acl = (ACL, READONLY_ACL)

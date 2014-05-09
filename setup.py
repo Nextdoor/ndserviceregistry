@@ -87,8 +87,9 @@ class PyflakesCommand(Command):
 class UnitTestCommand(Command):
     description = 'Run unit tests'
     user_options = []
-    args = ['--with-coverage',
-            '--cover-package=nd_status_dashboard',
+    args = [PACKAGE,
+            '--with-coverage',
+            '--cover-package=%s' % PACKAGE,
             '-v']
 
     def initialize_options(self):
@@ -102,13 +103,14 @@ class UnitTestCommand(Command):
         val = nose.run(argv=self.args)
 
         if not val:
-            sys.exit('ERROR:Integration tests failed')
+            sys.exit('ERROR:Tests failed')
 
 
 class IntegrationTestCommand(UnitTestCommand):
     description = 'Run full integration tests and unit tests'
-    args = ['--with-coverage',
-            '--cover-package=nd_status_dashboard',
+    args = [PACKAGE,
+            '--with-coverage',
+            '--cover-package=%s' % PACKAGE,
             '-v',
             '--include=integration']
 
@@ -128,7 +130,7 @@ class SourceDistHook(sdist):
     def run(self):
         with open('version.rst', 'w') as f:
             f.write(':Version: %s\n' % __version__)
-        shutil.copy('README.rst', 'README')
+        shutil.copy('README.md', 'README')
         sdist.run(self)
         os.unlink('MANIFEST')
         os.unlink('README')
@@ -139,7 +141,7 @@ setup(
     name=PACKAGE,
     version=__version__,
     description='Nextdoor Service Registry Module',
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     author='Nextdoor Engineering',
     author_email='eng@nextdoor.com',
     url='https://github.com/Nextdoor/ndserviceregistry',
