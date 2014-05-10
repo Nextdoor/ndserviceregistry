@@ -67,12 +67,16 @@ log = logging.getLogger(__name__)
 
 
 class RegistrationBase(object):
-    """An object that registers a znode with ZooKeeper."""
+    """Base object model for registering data in Zookeeper.
+
+    This object is not meant to be used directly -- its not complete, and
+    will not behave properly. It is simply a shell that other data types can
+    subclass."""
 
     GENERAL_EXC_MSG = ('[%s] Received exception. Moving on.'
                        ' Will not re-attempt this command: %s')
 
-    def __init__(self, zk, path, data=None, state=True, ephemeral=False):
+    def __init__(self, zk, path, data=None, state=False, ephemeral=False):
         # Set our local variables
         self._ephemeral = ephemeral
         self._zk = zk
@@ -92,7 +96,7 @@ class RegistrationBase(object):
 
     def data(self):
         """Returns live node data from Watcher object."""
-        return self._watcher.data()
+        return self._watcher.get()['data']
 
     def get(self):
         """Returns live node information from Watcher object."""
@@ -153,7 +157,6 @@ class RegistrationBase(object):
             log.debug('[%s] Got updated state: %s' % (self._path, state))
             self.set_state(state)
 
-
     def _update_state(self, state):
         if state is True:
             # Register our connection with zookeeper
@@ -188,7 +191,6 @@ class RegistrationBase(object):
                 log.error(RegistrationBase.GENERAL_EXC_MSG % (
                     self._path, e))
 
-
     def _update_data(self):
         try:
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
@@ -198,7 +200,7 @@ class RegistrationBase(object):
             log.error('[%s] No authorization to set node.' % self._path)
         except Exception, e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                    self._path, e))
+                      self._path, e))
 
 
 class EphemeralNode(RegistrationBase):
@@ -207,7 +209,6 @@ class EphemeralNode(RegistrationBase):
     The node registered with Zookeeper is ephemeral, so if we lose our
     connection to the service, we have to re-register the data."""
 
-    LOGGING = 'nd_service_registry.Registration.EphemeralNode'
     GENERAL_EXC_MSG = ('[%s] Received exception. Moving on, will re-attempt '
                        'when Watcher notifies us of a state change: %s')
 
@@ -258,8 +259,6 @@ class DataNode(RegistrationBase):
     """This is an registry object that we register arbitrary data and monitor.
 
     The node registered with Zookeeper is not ephemeral."""
-
-    LOGGING = 'nd_service_registry.Registration.DataNode'
 
     def __init__(self, zk, path, data=None, state=True):
         RegistrationBase.__init__(self, zk, path, data,
