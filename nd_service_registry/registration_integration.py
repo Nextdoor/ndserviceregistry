@@ -1,12 +1,10 @@
 import uuid
 import time
-import threading
 
 from kazoo.testing import KazooTestHarness
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.registration import RegistrationBase
 from nd_service_registry.registration import EphemeralNode
-from nd_service_registry.registration import DataNode
 
 
 def waituntil(predicate, predicate_start_value, timeout, period=0.25):
@@ -93,7 +91,6 @@ class RegistrationBaseTests(KazooTestHarness):
 
         # Test disabling the node through the update() method
         current_data = reg1.data()
-        current_state = reg1.state()
         reg1.update(None, False)
         waituntil(reg1.data, current_data, 5)
         self.assertFalse(reg1.state())
