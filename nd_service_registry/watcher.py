@@ -135,6 +135,8 @@ class Watcher(object):
                 log.debug('[%s] Node is registered.' % self._path)
             except kazoo.exceptions.NoNodeError:
                 log.debug('[%s] Node is not registered.' % self._path)
+            except kazoo.exceptions.ConnectionClosedError:
+                log.debug('[%s] Node connection closed.' % self._path)
 
             self._data = funcs.decode(data)
             self._stat = stat
