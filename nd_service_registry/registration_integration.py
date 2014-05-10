@@ -13,7 +13,7 @@ def waituntil(predicate, predicate_start_value, timeout, period=0.25):
     mustend = time.time() + timeout
     while time.time() < mustend:
         if not predicate() == predicate_start_value:
-            print "FUCKER %s" % predicate()
+            print "Exiting timer, %s changed..." % predicate
             return True
         print "Sleeping, waiting for %s to change..." % predicate
         time.sleep(period)
