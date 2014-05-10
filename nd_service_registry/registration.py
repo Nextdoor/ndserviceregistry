@@ -28,9 +28,10 @@ Args:
           if applicable)
     data: (dict/string) Data to apply to the supplied path
     state: (Boolean) whether to create, or delete the path from ZooKeeper
+    ephemeral: (Boolean) whether to create an ephemeral node, default: False
 
 Example:
-    Register a new node:
+    Register a new Ephemeral node:
     >>> r = EphemeralNode(zk, '/services/ssh/foo:123', 'my data', True)
     >>> r.data()
     {u'pid': 8364, u'string_value': u'my data',
@@ -65,8 +66,11 @@ TIMEOUT = 30
 log = logging.getLogger(__name__)
 
 
-class Registration(object):
+class RegistrationBase(object):
     """An object that registers a znode with ZooKeeper."""
+
+    GENERAL_EXC_MSG = ('[%s] Received exception. Moving on.'
+                       ' Will not re-attempt this command: %s')
 
     def __init__(self, zk, path, data=None, state=True, ephemeral=False):
         # Set our local variables
@@ -81,11 +85,10 @@ class Registration(object):
         self._encoded_data = funcs.encode(data)
         self._decoded_data = funcs.decode(self._encoded_data)
 
-        # Make sure that we have a watcher on the path we care about
+        # Set a default watcher without a callback.
         self._watcher = Watcher(self._zk,
                                 path=self._path,
-                                watch_children=False,
-                                callback=self._update)
+                                watch_children=False)
 
     def data(self):
         """Returns live node data from Watcher object."""
@@ -100,26 +103,11 @@ class Registration(object):
 
         Args:
             data: String or Dict of data to register with this object."""
-
         if not data == self._data:
             self._data = data
             self._encoded_data = funcs.encode(data)
             self._decoded_data = funcs.decode(self._encoded_data)
             self._update_data()
-
-    def _update_data(self):
-        try:
-            self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
-            log.debug('[%s] Updated with data: %s' %
-                      (self._path, self._encoded_data))
-        except kazoo.exceptions.NoAuthError, e:
-            log.error('[%s] No authorization to set node.' % self._path)
-            pass
-        except Exception, e:
-            log.error('[%s] Received exception. Moving on, will re-attempt '
-                      'when Watcher notifies us of a state change: %s ' %
-                      (self._path, e))
-            pass
 
     def stop(self):
         """Disables our registration of the node."""
@@ -149,6 +137,23 @@ class Registration(object):
         self._state = state
         self._update_state(self._state)
 
+    def update(self, data=None, state=None):
+        """If data or state are supplied, these are updated before triggering
+        the update.
+
+        Args:
+            data: (String/Dict) data to register with this object.
+            state: (Boolean) whether to register or unregister this object
+        """
+        if data:
+            log.debug('[%s] Got updated data: %s' % (self._path, data))
+            self.set_data(data)
+
+        if type(state) is bool:
+            log.debug('[%s] Got updated state: %s' % (self._path, state))
+            self.set_state(state)
+
+
     def _update_state(self, state):
         if state is True:
             # Register our connection with zookeeper
@@ -159,20 +164,16 @@ class Registration(object):
                                ephemeral=self._ephemeral, makepath=True)
                 log.info('[%s] Registered with data: %s' %
                          (self._path, self._encoded_data))
-                pass
             except kazoo.exceptions.NodeExistsError, e:
                 # Node exists ... possible this callback got called multiple
                 # times
                 pass
             except kazoo.exceptions.NoAuthError, e:
                 log.error('[%s] No authorization to create node.' % self._path)
-                pass
             except Exception, e:
-                log.error('[%s] Received exception. Moving on, will '
-                          're-attempt when Watcher notifies us of a '
-                          'state change: %s ' % (self._path, e))
-                pass
-            pass
+                log.error(RegistrationBase.GENERAL_EXC_MSG % (
+                    self._path, e))
+
         elif state is False:
             # Try to delete the node
             log.debug('[%s] Attempting de-registration...' % self._path)
@@ -183,32 +184,43 @@ class Registration(object):
                 # it. We certainly will not have access then to change it below
                 # so return false. We'll retry again very soon.
                 log.error('[%s] No authorization to delete node.' % self._path)
-                pass
             except Exception, e:
-                log.error('[%s] Received exception. Moving on, will '
-                          're-attempt when Watcher notifies us of a '
-                          'state change: %s ' % (self._path, e))
-                pass
-            return
+                log.error(RegistrationBase.GENERAL_EXC_MSG % (
+                    self._path, e))
 
-    def update(self, data=None, state=None):
-        """Triggers near-immediate run of the self._update() function.
 
-        If data or state are supplied, these are updated before triggering the
-        update.
+    def _update_data(self):
+        try:
+            self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
+            log.debug('[%s] Updated with data: %s' %
+                      (self._path, self._encoded_data))
+        except kazoo.exceptions.NoAuthError, e:
+            log.error('[%s] No authorization to set node.' % self._path)
+        except Exception, e:
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (
+                    self._path, e))
 
-        Args:
-            data: (String/Dict) data to register with this object.
-            state: (Boolean) whether to register or unregister this object
-        """
 
-        if data:
-            log.debug('[%s] Got updated data: %s' % (self._path, data))
-            self.set_data(data)
+class EphemeralNode(RegistrationBase):
+    """This is a node-specific ephemeral object that we register and monitor.
 
-        if type(state) is bool:
-            log.debug('[%s] Got updated state: %s' % (self._path, state))
-            self.set_state(state)
+    The node registered with Zookeeper is ephemeral, so if we lose our
+    connection to the service, we have to re-register the data."""
+
+    LOGGING = 'nd_service_registry.Registration.EphemeralNode'
+    GENERAL_EXC_MSG = ('[%s] Received exception. Moving on, will re-attempt '
+                       'when Watcher notifies us of a state change: %s')
+
+    def __init__(self, zk, path, data=None, state=True):
+        """Sets the ZooKeeper registration up to be ephemeral.
+
+        Sets ephemeral=True when we register the Zookeeper node, and
+        initiates a simple thread that monitors whether or not our node
+        registration has been lost. If it has, it re-registers it."""
+
+        RegistrationBase.__init__(self, zk, path, data,
+                                  state=state, ephemeral=True)
+        self._watcher.add_callback(self._update)
 
     def _update(self, data):
         """Registers a supplied node (full path and nodename)."""
@@ -233,25 +245,6 @@ class Registration(object):
                         self._path)
             self._update_data()
 
-
-class EphemeralNode(Registration):
-    """This is a node-specific ephemeral object that we register and monitor.
-
-    The node registered with Zookeeper is ephemeral, so if we lose our
-    connection to the service, we have to re-register the data."""
-
-    LOGGING = 'nd_service_registry.Registration.EphemeralNode'
-
-    def __init__(self, zk, path, data, state=True):
-        """Sets the ZooKeeper registration up to be ephemeral.
-
-        Sets ephemeral=True when we register the Zookeeper node, and
-        initiates a simple thread that monitors whether or not our node
-        registration has been lost. If it has, it re-registers it."""
-
-        Registration.__init__(self, zk, path, data,
-                              state=state, ephemeral=True)
-
     def stop(self):
         """De-registers from Zookeeper, then calls SuperClass stop() method."""
         # Set our state to disabled to force the de-registration of our node
@@ -259,3 +252,32 @@ class EphemeralNode(Registration):
 
         # Call our super class stop()
         return super(EphemeralNode, self).stop()
+
+
+class DataNode(RegistrationBase):
+    """This is an registry object that we register arbitrary data and monitor.
+
+    The node registered with Zookeeper is not ephemeral."""
+
+    LOGGING = 'nd_service_registry.Registration.DataNode'
+
+    def __init__(self, zk, path, data=None, state=True):
+        RegistrationBase.__init__(self, zk, path, data,
+                                  state=state, ephemeral=False)
+
+        # Update data immediately
+        self._update_state(state)
+        self.update(data, state)
+
+    def set_data(self, data):
+        """Always sets self._data.
+
+        Args:
+            data: String or Dict of data to register with this object."""
+        self._data = data
+        encoded_data = funcs.encode(data)
+
+        if encoded_data != self._encoded_data:
+            self._encoded_data = funcs.encode(data)
+            self._decoded_data = funcs.decode(self._encoded_data)
+            self._update_data()

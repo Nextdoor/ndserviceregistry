@@ -112,6 +112,7 @@ from nd_service_registry import exceptions
 from nd_service_registry import funcs
 from nd_service_registry.lock import Lock
 from nd_service_registry.registration import EphemeralNode
+from nd_service_registry.registration import DataNode
 from nd_service_registry.shims import ZookeeperClient
 from nd_service_registry.watcher import DummyWatcher
 from nd_service_registry.watcher import Watcher
@@ -155,6 +156,10 @@ class nd_service_registry(object):
     def set_node(self, node, data=None, state=True):
         """Short-cut for creating an EphemeralNode object."""
         return self.set(node=node, data=data, state=state, type=EphemeralNode)
+
+    def set_data(self, node, data=None, state=True):
+        """Short-cut for creating an DataNode object."""
+        return self.set(node=node, data=data, state=state, type=DataNode)
 
     def unset(self, node):
         """Disables a Registration object."""
