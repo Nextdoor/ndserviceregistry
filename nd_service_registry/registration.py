@@ -258,25 +258,56 @@ class EphemeralNode(RegistrationBase):
 class DataNode(RegistrationBase):
     """This is an registry object that we register arbitrary data and monitor.
 
-    The node registered with Zookeeper is not ephemeral."""
+    The node registered with Zookeeper is not ephemeral. If data is changed
+    in Zookeeper, this node is updated via the Watcher object."""
 
     def __init__(self, zk, path, data=None, state=True):
         RegistrationBase.__init__(self, zk, path, data,
                                   state=state, ephemeral=False)
 
-        # Update data immediately
+        # Regardless of what the state of the node in Zookeeper is,
+        # explicitly set it when this DataNode is instantiated.
         self._update_state(state)
-        self.update(data, state)
+        self._update_data()
 
-    def set_data(self, data):
-        """Always sets self._data.
+        # Now, set a callback so that if the Watcher detects a remote
+        # data change, our local self._data object is updated.
+        self._watcher.add_callback(self._update)
 
-        Args:
-            data: String or Dict of data to register with this object."""
-        self._data = data
-        encoded_data = funcs.encode(data)
+    def _update(self, data):
+        """Updates the DataNode objects data values.
 
-        if encoded_data != self._encoded_data:
-            self._encoded_data = funcs.encode(data)
-            self._decoded_data = funcs.decode(self._encoded_data)
-            self._update_data()
+        If the values change via the Watcher object, update the DataNode cached
+        settings so that we know what the current state of Zookeeper is.
+
+        These are updated with the true values in Zookeeper (regardless of what
+        the initial object was created with) so that when the set_data()
+        method is called, we only make updates to Zookeeper if necessary."""
+
+        log.debug('[%s] Received updated data: %s' % (self._path, data))
+
+        # Quickly check that if data['data'] is none, we just clear our
+        # settings and jump out of this method.
+        if not data['data']:
+            log.error("No data supplied at all. Wiping out local data cache.")
+            self._encoded_data = None
+            self._decoded_data = None
+            self._data = None
+            return
+
+        # First, store the directly supplied data as our _decoded_data
+        # (string), and then decode that into a proper hash and store it
+        # as our _encoded_data.
+        self._encoded_data = funcs.encode(data['data'])
+        self._decoded_data = dict(data['data'])
+
+        # Strictly speaking, the self._data object should contain the user
+        # supplied data object, without any of the additional data
+        # automatically supplied by funcs.default_data(). If this DataNode
+        # object receives an updated bunch of data from Zookeeper, it will
+        # include these additional data parameters. We need to strip those
+        # out first, to ensure that we're only storing the user-supplied
+        # parameters.
+        self._data = dict(data['data'])
+        for k in funcs.default_data().keys():
+            self._data.pop(k, None)
