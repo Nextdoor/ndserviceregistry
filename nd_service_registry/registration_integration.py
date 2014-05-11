@@ -158,8 +158,8 @@ class EphemeralNodeTests(KazooTestHarness):
     def tearDown(self):
         self.teardown_zookeeper()
 
-    def test_init_and_behavior(self):
-        path = '%s/unittest' % self.sandbox
+    def test_init(self):
+        path = '%s/unittest-init' % self.sandbox
         data = {'unittest': 'data'}
         eph1 = EphemeralNode(zk=self.zk, path=path, data=data)
         waituntil(eph1.data, None, 5)
@@ -171,7 +171,13 @@ class EphemeralNodeTests(KazooTestHarness):
         self.assertNotEquals(None, stat)
         self.assertTrue('"unittest":"data"' in data)
 
-        # Now, lets intentionally change the data in ZOokeeper directly,
+    def test_greedy_ownership_of_data(self):
+        path = '%s/unittest-greedy-data' % self.sandbox
+        data = {'unittest': 'data'}
+        eph1 = EphemeralNode(zk=self.zk, path=path, data=data)
+        waituntil(eph1.data, None, 5)
+
+        # Lets intentionally change the data in Zookeeper directly,
         # the EphemeralNode should immediately re-set the data.
         current_stat = eph1.get()
         self.zk.set(path, value='bogus')
@@ -187,6 +193,12 @@ class EphemeralNodeTests(KazooTestHarness):
         (data, stat) = self.zk.get(path)
         self.assertTrue('"unittest":"data"' in data)
         self.assertTrue(self.zk.exists(path))
+
+    def test_greedy_ownership_of_state(self):
+        path = '%s/unittest-greedy-state' % self.sandbox
+        data = {'unittest': 'data'}
+        eph1 = EphemeralNode(zk=self.zk, path=path, data=data)
+        waituntil(eph1.data, None, 5)
 
         # Try disabling the node. If the node gets recreated automatically in
         # some way (by some rogue daemon), then we should destroy it.
