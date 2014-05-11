@@ -42,7 +42,7 @@ class RegistrationBaseTests(KazooTestHarness):
         self.teardown_zookeeper()
 
     def test_init(self):
-        path = '%s/unittest' % self.sandbox
+        path = '%s/unittest-init' % self.sandbox
         data = {'unittest': 'data'}
         reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
 
@@ -62,11 +62,6 @@ class RegistrationBaseTests(KazooTestHarness):
         self.assertEquals(None, reg1._watcher.get()['data'])
         self.assertEquals(None, reg1._watcher.get()['stat'])
 
-    def test_public_methods(self):
-        path = '%s/unittest' % self.sandbox
-        data = {'unittest': 'data'}
-        reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
-
         # First, data() should return None because we havn't actively
         # registered the path.
         self.assertEquals(None, reg1.data())
@@ -74,6 +69,14 @@ class RegistrationBaseTests(KazooTestHarness):
                            'data': None, 'children': {}}, reg1.get())
         self.assertFalse(reg1.state())
         self.assertEquals(None, self.zk.exists(path))
+
+        # Tear down the object
+        reg1.stop()
+
+    def test_start(self):
+        path = '%s/unittest-start' % self.sandbox
+        data = {'unittest': 'data'}
+        reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
 
         # Now register the path and wait until reg1.data() returns some data
         # other than None. If it doesn't after 5 seconds, fail.
@@ -88,6 +91,19 @@ class RegistrationBaseTests(KazooTestHarness):
         self.assertTrue('pid' in reg1.data() and 'pid' in data)
         self.assertTrue('unittest' in reg1.data() and 'unittest' in data)
         self.assertTrue(reg1.state())
+
+        # Tear down the object
+        reg1.stop()
+
+    def test_update(self):
+        path = '%s/unittest-update' % self.sandbox
+        data = {'unittest': 'data'}
+        reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
+
+        # Now register the path and wait until reg1.data() returns some data
+        # other than None. If it doesn't after 5 seconds, fail.
+        reg1.start()
+        waituntil(reg1.data, None, 5)
 
         # Test updating the data now that its registered
         current_data = reg1.data()
@@ -105,10 +121,15 @@ class RegistrationBaseTests(KazooTestHarness):
                            'data': None, 'children': {}}, reg1.get())
         self.assertEquals(None, self.zk.exists(path))
 
-        # Re-enable the node for the final test
-        current_stat = reg1.get()
+    def test_stop(self):
+        path = '%s/unittest-update' % self.sandbox
+        data = {'unittest': 'data'}
+        reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
+
+        # Now register the path and wait until reg1.data() returns some data
+        # other than None. If it doesn't after 5 seconds, fail.
         reg1.start()
-        waituntil(reg1.get, current_stat, 5)
+        waituntil(reg1.data, None, 5)
         self.assertTrue(self.zk.exists(path))
 
         # Now, test shutting the node down
