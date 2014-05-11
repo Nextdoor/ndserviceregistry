@@ -86,6 +86,45 @@ entirely different method to handle the unlock)
     >>> <do your work... >
     >>> nd.release_lock('/foo')
 
+## Storing Data
+
+Storing arbitrary (and long-lived) data in Zookeeper is quick and simple!
+
+    >>> nd.set_data('/configs/my_api_key', data='abcdefg')
+    True
+    >>> >>> nd.get('/configs/my_api_key')['data']
+    {u'pid': 14644, u'string_value': u'abcdefg', u'created': u'2014-05-11 11:01:59'}
+    >>> nd.set_data('/configs/data', data={'more': 'complex', 'data': 'structure'})
+    True
+    >>> nd.get('/configs/data')['data']
+    {u'data': u'structure', u'more': u'complex', u'pid': 14644, u'created': u'2014-05-11 11:03:03'}
+    >>> 
+
+## Registering Ephemeral Nodes
+
+Registering a node in Zookeeper thats Ephemeral (disappears when the node
+goes offline, or if the connection is lost) is highly useful for keeping
+track of which servers are offering specific services.
+
+    >>> nd.set_node('/production/ssh/server1:22')
+    >>> nd.set_node('/production/ssh/server2:22')
+    >>> nd.set_node('/production/ssh/server3:22')
+    >>> nd.set_node('/production/web/server2:22',
+                    data={'type': 'apache'})
+    >>> nd.get('/production/ssh')
+    {'children': {u'server1:22': {u'created': u'2012-12-15 01:15:09',
+                                  u'pid': 11137},
+                  u'server2:22': {u'created': u'2012-12-15 01:15:14',
+                                  u'pid': 11137},
+                  u'server3:22': {u'created': u'2012-12-15 01:15:18',
+                                  u'pid': 11137}},
+     'data': None,
+     'path': '/production/ssh',
+     'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452,
+                       mtime=1355533229452, version=0, cversion=5,
+                       aversion=0, ephemeralOwner=0, dataLength=0,
+                       numChildren=3, pzxid=45)}
+
 ## Django use
 
 We wrote this code to be easy to use in Django. Here's a (very brief) version

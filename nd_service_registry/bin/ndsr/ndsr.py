@@ -57,6 +57,9 @@ FLAGS = gflags.FLAGS
 # Mapping of valid commands to their classes
 COMMANDS = {'Get': get.Get}
 
+# TODO (wenbin): add Put command for write data to zookeeper. Need an argument
+# to specify whether or not the node is ephemeral.
+
 
 def main(argv):
     """Determines which subcommand is being called, dynamically instantiates
