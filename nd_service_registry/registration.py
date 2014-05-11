@@ -149,13 +149,13 @@ class RegistrationBase(object):
             data: (String/Dict) data to register with this object.
             state: (Boolean) whether to register or unregister this object
         """
-        if data:
-            log.debug('[%s] Got updated data: %s' % (self._path, data))
-            self.set_data(data)
-
         if type(state) is bool:
             log.debug('[%s] Got updated state: %s' % (self._path, state))
             self.set_state(state)
+
+        if data:
+            log.debug('[%s] Got updated data: %s' % (self._path, data))
+            self.set_data(data)
 
     def _update_state(self, state):
         if state is True:
@@ -286,11 +286,19 @@ class DataNode(RegistrationBase):
 
         log.debug('[%s] Received updated data: %s' % (self._path, data))
 
+        # If the returned 'stat' is empty, then the node was deleted in
+        # Zookeeper and we should update our local 'state'.
+        if not data['stat']:
+            log.debug("[%s] No stat supplied, setting local state "
+                      "to false." % self._path)
+            self._state = False
+
         # Quickly check that if data['data'] is none, we just clear our
         # settings and jump out of this method.
         if not data['data']:
-            log.error("No data supplied at all. Wiping out local data cache.")
-            self._encoded_data = None
+            log.error("[%s] No data supplied at all. Wiping out "
+                      "local data cache." % self._path)
+            self._encoded_data = funcs.encode(None)
             self._decoded_data = None
             self._data = None
             return

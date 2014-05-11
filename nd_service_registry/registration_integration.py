@@ -211,6 +211,30 @@ class DataNodeTests(KazooTestHarness):
         self.assertNotEquals(None, stat)
         self.assertTrue('"unittest":"data"' in data)
 
+        # If the object is deleted in Zookeeper, our DataNode should reflect
+        # that. It should also be able to re-update the value when told to.
+        def get_stat_from_watcher():
+            return data1._watcher.get()['stat']
+
+        # First, delete the path
+        self.zk.delete(path)
+        waituntil(get_stat_from_watcher, None, 5, mode=2)
+        # Validate that the path is deleted, and the DataNode object was
+        # updated correctly
+        self.assertEquals(None, data1.get()['data'])
+        self.assertEquals(None, data1.get()['stat'])
+
+        # Ok now call the update() method and see if it re-registers
+        data = {'unittest': 'data'}
+        data1.update(data=data, state=True)
+
+        # Now, wait until se see something in zookeeper
+        def get_exists_from_zk():
+            return self.zk.exists(path)
+
+        waituntil(get_exists_from_zk, None, 5, mode=1)
+        self.assertEquals(data, data1._data)
+
         # Resetting the data in ZK should not cause the DataNode object to do
         # anything but update its local cache of the data.
         def get_string_value_from_watcher():
