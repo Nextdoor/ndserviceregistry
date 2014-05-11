@@ -319,3 +319,9 @@ class DataNode(RegistrationBase):
         self._data = dict(data['data'])
         for k in funcs.default_data().keys():
             self._data.pop(k, None)
+
+        # If the only key left in the self._data object is 'string_value',
+        # then the supplied user data was actually in string format -- so
+        # thats actually what we want to save.
+        if self._data.keys() == [ 'string_value' ]:
+            self._data = self._data['string_value']

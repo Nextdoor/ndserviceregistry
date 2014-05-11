@@ -232,72 +232,107 @@ class DataNodeTests(KazooTestHarness):
     def tearDown(self):
         self.teardown_zookeeper()
 
-    def test_init_and_behavior(self):
+    def test_init(self):
         path = '%s/unittest' % self.sandbox
         data = {'unittest': 'data'}
-        data1 = DataNode(zk=self.zk, path=path, data=data)
+        datanode = DataNode(zk=self.zk, path=path, data=data)
 
-        # The DatNode object DOES immediately register itself in
+        # The DataNode object DOES immediately register itself in
         # zookeeper, so we should be able to pull that data from Zookeeper
         # right away.
         (data, stat) = self.zk.get(path)
         self.assertNotEquals(None, stat)
         self.assertTrue('"unittest":"data"' in data)
 
+    def test_delete_of_data_in_zk(self):
+        path = '%s/unittest-delete' % self.sandbox
+        data = {'unittest': 'data'}
+        datanode = DataNode(zk=self.zk, path=path, data=data)
+
         # If the object is deleted in Zookeeper, our DataNode should reflect
         # that. It should also be able to re-update the value when told to.
         def get_stat_from_watcher():
-            return data1._watcher.get()['stat']
+            return datanode._watcher.get()['stat']
 
         # First, delete the path
         self.zk.delete(path)
         waituntil(get_stat_from_watcher, None, 5, mode=2)
         # Validate that the path is deleted, and the DataNode object was
         # updated correctly
-        self.assertEquals(None, data1.get()['data'])
-        self.assertEquals(None, data1.get()['stat'])
+        self.assertEquals(None, datanode.get()['data'])
+        self.assertEquals(None, datanode.get()['stat'])
+
+    def test_update(self):
+        path = '%s/unittest-update' % self.sandbox
+        data = {'unittest': 'data'}
+        datanode = DataNode(zk=self.zk, path=path, data=data)
+
+        # First, delete the path
+        def get_stat_from_watcher():
+            return datanode._watcher.get()['stat']
+        self.zk.delete(path)
+        waituntil(get_stat_from_watcher, None, 5, mode=2)
 
         # Ok now call the update() method and see if it re-registers
-        data = {'unittest': 'data'}
-        data1.update(data=data, state=True)
+        datanode.update(data=data, state=True)
 
         # Now, wait until se see something in zookeeper
         def get_exists_from_zk():
             return self.zk.exists(path)
 
         waituntil(get_exists_from_zk, None, 5, mode=1)
-        self.assertEquals(data, data1._data)
+        self.assertEquals(data, datanode._data)
+
+    def test_updating_of_local_cache(self):
+        path = '%s/unittest-update-cache' % self.sandbox
+        data = {'unittest': 'data'}
+        datanode = DataNode(zk=self.zk, path=path, data=data)
 
         # Resetting the data in ZK should not cause the DataNode object to do
         # anything but update its local cache of the data.
         def get_string_value_from_watcher():
-            if 'string_value' in data1._watcher.get()['data']:
-                return data1._watcher.get()['data']['string_value']
+            if 'string_value' in datanode._watcher.get()['data']:
+                return datanode._watcher.get()['data']['string_value']
             return False
 
         self.zk.set(path, 'foobar')
         waituntil(get_string_value_from_watcher, 'foobar', 5, mode=2)
         self.assertEquals('foobar',
-                          data1._watcher.get()['data']['string_value'])
-        self.assertEquals('foobar', data1._data['string_value'])
+                          datanode._watcher.get()['data']['string_value'])
+        self.assertEquals('foobar', datanode._data)
+
+    def test_set_data(self):
+        path = '%s/unittest-set-data' % self.sandbox
+        datanode = DataNode(zk=self.zk, path=path, data=None)
 
         # Now lets ensure that if we call set_data() that the data in Zookeeper
         # is updated at least once. It should not be, though, updated multiple
         # times.
-        data1.set_data('foo')
+        def get_string_value_from_datanode():
+            if 'string_value' in datanode.get()['data']:
+                return datanode.get()['data']['string_value']
+            return False
+
+        datanode.set_data('foo')
+        waituntil(get_string_value_from_datanode, 'foo', 5, mode=2)
         (data, stat) = self.zk.get(path)
         for i in xrange(1, 10):
-            data1.set_data('foo')
+            datanode.set_data('foo')
         (data2, stat2) = self.zk.get(path)
         self.assertEquals(stat, stat2)
 
         # Ok, calling set_data() with the same data over and over again only
         # updates Zookeeper once. Good. Now what happens if the data in
         # Zookeeper changes and we call
-        data1.set_data('foo')
+        def get_string_value_from_watcher():
+            if 'string_value' in datanode._watcher.get()['data']:
+                return datanode._watcher.get()['data']['string_value']
+            return False
+
+        datanode.set_data('foo')
         (data, stat) = self.zk.get(path)
         self.zk.set(path, 'foobar')
         waituntil(get_string_value_from_watcher, 'foobar', 5, mode=2)
-        data1.set_data('foo')
+        datanode.set_data('foo')
         (data2, stat2) = self.zk.get(path)
         self.assertNotEquals(stat, stat2)
