@@ -323,5 +323,5 @@ class DataNode(RegistrationBase):
         # If the only key left in the self._data object is 'string_value',
         # then the supplied user data was actually in string format -- so
         # thats actually what we want to save.
-        if self._data.keys() == [ 'string_value' ]:
+        if self._data.keys() == ['string_value']:
             self._data = self._data['string_value']

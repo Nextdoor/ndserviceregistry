@@ -235,7 +235,7 @@ class DataNodeTests(KazooTestHarness):
     def test_init(self):
         path = '%s/unittest' % self.sandbox
         data = {'unittest': 'data'}
-        datanode = DataNode(zk=self.zk, path=path, data=data)
+        DataNode(zk=self.zk, path=path, data=data)
 
         # The DataNode object DOES immediately register itself in
         # zookeeper, so we should be able to pull that data from Zookeeper
