@@ -125,61 +125,42 @@ track of which servers are offering specific services.
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=3, pzxid=45)}
 
-## Django use
+## Django
 
-We wrote this code to be easy to use in Django. Here's a (very brief) version
-of the module we use in Django to simplify use of *nd_service_registry*.
+We initially wrote this code to simplify our use of Zookeeper in Django.
+Included is a very simple Django utility package that makes it dead simple
+to use Zookeeper inside Django for retreiving information. To use, add
+the following to your *settings* module in Django:
 
-<your django tree>/foo/service_registry_utils.py
+    from nd_service_registry.contrib.django import utils as ndsr
+    ndsr.SERVER = '127.0.0.1'
+    ndsr.PORT = '2181'
+    ndsr.TIMEOUT = 5
+    ndsr.CACHEFILE = '/tmp/serviceregistry.cache'
 
-    import nd_service_registry, time
-    from django.conf import settings
+Example usage to grab a single string and use it as a setting:
     
-    _service_registry = None
-    
-    def get_service_registry():
-        global _service_registry
-        if not _service_registry:
-            server = "%s:%s" % (settings.SERVICEREGISTRY_PARAMS['SERVER'],
-                                settings.SERVICEREGISTRY_PARAMS['PORT'])
-            _service_registry = nd_service_registry.KazooServiceRegistry(
-                server=server,
-                lazy=True,
-                readonly=True,
-                timeout=settings.SERVICEREGISTRY_PARAMS['TIMEOUT'],
-                cachefile=settings.SERVICEREGISTRY_PARAMS['CACHEFILE'])
-        return _service_registry
-    
-    def get(path, callback=None, wait=None):
-        if not wait:
-            return get_service_registry().get(path, callback=callback)
-        begin = time.time()
-        while time.time() - begin <= wait:
-            data = get_service_registry().get(path)
-            if len(data['children']) > 0:
-                if callback:
-                    get_service_registry().add_callback(path, callback=callback)
-                return data
-            time.sleep(0.1)
-        return get_service_registry().get(path, callback=callback)
+    MY_CRED = ndsr.get('/creds/some_cred')['data']['mycred']
 
-Example use in your code 
+Example use in your code, calling a method every time a value is updated
+in Zookeeper: 
 
-    >>> from nextdoor import service_registry_utils
     >>> def do_something(data):
     ...     print "New server data: %s" % data
     ...
-    >>> service_registry_utils.get('/services/staging/uswest2/memcache',
-    ...                            callback=do_something)
+    >>> ndsr.get('/services/staging/uswest2/memcache', callback=do_something)
     New server data: { 'path': '/services/staging/uswest2/memcache',
                        'stat': ZnodeStat(czxid=8589934751, mzxid=8589934751,
-                                         ctime=1354785240728, mtime=1354785240728,
-                                         version=0, cversion=45, aversion=0,
-                                         ephemeralOwner=0, dataLength=0, numChildren=1,
-                                         pzxid=30064903926),
+                                         ctime=1354785240728,
+                                         mtime=1354785240728, version=0,
+                                         cversion=45, aversion=0,
+                                         ephemeralOwner=0, dataLength=0,
+                                         numChildren=1, pzxid=30064903926),
                        'data': None,
-                       'children': { u'ec2-123-123-123-123.us-west-2.compute.amazonaws.com:11211':
-                                       {u'created': u'2013-01-08 16:51:12', u'pid': 3246, }
+                       'children': { u'ec2-123-123-123-123.us-west-2:11211': {
+                                       u'created': u'2013-01-08 16:51:12',
+                                       u'pid': 3246
+                                     }
                                    }
                        }
 

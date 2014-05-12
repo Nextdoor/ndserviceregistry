@@ -1,4 +1,4 @@
-# Copyright 2012 Nextdoor.com, Inc.
+# Copyright 2014 Nextdoor.com, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 """Kazoo Zookeeper znode watch object
 
-Copyright 2012 Nextdoor Inc."""
+Copyright 2014 Nextdoor Inc."""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 

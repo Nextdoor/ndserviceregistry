@@ -270,17 +270,13 @@ class DataNodeTests(KazooTestHarness):
         # First, delete the path
         def get_stat_from_watcher():
             return datanode._watcher.get()['stat']
+
         self.zk.delete(path)
         waituntil(get_stat_from_watcher, None, 5, mode=2)
 
         # Ok now call the update() method and see if it re-registers
         datanode.update(data=data, state=True)
-
-        # Now, wait until se see something in zookeeper
-        def get_exists_from_zk():
-            return self.zk.exists(path)
-
-        waituntil(get_exists_from_zk, None, 5, mode=1)
+        waituntil(get_stat_from_watcher, None, 5, mode=1)
         self.assertEquals(data, datanode._data)
 
     def test_updating_of_local_cache(self):
@@ -291,8 +287,12 @@ class DataNodeTests(KazooTestHarness):
         # Resetting the data in ZK should not cause the DataNode object to do
         # anything but update its local cache of the data.
         def get_string_value_from_watcher():
+            if not datanode._watcher.get()['data']:
+                return False
+
             if 'string_value' in datanode._watcher.get()['data']:
                 return datanode._watcher.get()['data']['string_value']
+
             return False
 
         self.zk.set(path, 'foobar')

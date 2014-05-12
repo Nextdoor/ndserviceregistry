@@ -23,7 +23,7 @@ test: build
 	python setup.py test pep8 pyflakes
 
 integration: build $(ZOOKEEPER)
-	ZOOKEEPER_PATH=$(ZOOKEEPER_PATH) python setup.py integration pep8 pyflakes
+	PYFLAKES_NODOCTEST=True ZOOKEEPER_PATH=$(ZOOKEEPER_PATH) python setup.py integration pep8 pyflakes
 
 $(ZOOKEEPER):
 	@echo "Installing Zookeeper"
