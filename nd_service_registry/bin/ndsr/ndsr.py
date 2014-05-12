@@ -71,7 +71,14 @@ def main(argv):
     command = command.capitalize()
     if command in COMMANDS:
         log.info("Connecting to server %s" % FLAGS.server)
-        nd = nd_service_registry.KazooServiceRegistry(server=FLAGS.server)
+
+        # Instantiate the KazooServiceRegistry() object, and ensure that
+        # we disable the normal rate-limiting that occurs so that the
+        # CLI tool returns back as quickly as possible.
+        nd = nd_service_registry.KazooServiceRegistry(server=FLAGS.server,
+                                                      rate_limit_calls=0,
+                                                      rate_limit_time=0)
+
         if FLAGS.username is not None and FLAGS.password is not None:
             nd.set_username(FLAGS.username)
             nd.set_password(FLAGS.password)
