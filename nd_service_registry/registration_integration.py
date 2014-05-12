@@ -287,8 +287,12 @@ class DataNodeTests(KazooTestHarness):
         # Resetting the data in ZK should not cause the DataNode object to do
         # anything but update its local cache of the data.
         def get_string_value_from_watcher():
+            if not datanode._watcher.get()['data']:
+                return False
+
             if 'string_value' in datanode._watcher.get()['data']:
                 return datanode._watcher.get()['data']['string_value']
+
             return False
 
         self.zk.set(path, 'foobar')
