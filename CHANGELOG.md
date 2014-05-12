@@ -3,6 +3,7 @@
  * #25: Add DataNode object type and appropriate set_data() methods.
  * Testing: Implemented initial Unit and Integration Tests
  * Testing: Integrated Travis CI testing of all code
+ * Add contrib.django.utils package for easy Django/Zookeeper integration.
 
 ## Version 0.2.9
  * Fix Registration.registration again - set the *ephemeral* setting at construction time.
