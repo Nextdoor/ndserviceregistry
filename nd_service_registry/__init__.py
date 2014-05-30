@@ -180,7 +180,7 @@ class nd_service_registry(object):
         time the connection state changes.
 
         args:
-            callback: Method to execute if the connection state changes.
+            callback: Function to execute if the connection state changes.
 
         returns:
             True/False
@@ -585,8 +585,8 @@ class KazooServiceRegistry(nd_service_registry):
 
         # Store our connection state, and a list of methods to notify
         # if that state changes at all.
-        self._state = False
-        self._state_callbacks = []
+        self._conn_state = False
+        self._conn_state_callbacks = []
 
         # Store all of our Registration objects here
         self._registrations = {}
@@ -857,17 +857,17 @@ class KazooServiceRegistry(nd_service_registry):
             # In this state, just mark that we can't handle any 'writes' right
             # now but that we might come back to life soon.
             log.warning('%s: %s' % (message, state))
-            self._state = False
+            self._conn_state = False
         elif state == KazooState.LOST:
             # If we enter the LOST state, we've started a whole new session
             # with the Zookeeper server. Watches are re-established auto-
             # magically. Registered paths are re-established by their own
             # Registration control objects.
             log.warning('%s: %s' % (message, state))
-            self._state = False
+            self._conn_state = False
         else:
             log.info('%s: %s' % (message, state))
-            self._state = True
+            self._conn_state = True
             # We've re-connected, so re-configure our auth digest settings
             self._setup_auth()
 
@@ -883,38 +883,43 @@ class KazooServiceRegistry(nd_service_registry):
         # Execute any of our state-listener callbacks now that we've finished
         # updating the internal state of our connection.
         def execute_state_callbacks(state):
-            log.debug('Configured connection state callbacks: %s' %
-                      self._state_callbacks)
+            """Sequentially executes the callback functions.
 
-            for callback in self._state_callbacks:
+            args:
+                state: Boolean of our connection state
+            """
+            log.debug('Configured connection state callbacks: %s' %
+                      self._conn_state_callbacks)
+
+            for callback in self._conn_state_callbacks:
                 log.debug('Calling [%s] with new connection state: %s' %
                           (callback, state))
                 callback(state)
 
-        self._zk.handler.spawn(execute_state_callbacks(self._state))
+        self._zk.handler.spawn(execute_state_callbacks(self._conn_state))
 
     def _get_state(self, callback=None):
         """Returns the current connection state to Zookeeper.
 
-        Optionally, if a callback method is supplied we will add it to the
-        callback list for the _state_listener() method. This will trigger the
+        Optionally, if a callback function is supplied we will add it to the
+        callback list for the _state_listener() function. This will trigger the
         callback immediately as well.
 
         args:
-            callback: A reference to a method to call when the state changes.
+            callback: A reference to a function to call when the state changes.
 
         returns:
             Boolean of the connection state.
         """
-        if callback and callback in self._state_callbacks:
+        if callback and callback in self._conn_state_callbacks:
             log.debug('[%s] already in state listener callbacks.' % callback)
-            return self._state
+            return self._conn_state
 
         if callback:
-            self._state_callbacks.append(callback)
-            callback(self._state)
+            self._conn_state_callbacks.append(callback)
+            callback(self._conn_state)
 
-        return self._state
+        return self._conn_state
 
     def add_callback(self, path, callback):
         """Adds a callback in the event of a path change.
