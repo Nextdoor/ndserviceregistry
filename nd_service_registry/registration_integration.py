@@ -309,8 +309,14 @@ class DataNodeTests(KazooTestHarness):
         # is updated at least once. It should not be, though, updated multiple
         # times.
         def get_string_value_from_datanode():
-            if 'string_value' in datanode.get()['data']:
-                return datanode.get()['data']['string_value']
+            data = datanode.get()['data']
+
+            if data is None:
+                return False
+
+            if 'string_value' in data:
+                return data['string_value']
+
             return False
 
         datanode.set_data('foo')
