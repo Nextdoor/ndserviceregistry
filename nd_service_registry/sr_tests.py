@@ -3,6 +3,7 @@ import unittest
 
 from kazoo.client import KazooState
 
+from nd_service_registry import watcher
 import nd_service_registry
 
 
@@ -66,3 +67,39 @@ class KazooServiceRegistryTests(unittest.TestCase):
         # Now validate that the callback was executed once with False when
         # we updated the state
         callback_checker.test.assert_called_with(False)
+
+    def test_get_dummywatcher(self):
+        # With a callback, the callback should get executed
+        callback_checker = mock.MagicMock()
+        callback_checker.test.return_value = True
+
+        returned_watcher = self.ndsr._get_dummywatcher(
+            '/foo', callback=callback_checker.test)
+        self.assertEquals(type(returned_watcher), watcher.DummyWatcher)
+
+        expected_data = {
+            'path': '/foo',
+            'stat': None,
+            'data': None,
+            'children': None}
+        callback_checker.test.assert_called_with(expected_data)
+
+    def test_get_with_no_zk_connection_or_cache(self):
+        # With a callback, the callback should get executed
+        callback_checker = mock.MagicMock()
+        callback_checker.test.return_value = True
+
+        # Disable the zookeeper connection
+        self.ndsr.stop()
+        self.ndsr._zk.connected = False
+
+        expected_data = {
+            'path': '/foo',
+            'stat': None,
+            'data': None,
+            'children': None}
+
+        returned_data = self.ndsr.get('/foo', callback=callback_checker.test)
+        callback_checker.test.assert_called_with(expected_data)
+        self.assertFalse(returned_data)
+        self.assertTrue('/foo' in self.ndsr._watchers)
