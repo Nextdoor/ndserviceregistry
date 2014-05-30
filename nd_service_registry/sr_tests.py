@@ -7,6 +7,12 @@ import nd_service_registry
 
 
 class KazooServiceRegistryTests(unittest.TestCase):
+    """Behavioral tests for the KazooServiceRegistry.
+
+    These tests verify the overall behavior of the entire class as used
+    by potential clients.
+    """
+
     # A flag for filtering nose tests
     unit = True
 
@@ -20,10 +26,10 @@ class KazooServiceRegistryTests(unittest.TestCase):
         self.ndsr._initialized = False
 
     def test_get_state(self):
-        # Simple checks should return the value of self.ndsr._state
-        self.ndsr._state = True
+        # Simple checks should return the value of self.ndsr._conn_state
+        self.ndsr._conn_state = True
         self.assertTrue(self.ndsr.get_state())
-        self.ndsr._state = False
+        self.ndsr._conn_state = False
         self.assertFalse(self.ndsr.get_state())
 
     def test_get_state_with_callback(self):
@@ -32,11 +38,12 @@ class KazooServiceRegistryTests(unittest.TestCase):
         callback_checker.test.return_value = True
 
         # Mock the state to be True
-        self.ndsr._state = True
+        self.ndsr._conn_state = True
 
         # Ensure that we return True, and that the callback is in the callbacks
         self.assertTrue(self.ndsr.get_state(callback_checker.test))
-        self.assertTrue(callback_checker.test in self.ndsr._state_callbacks)
+        self.assertTrue(
+            callback_checker.test in self.ndsr._conn_state_callbacks)
         callback_checker.test.assert_called_once_with(True)
 
     def test_state_callback_with_updated_state(self):
@@ -45,12 +52,13 @@ class KazooServiceRegistryTests(unittest.TestCase):
         callback_checker.test.return_value = True
 
         # Mock the state to be True
-        self.ndsr._state = True
+        self.ndsr._conn_state = True
 
         # Add our callback checker mock above and validate that the callback
         # was executed once with True.
         self.ndsr.get_state(callback_checker.test)
-        self.assertTrue(callback_checker.test in self.ndsr._state_callbacks)
+        self.assertTrue(
+            callback_checker.test in self.ndsr._conn_state_callbacks)
         callback_checker.test.assert_called_with(True)
 
         # Now fake a state change to LOST
