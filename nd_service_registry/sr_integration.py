@@ -1,6 +1,3 @@
-import uuid
-import time
-
 from kazoo.testing import KazooTestHarness
 from nd_service_registry import KazooServiceRegistry
 
@@ -12,7 +9,6 @@ class KazooServiceRegistryIntegrationTests(KazooTestHarness):
     def setUp(self):
         self.setup_zookeeper()
         self.server = 'localhost:20000'
-        self.sandbox = "/tests/state-%s" % uuid.uuid4().hex
         self.ndsr = KazooServiceRegistry(server=self.server,
                                          rate_limit_calls=0,
                                          rate_limit_time=0)
