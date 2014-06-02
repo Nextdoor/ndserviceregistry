@@ -6,3 +6,5 @@ Berksfile.lock
 build
 dist
 *.egg-info
+*.swp
+.coverage

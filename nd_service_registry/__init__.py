@@ -320,7 +320,7 @@ class nd_service_registry(object):
         log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
 
-    def _get_dummywatcher(self, path, callback=None):
+    def _get_dummywatcher_from_cache(self, path, callback=None):
         """Creates DummyWatcher objects from our saved cache.
 
         Creates a DummyWatcher object for the supplied path and returns the
@@ -366,6 +366,31 @@ class nd_service_registry(object):
             raise exceptions.ServiceRegistryException(
                 'Could not create DummyWatcher object from local cachefile '
                 '(%s) for path %s.' % (self._cachefile, path))
+
+    def _get_dummywatcher(self, path, callback=None):
+        """Creates a blank DummyWatcher object.
+
+        This is useful to ensure that KazooServiceRegistry keeps ttack of
+        all requested watches on paths. In the event that Zookeeper was down,
+        and there is no previously-cached data for the path, we create a blank
+        DummyWatcher object that will automatically be converted to a real
+        Watcher object as soon as the connection is re-established.
+
+        args:
+            path: A string representing the path to the servers.
+            callback: (optional) reference to function to call if the path
+                      changes.
+
+        returns:
+            DummyWatcher object
+        """
+        log.debug('[%s] Creating Blank DummyWatcher object...' % path)
+        data = {
+            'data': None,
+            'children': None,
+            'stat': None,
+        }
+        return DummyWatcher(path=path, data=data, callback=callback)
 
     def _convert_dummywatchers_to_watchers(self):
         """Converts all DummyWatcher objects to Watcher objects.
@@ -633,6 +658,7 @@ class KazooServiceRegistry(nd_service_registry):
 
         try:
             self._zk.stop()
+            log.debug('Stopping Zookeeper connection...')
         except:
             pass
 
@@ -640,6 +666,7 @@ class KazooServiceRegistry(nd_service_registry):
         """Starts up our ZK connection again.
 
         All existing watches/registrations/etc will be re-established."""
+        log.debug('Starting Zookeeper conncetion...')
         self._connect(self._lazy)
 
     @_health_check
@@ -951,12 +978,19 @@ class KazooServiceRegistry(nd_service_registry):
 
         try:
             log.info('[%s] Loading from cache instead' % path)
-            self._watchers[path] = self._get_dummywatcher(path, callback)
+            watcher = self._get_dummywatcher_from_cache(path, callback)
+            self._watchers[path] = watcher
             return self._watchers[path].get()
         except exceptions.ServiceRegistryException, e:
-            # Ugh. Total failure. Return false
-            log.error('Unable to retrieve [%s] from Zookeeper or cache - '
-                      'try again later: %s' % (path, e))
+            # Failure getting the DummyWatcher from our cache, so now
+            # create a blank DummyWatcher just to keep track of this
+            # request. When the connection comes back, this DummyWatcher
+            # will be converted into a real Watcher object and will notify
+            # the callback appropriately.
+            log.error('Unable to retrieve [%s] from Zookeeper or cache: '
+                      '%s' % (path, e))
+            watcher = self._get_dummywatcher(path, callback)
+            self._watchers[path] = watcher
         return False
 
     @_health_check

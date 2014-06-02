@@ -68,6 +68,15 @@ class Watcher(object):
         self._data = None
         self._stat = None
 
+        # Watching for Children is "optional" -- and actually doesn't happen
+        # in the event that you pass this object a path that doesn't exist yet
+        # (Kazoo throws a NoNodeError). Use a simple local state variable to
+        # track whether or not we've started watching for children. This is
+        # used in the _begin() method to prevent duplicate ChildrenWatches.
+        #
+        # See the _begin() method for more info.
+        self._watching_children = False
+
         # Array to hold any callback functions we're supposed to notify when
         # anything changes on this path
         self._callbacks = []
@@ -145,22 +154,44 @@ class Watcher(object):
                       (self._path, self._data, self._stat))
             self._execute_callbacks()
 
-        # Only register a watch on the children if this path exists. If
-        # it doesnt, we're assuming that you're watching a specific node
-        # that may or may not be registered.
-        if self._zk.exists(self._path) and self._watch_children:
-            log.debug('[%s] Registering watch on child changes' % self._path)
+        # ChildrenWatches can only be applied to already existing paths
+        # (Kazoo throws a NoNodeError otherwise). To get around this, we
+        # add a second DataWatch on the root path. If the path 'stat' goes
+        # from None to <any data at all>, we know the path has been created
+        # and we can initiate our ChildrenWatch.
+        @self._zk.DataWatch(self._path, allow_missing_node=True)
+        def _optionally_create_child_watch(data, stat):
+            """Creates a ChildrenWatch object if appropriate.
 
-            @self._zk.ChildrenWatch(self._path)
-            def _update_child_list(data):
-                log.debug('[%s] New children: %s' % (self._path, sorted(data)))
-                children = {}
-                for child in data:
-                    fullpath = '%s/%s' % (self._path, child)
-                    data, stat = self._zk.retry(self._zk.get, fullpath)
-                    children[child] = funcs.decode(data)
-                self._children = children
-                self._execute_callbacks()
+            In the event that a watch on the children is desired, and
+            we havn't already created one, then we create a new watch.
+            Otherwise we gracefully exit this function.
+
+            args:
+                data: The current znode data
+                stat: The current znode stat
+            """
+            if self._watching_children:
+                return
+
+            if stat and self._watch_children:
+                log.debug('[%s] Registering watch on children' % self._path)
+
+                @self._zk.ChildrenWatch(self._path)
+                def _update_child_list(data):
+                    log.debug('[%s] New children: %s' %
+                              (self._path, sorted(data)))
+                    children = {}
+                    for child in data:
+                        fullpath = '%s/%s' % (self._path, child)
+                        data, stat = self._zk.retry(self._zk.get, fullpath)
+                        children[child] = funcs.decode(data)
+                    self._children = children
+                    self._execute_callbacks()
+
+                    # Now mark that we're watching the children of this path
+                    # so that this method is never executed again.
+                    self._watching_children = True
 
     def _execute_callbacks(self):
         """Runs any callbacks that were passed to us for a given path.
