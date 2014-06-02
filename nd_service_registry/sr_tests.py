@@ -134,13 +134,13 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
         # A normal data node storing some real data should be cachable
         fake_node_data = {
             'children': {},
-            'data': { 'some': 'data' },
+            'data': {'some': 'data'},
             'path': '/mydata',
             'stat': ZnodeStat(
-                  czxid=505, mzxid=505, ctime=1355719651687,
-                  mtime=1355719651687, version=0, cversion=1,
-                  aversion=0, ephemeralOwner=0, dataLength=0,
-                  numChildren=0, pzxid=506)}
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
 
         self.ndsr._cachefile = True
         self.ndsr._save_watcher_to_dict(fake_node_data)
@@ -158,10 +158,10 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
             'data': None,
             'path': '/services/ssh',
             'stat': ZnodeStat(
-                  czxid=505, mzxid=505, ctime=1355719651687,
-                  mtime=1355719651687, version=0, cversion=1,
-                  aversion=0, ephemeralOwner=0, dataLength=0,
-                  numChildren=0, pzxid=506)}
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
 
         self.ndsr._cachefile = True
         self.ndsr._save_watcher_to_dict(fake_node_data)
@@ -191,10 +191,10 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
             'data': None,
             'path': '/services/ssh',
             'stat': ZnodeStat(
-                  czxid=505, mzxid=505, ctime=1355719651687,
-                  mtime=1355719651687, version=0, cversion=1,
-                  aversion=0, ephemeralOwner=0, dataLength=0,
-                  numChildren=0, pzxid=506)}
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
 
         self.ndsr._cachefile = False
         self.ndsr._save_watcher_to_dict(fake_node_data)
