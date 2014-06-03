@@ -155,3 +155,34 @@ class WatcherIntegrationTests(KazooTestHarness):
         # call count would be MUCH higher (11++) if we were recursively
         # creating Watches though.
         self.assertEquals(7, len(callback_checker.test.mock_calls))
+
+    def test_deleting_node_watcher_is_watching(self):
+        # Create our test path
+        path = '%s/path-to-be-deleted-%s' % (self.sandbox, uuid.uuid4().hex)
+        self.zk.create(path, makepath=True)
+
+        # Watch it and verify that we got back the proper stat data for
+        # the existing node.
+        watch = Watcher(zk=self.zk, path=path)
+        self.assertTrue(watch.get()['stat'] is not None)
+
+        # Now, delete it
+        self.zk.delete(path)
+
+        # Now, wait until the Zookeeper callback has been executed, at which
+        # point, our Watcher object should cleanly update itself indicating
+        # that the path no longer exists.
+        expected_get_results = {
+            'path': path, 'stat': None, 'data': None, 'children': {}}
+        waituntil(watch.get, expected_get_results, 5, mode=2)
+        self.assertEquals(expected_get_results, watch.get())
+
+        # Note: In the background, Kazoo is likely throwing a NoNodeError
+        # exception on one of its threads. This seems unavoidable right now,
+        # but is also not a catchable Exception because of where it happens
+        # in the code. This exception can be seen if you uncomment this line
+        # below, which forces this test to fail and display all log messages.
+        #
+        # Open Bug Report: https://github.com/python-zk/kazoo/issues/149
+        #
+        # self.assertTrue(False)
