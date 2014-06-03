@@ -1,9 +1,17 @@
 ## Version 0.3.0
- * #14: Add in a CLI Management Command *ndsr* for interacting with Zookeeper data.
- * #25: Add DataNode object type and appropriate set_data() methods.
- * Testing: Implemented initial Unit and Integration Tests
- * Testing: Integrated Travis CI testing of all code
- * Add contrib.django.utils package for easy Django/Zookeeper integration.
+ * #45: Prevent duplicat callback executions when data has not changed
+ * #39: Reduce the number of Zookeeper get() calls made by the Watcher objects
+ * #38: Ensure that an non-existent path will get a Child Watch when available
+ * #37: Fix DummyWatcher behavior when no local cache data is available
+ * #36: Add a get_state() method to KazooServiceRegistry
+ * #35: Prevent caching of nodes where *data* and *stat* are None
+ * #28: Provide normal *directory style* format for ndsr output
+ * #27: Disable Rate Limiting of Zookeeper calls in the CLI *ndsr* tool
+ * #25: Add DataNode object type and appropriate set_data() methods
+ * #15: Implemented initial Unit and Integration tests
+ * #14/#24: Add in a CLI Management Command *ndsr* for interacting with Zookeeper data
+ * Testing: Integrated Travis CI testing
+ * Add contrib.django.utils package for easy Django/Zookeeper integration
 
 ## Version 0.2.9
  * Fix Registration.registration again - set the *ephemeral* setting at construction time.
