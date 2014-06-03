@@ -2,6 +2,7 @@ import mock
 import unittest
 
 from kazoo.client import KazooState
+from kazoo.protocol.states import ZnodeStat
 
 from nd_service_registry import watcher
 import nd_service_registry
@@ -111,3 +112,90 @@ class KazooServiceRegistryTests(unittest.TestCase):
         callback_checker.test.assert_called_with(expected_data)
         self.assertFalse(returned_data)
         self.assertTrue('/foo' in self.ndsr._watchers)
+
+
+class KazooServiceRegistryCachingTests(unittest.TestCase):
+    """KazooServiceRegistry Caching Tests."""
+
+    # A flag for filtering nose tests
+    unit = True
+
+    @mock.patch('nd_service_registry.ZookeeperClient')
+    def setUp(self, mocked_zookeeper):
+        self.ndsr = nd_service_registry.KazooServiceRegistry()
+
+    def tearDown(self):
+        # The NDSR object is a singleton ... if its already setup, we need
+        # to wipe its initalized state for our tests on each test-run.
+        self.ndsr._initialized = False
+
+    @mock.patch('nd_service_registry.funcs.save_dict')
+    def test_save_watcher_to_dict(self, mocked_save_dict):
+        # A normal data node storing some real data should be cachable
+        fake_node_data = {
+            'children': {},
+            'data': {'some': 'data'},
+            'path': '/mydata',
+            'stat': ZnodeStat(
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
+
+        self.ndsr._cachefile = True
+        self.ndsr._save_watcher_to_dict(fake_node_data)
+        mocked_save_dict.assert_called_with(
+            {'/mydata': fake_node_data}, True)
+
+    @mock.patch('nd_service_registry.funcs.save_dict')
+    def test_save_watcher_to_dict_with_empty_data(self, mocked_save_dict):
+        # A data node though that has NO DATA is assumed to be a path used
+        # only for storing ephemeral node lists (server registrations).
+        # In this case, if the children-list AND data-list are empty, we
+        # do not cache this.
+        fake_node_data = {
+            'children': {},
+            'data': None,
+            'path': '/services/ssh',
+            'stat': ZnodeStat(
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
+
+        self.ndsr._cachefile = True
+        self.ndsr._save_watcher_to_dict(fake_node_data)
+        self.assertItemsEqual(mocked_save_dict.mock_calls, [])
+
+    @mock.patch('nd_service_registry.funcs.save_dict')
+    def test_save_watcher_to_dict_with_bogus_node(self, mocked_save_dict):
+        # A data node though that has NO DATA is assumed to be a path used
+        # only for storing ephemeral node lists (server registrations).
+        # In this case, if the children-list AND data-list are empty, we
+        # do not cache this.
+        fake_node_data = {
+            'children': {},
+            'data': None,
+            'path': '/services/ssh',
+            'stat': None}
+
+        self.ndsr._cachefile = True
+        self.ndsr._save_watcher_to_dict(fake_node_data)
+        self.assertItemsEqual(mocked_save_dict.mock_calls, [])
+
+    @mock.patch('nd_service_registry.funcs.save_dict')
+    def test_save_watcher_to_dict_with_disabled_cache(self, mocked_save_dict):
+        # If caching is disabled, it should return quickly
+        fake_node_data = {
+            'children': {},
+            'data': None,
+            'path': '/services/ssh',
+            'stat': ZnodeStat(
+                czxid=505, mzxid=505, ctime=1355719651687,
+                mtime=1355719651687, version=0, cversion=1,
+                aversion=0, ephemeralOwner=0, dataLength=0,
+                numChildren=0, pzxid=506)}
+
+        self.ndsr._cachefile = False
+        self.ndsr._save_watcher_to_dict(fake_node_data)
+        self.assertItemsEqual(mocked_save_dict.mock_calls, [])

@@ -316,6 +316,24 @@ class nd_service_registry(object):
         if not self._cachefile:
             return
 
+        # If the 'stat' data is None, then this node doesn't even exist
+        # in Zookeeper. Definitely do not cache.
+        if not data['stat']:
+            return
+
+        # If the supplied node data has...
+        #   ... No Children
+        #   and
+        #   ... No Data
+        # Then we assume the data should not be cached (this most likely
+        # means that the path was storing a list of ephemeral children, and
+        # no children are currently registered. We do not want to cache
+        # this data, because it likely indicates something wrong.) Another
+        # way to look at this is that its simply an empty node that someone
+        # may have created, and caching an empty node doesn't make much sense.
+        if len(data['children']) < 1 and not data['data']:
+            return
+
         cache = {data['path']: data}
         log.debug('Saving Watcher object to cache: %s' % cache)
         funcs.save_dict(cache, self._cachefile)
