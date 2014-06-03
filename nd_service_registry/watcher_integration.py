@@ -149,12 +149,12 @@ class WatcherIntegrationTests(KazooTestHarness):
             self.zk.set(path, value='%s' % i)
             waituntil(get_data, {'string_value': '%s' % i}, timeout=5, mode=2)
 
-        # The right number of calls is 7. There are a few upfront calls when
+        # The right number of calls is 6. There are a few upfront calls when
         # the Watcher object is initialized, and after that there are a few
         # calls for the updated node-data when new children are added. The
         # call count would be MUCH higher (11++) if we were recursively
         # creating Watches though.
-        self.assertEquals(7, len(callback_checker.test.mock_calls))
+        self.assertEquals(6, len(callback_checker.test.mock_calls))
 
     def test_deleting_node_watcher_is_watching(self):
         # Create our test path
