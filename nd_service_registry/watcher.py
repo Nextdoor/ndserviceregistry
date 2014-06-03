@@ -53,8 +53,28 @@ class Watcher(object):
             'path': '/services/foo',
         }
     """
+    def __init__(self, zk, path, callback=None, watch_children=True,
+                 get_children_data=True):
+        """Initialize the Watcher object and begin watching a path.
 
-    def __init__(self, zk, path, callback=None, watch_children=True, get_children_data=True):
+        The initialization of a Watcher object automatically registers a
+        data watch in Zookeeper on the path specificed. Any and all
+        callbacks supplied during this initialization are executed as soon
+        as the data is returned by Zookeeper.
+
+        Optionally, a subsequent child watch is created on the children
+        of the supplied path and again these callbacks are executed
+        any time Zookeeper tells us that the children have changed
+        in any way.
+
+        args:
+            zk: A kazoo.client.KazooClient object
+            path: The path in Zookeeper to watch
+            callback: A function to call when the path data changes
+            wach_children: Whether or not to watch the children
+            get_children_data: When watching the Children, whetheror not to
+                               'get' the individual child 'data' as well.
+        """
         # Set our local variables
         self._zk = zk
         self._path = path
