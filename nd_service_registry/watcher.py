@@ -99,6 +99,10 @@ class Watcher(object):
         if callback:
             self._callbacks.append(callback)
 
+        # Quick copy of the data last used when executing callbacks -- used
+        # to prevent duplicate callback executions due to multiple watches.
+        self._last_callback_executed_with = None
+
         # if self._state is False, then even on a data change, our callbacks
         # do not run.
         self._state = True
@@ -221,9 +225,17 @@ class Watcher(object):
 
         Args:
             path: A string value of the 'path' that has been updated. This
-                  triggers the callbacks registered for that path only."""
-        log.debug('[%s] execute_callbacks triggered' % self._path)
+                  triggers the callbacks registered for that path only.
+        """
 
+        # If the current data and the last-execution data are the same, then
+        # assume our callback notification was bogus and don't run.
+        if self._last_callback_executed_with == self.get():
+            log.debug('[%s] Last callback data matches current data, not '
+                      'executing callbacks again.' % self._path)
+            return
+
+        log.debug('[%s] execute_callbacks triggered' % self._path)
         if not self.state():
             log.debug('[%s] self.state() is False - not executing callbacks.'
                       % self._path)
@@ -232,6 +244,10 @@ class Watcher(object):
         for callback in self._callbacks:
             log.debug('[%s] Executing callback %s' % (self._path, callback))
             callback(self.get())
+
+        # Store a "last called with" variable that we can check to prevent
+        # unnecessary extra callback executions.
+        self._last_callback_executed_with = self.get()
 
 
 class DummyWatcher(Watcher):

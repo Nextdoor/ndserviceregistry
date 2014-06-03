@@ -35,6 +35,18 @@ class WatcherTests(unittest.TestCase):
         self.assertTrue(self.callback_watcher.test in self.watch._callbacks)
         self.assertEquals(self.watch._data_watch, self.data_watch.return_value)
 
+    def test_execute_callbacks(self):
+        # Reset any knowledge of calls to the callback from the setUp()
+        self.callback_watcher.reset_mock()
+
+        # Execute the callback method several times. It sohuld only fire off
+        # once
+        for i in xrange(0, 5):
+          self.watch._execute_callbacks()
+
+        # Executing the callbacks should happen only when the data changes.
+        self.assertEquals(1, self.callback_watcher.test.call_count)
+
     def test_update_with_stat_and_data(self):
         fake_data_str = 'unittest'
         expected_decoded_fake_data = {'string_value': 'unittest'}
