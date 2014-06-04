@@ -1,4 +1,4 @@
-# nd_service_registry
+# Nextdoor Service Registry
 
 *nd_service_registry* is a Python module that provides a simple way to leverage
 *Apache Zookeeper* as a dynamic configuration and service registry.
@@ -9,9 +9,10 @@ Zookeeper.
 
 The current use cases are:
 
- * Register a server providing a service
- * Retrieve a list of servers providing a particular service
- * Execute callback methods whenever a service list changes
+ * Register a server providing a service (and subsequently retrieve them)
+ * Store a simple dict/key value in Zookeeper (and retreive it)
+ * Execute callback methods whenever any node list or data setting changes
+ * Get a temporary (but global!) lock while you do something
 
 The main benefit of using this module is if you have several different tools
 in your network that all need to interact with Zookeeper in a common way. The
@@ -28,79 +29,28 @@ or
 
     pip install nd_service_registry
 
-## Instantiating a KazooServiceRegistry module
+## Usage
+
+### Instantiating KazooServiceRegistry
 
 Create a logger object
 
     >>> import logging
-    >>> logger = logging.getLogger()
-    >>> logger.setLevel(logging.DEBUG)
-    >>> handler = logging.StreamHandler()
-    >>> logger.addHandler(handler)
+    >>> logging.basicConfig(level=logging.DEBUG)
 
 To create your initial connection object
 
-    >>> from nd_service_registry import KazooServiceRegistry
-    >>> nd = KazooServiceRegistry()
+    >>> import nd_service_registry
+    >>> nd = nd_service_registry.KazooServiceRegistry()
 
-The KazooServiceRegistry object is a child of nd_service_registry that conforms
-to our ServiceRegistry specs, while leveraging Kazoo as the backend. The
-object handles all of your connection states - there is no need to start/stop
-or monitor the connection state at all.
+The KazooServiceRegistry object is a child of nd\_service\_registry that
+conforms to our ServiceRegistry specs, while leveraging Kazoo as the backend.
+The object handles all of your connection states - there is no need to
+start/stop or monitor the connection state at all.
 
-## Basic use
+### Registering Data
 
-To register the host as providing a particular service
-
-    >>> nd.set_node('/services/ssh/server1:22', data={ 'foo': 'bar'})
-
-Getting a list of servers at a path
-
-    >>> nd.get('/services/ssh')
-    {'children': {u'server1:22': {u'foo': u'bar',
-                                  u'created': u'2012-12-15 00:45:03',
-                                  u'pid': 10733}},
-     'data': None,
-     'path': '/services/ssh',
-     'stat': ZnodeStat(czxid=6, mzxid=6, ctime=1355532303688,
-                       mtime=1355532303688, version=0, cversion=1,
-                       aversion=0, ephemeralOwner=0, dataLength=0,
-                       numChildren=1, pzxid=7)}
-
-## Locks
-
-One of Zookeepers great features is using it as a global lock manager. We provide
-two models for getting a lock. In one model, your lock is only active as long as
-your code is running
-
-    >>> with nd.get_lock('/foo', simultaneous=1):
-    ...      <do some work>
-    ...
-    >>>
-
-Another example is explicitly locking a path for some period of time, then
-releasing it explicitly (eg, locking during one method, and waiting for an
-entirely different method to handle the unlock)
-
-    >>> nd.acquire_lock('/foo', simultaneous=1)
-    >>> <do your work... >
-    >>> nd.release_lock('/foo')
-
-## Storing Data
-
-Storing arbitrary (and long-lived) data in Zookeeper is quick and simple!
-
-    >>> nd.set_data('/configs/my_api_key', data='abcdefg')
-    True
-    >>> >>> nd.get('/configs/my_api_key')['data']
-    {u'pid': 14644, u'string_value': u'abcdefg', u'created': u'2014-05-11 11:01:59'}
-    >>> nd.set_data('/configs/data', data={'more': 'complex', 'data': 'structure'})
-    True
-    >>> nd.get('/configs/data')['data']
-    {u'data': u'structure', u'more': u'complex', u'pid': 14644, u'created': u'2014-05-11 11:03:03'}
-    >>> 
-
-## Registering Ephemeral Nodes
+#### Ephemeral Nodes
 
 Registering a node in Zookeeper thats Ephemeral (disappears when the node
 goes offline, or if the connection is lost) is highly useful for keeping
@@ -125,7 +75,61 @@ track of which servers are offering specific services.
                        aversion=0, ephemeralOwner=0, dataLength=0,
                        numChildren=3, pzxid=45)}
 
-## Django
+
+To register the host as providing a particular service
+
+    >>> nd.set_node('/services/ssh/server1:22', data={ 'foo': 'bar'})
+
+Getting a list of servers at a path
+
+    >>> nd.get('/services/ssh')
+    {'children': {u'server1:22': {u'foo': u'bar',
+                                  u'created': u'2012-12-15 00:45:03',
+                                  u'pid': 10733}},
+     'data': None,
+     'path': '/services/ssh',
+     'stat': ZnodeStat(czxid=6, mzxid=6, ctime=1355532303688,
+                       mtime=1355532303688, version=0, cversion=1,
+                       aversion=0, ephemeralOwner=0, dataLength=0,
+                       numChildren=1, pzxid=7)}
+
+#### Arbitrary Data
+
+When you want to store arbitrary (but simple!) data objects in, its simple!
+
+    >>> sr.set_data('/config/my_app', data={'state': 'enabled'})
+    True
+    >>> sr.get('/config/my_app')
+    {'children': {},
+     'data': {u'created': u'2014-06-03 13:37:53',
+              u'pid': 2546,
+              u'state': u'enabled'},
+     'path': '/config/my_app',
+     'stat': ZnodeStat(czxid=76, mzxid=77, ctime=1401827873764,
+                       mtime=1401827873766, version=1, cversion=0,
+                       aversion=0, ephemeralOwner=0, dataLength=62,
+                       numChildren=0, pzxid=76)}
+
+### Distributed Locks
+
+One of Zookeepers great features is using it as a global lock manager. We provide
+two models for getting a lock. In one model, your lock is only active as long as
+your code is running
+
+    >>> with nd.get_lock('/foo', simultaneous=1):
+    ...      <do some work>
+    ...
+    >>>
+
+Another example is explicitly locking a path for some period of time, then
+releasing it explicitly (eg, locking during one method, and waiting for an
+entirely different method to handle the unlock)
+
+    >>> nd.acquire_lock('/foo', simultaneous=1)
+    >>> <do your work... >
+    >>> nd.release_lock('/foo')
+
+### Django
 
 We initially wrote this code to simplify our use of Zookeeper in Django.
 Included is a very simple Django utility package that makes it dead simple
