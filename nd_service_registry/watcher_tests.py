@@ -1,6 +1,5 @@
 import mock
 import unittest
-import threading
 
 from nd_service_registry import watcher
 
@@ -13,8 +12,10 @@ class WatcherTests(unittest.TestCase):
     @mock.patch('kazoo.recipe.watchers.DataWatch')
     @mock.patch('kazoo.recipe.watchers.ChildrenWatch')
     def setUp(self, children_watch, data_watch):
+        # During the setup we mock out the actual KazooClient
+        # object, as well as the DataWatch and ChildrenWatch classes
+        # that are used directly by the Watcher class.
         self.zk = mock.MagicMock()
-        self.zk.handler.lock_object.return_value = threading.Lock()
         self.path = '/test'
         self.children_watch = children_watch
         self.data_watch = data_watch
@@ -33,7 +34,8 @@ class WatcherTests(unittest.TestCase):
     def test_init(self):
         # Ensure that the Watcher has been initialized properly
         self.assertTrue(self.callback_watcher.test in self.watch._callbacks)
-        self.assertEquals(self.watch._data_watch, self.data_watch.return_value)
+        self.assertEquals(self.watch._current_data_watch,
+                          self.data_watch.return_value)
 
     def test_execute_callbacks(self):
         # Reset any knowledge of calls to the callback from the setUp()
@@ -48,36 +50,59 @@ class WatcherTests(unittest.TestCase):
         self.assertEquals(1, self.callback_watcher.test.call_count)
 
     def test_update_with_stat_and_data(self):
+        # Tell the Watcher that the node exists with some real-looking
+        # stat/data parameters.
         fake_data_str = 'unittest'
         expected_decoded_fake_data = {'string_value': 'unittest'}
         fake_stat = 'stat'
-
-        # Call the method
         self.watch._update(fake_data_str, fake_stat)
+
+        # Ensure that we've updated the local object data appropriately
         self.assertEquals(self.watch._data, expected_decoded_fake_data)
+
+        # Also guarantee that the callbacks were executed
         self.callback_watcher.test.assert_any_call
-        self.assertTrue(self.watch._children_watch is not None)
+
+        # Finally, make sure we stored the fact that a ChildrenWatch
+        # object was created by the _update() function.
+        self.assertTrue(self.watch._current_children_watch is not None)
 
     def test_update_with_nonexistent_node(self):
+        # Start out by telling the Watcher that the node doesn't exist
+        # by passing None in for the 'data' and 'stat'.
         fake_data_str = None
         expected_decoded_fake_data = None
         fake_stat = None
-
-        # Call the method
         self.watch._update(fake_data_str, fake_stat)
+
+        # Ensure that w've updated the lcoal object data appropriately
         self.assertEquals(self.watch._data, expected_decoded_fake_data)
+
+        # Also guarantee that the callbacks were executed
         self.callback_watcher.test.assert_any_call
-        self.assertTrue(self.watch._children_watch is None)
+
+        # In this case, verify that we did NOT attempt to create a
+        # ChildrenWatch object because the path does not exist.
+        self.assertTrue(self.watch._current_children_watch is None)
 
     def test_update_children(self):
-        # Mock the retry method to return back some fake data
+        # Mock out the zk.retry() function to return some fake data
+        # because the _update_children() function optionally calls out
+        # to it for each of the children that are passed into the function.
+        #
+        # (NOTE: This behavior is being deprecated)
         self.zk.retry.return_value = ('data', 'stat')
+
+        # Here is our list of fake children, and what we expect will be stored
+        # in the object once the function has completed. Notice it includes the
+        # 'data' return value above.
         fake_children = ['child2', 'child1']
         expected_children_dict = {
             'child1': {'string_value': 'data'},
             'child2': {'string_value': 'data'}
         }
 
+        # Execute the _update_children() function with our fake_children above
         self.watch._update_children(fake_children)
 
         # Ensure that the hash returned has a sorted list of children
@@ -85,12 +110,18 @@ class WatcherTests(unittest.TestCase):
         self.assertEquals(self.watch._children, expected_children_dict)
 
     def test_update_children_with_getdata_disabled(self):
-        # Mock the retry method to return back some fake data
-        self.zk.retry.return_value = ('data', 'stat')
-        fake_children = ['child2', 'child1']
-
+        # Explicitly disable the retrieval of 'data' information from each
+        # of the children when the _update_children() function is executed
         self.watch._get_children_data = False
+
+        # In this test, self.zk.retry() should never be called so we don't
+        # hae to mock it out. Just supply a list of children, and this list
+        # should be stored and then the callbacks should be executed.
+        fake_children = ['child2', 'child1']
         self.watch._update_children(fake_children)
 
         # Ensure that the hash returned has a sorted list of children
         self.assertEquals(self.watch._children, sorted(fake_children))
+
+        # Also ensure that we never called self.zk.retry()
+        self.zk.retry.assert_has_calls([])
