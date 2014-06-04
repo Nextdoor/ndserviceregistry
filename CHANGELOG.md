@@ -1,3 +1,6 @@
+## Version 0.3.1
+ * Bugfix: Remove *nose* requirement from the setup.py.
+
 ## Version 0.3.0
  * #45: Prevent duplicat callback executions when data has not changed
  * #39: Reduce the number of Zookeeper get() calls made by the Watcher objects
