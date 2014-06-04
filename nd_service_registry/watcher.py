@@ -20,10 +20,10 @@ __author__ = 'matt@nextdoor.com (Matt Wise)'
 
 import logging
 
+from kazoo.recipe import watchers
+
 from nd_service_registry import funcs
 
-# For KazooServiceRegistry Class
-import kazoo.exceptions
 
 TIMEOUT = 30
 
@@ -53,12 +53,33 @@ class Watcher(object):
             'path': '/services/foo',
         }
     """
+    def __init__(self, zk, path, callback=None, watch_children=True,
+                 get_children_data=True):
+        """Initialize the Watcher object and begin watching a path.
 
-    def __init__(self, zk, path, callback=None, watch_children=True):
+        The initialization of a Watcher object automatically registers a
+        data watch in Zookeeper on the path specificed. Any and all
+        callbacks supplied during this initialization are executed as soon
+        as the data is returned by Zookeeper.
+
+        Optionally, a subsequent child watch is created on the children
+        of the supplied path and again these callbacks are executed
+        any time Zookeeper tells us that the children have changed
+        in any way.
+
+        args:
+            zk: A kazoo.client.KazooClient object
+            path: The path in Zookeeper to watch
+            callback: A function to call when the path data changes
+            wach_children: Whether or not to watch the children
+            get_children_data: When watching the Children, whetheror not to
+                               'get' the individual child 'data' as well.
+        """
         # Set our local variables
         self._zk = zk
         self._path = path
         self._watch_children = watch_children
+        self._get_children_data = get_children_data
 
         # Get a lock handler
         self._run_lock = self._zk.handler.lock_object()
@@ -68,14 +89,9 @@ class Watcher(object):
         self._data = None
         self._stat = None
 
-        # Watching for Children is "optional" -- and actually doesn't happen
-        # in the event that you pass this object a path that doesn't exist yet
-        # (Kazoo throws a NoNodeError). Use a simple local state variable to
-        # track whether or not we've started watching for children. This is
-        # used in the _begin() method to prevent duplicate ChildrenWatches.
-        #
-        # See the _begin() method for more info.
-        self._watching_children = False
+        # Keep track of our Watcher objects in Kazoo with local references
+        self._current_data_watch = None
+        self._current_children_watch = None
 
         # Array to hold any callback functions we're supposed to notify when
         # anything changes on this path
@@ -87,8 +103,16 @@ class Watcher(object):
         # do not run.
         self._state = True
 
-        # Start up
-        self._begin()
+        # Start up our DataWatch. This can be started on any path regardless of
+        # whether it exists or not. ChildrenWatch objects though must be
+        # started on only existing-paths -- so we do not create that object
+        # here, but instead do it from with the self._update() method.
+        log.debug('[%s] Registering DataWatch (%s)' %
+                  (self._path, self._current_data_watch))
+        self._current_data_watch = watchers.DataWatch(
+            client=self._zk,
+            path=self._path,
+            func=self._update)
 
     def get(self):
         """Returns local data/children in specific dict format"""
@@ -124,74 +148,73 @@ class Watcher(object):
         self._callbacks.append(callback)
         callback(self.get())
 
-    def _begin(self):
-        # First, register a watch on the data for the path supplied.
-        log.debug('[%s] Registering watch on data changes' % self._path)
+    def _update(self, data, stat):
+        """Function executed by Kazoo upon data/stat changes for a path.
 
-        @self._zk.DataWatch(self._path, allow_missing_node=True)
-        def _update_root_data(data, stat):
-            log.debug('[%s] Data change detected' % self._path)
+        This function is registered during the __init__ process of this
+        Object with Kazoo. Upon the initial registration, and any subsequent
+        changes to the 'data' or 'stat' of a path, this function is called
+        again.
 
-            # NOTE: Applies to Kazoo <= 0.9, fixed in >= 1.0
-            #
-            # Since we set allow_missing_node to True, the 'data' passed back
-            # is ALWAYS 'None'. This means that we need to actually go out and
-            # explicitly get the data whenever this function is called. Try to
-            # get the data with zk.get(). If a NoNodeError is thrown, then
-            # we know the host is not registered.
-            try:
-                data, self._stat = self._zk.retry(self._zk.get, self._path)
-                log.debug('[%s] Node is registered.' % self._path)
-            except kazoo.exceptions.NoNodeError:
-                log.debug('[%s] Node is not registered.' % self._path)
-            except kazoo.exceptions.ConnectionClosedError:
-                log.debug('[%s] Node connection closed.' % self._path)
+        This function is responsible for updating the local Watcher object
+        state (its path data, stat data, etc) and triggering any callbacks
+        that have been registered with this Watcher.
 
-            self._data = funcs.decode(data)
-            self._stat = stat
-
-            log.debug('[%s] Data: %s, Stat: %s' %
-                      (self._path, self._data, self._stat))
-            self._execute_callbacks()
+        args:
+            data: The 'data' stored in Zookeeper for this path
+            stat: The 'stat' data for this path
+        """
+        self._data = funcs.decode(data)
+        self._stat = stat
+        log.debug('[%s] Data change detected: %s, Stat: %s' %
+                  (self._path, self._data, self._stat))
 
         # ChildrenWatches can only be applied to already existing paths
-        # (Kazoo throws a NoNodeError otherwise). To get around this, we
-        # add a second DataWatch on the root path. If the path 'stat' goes
-        # from None to <any data at all>, we know the path has been created
-        # and we can initiate our ChildrenWatch.
-        @self._zk.DataWatch(self._path, allow_missing_node=True)
-        def _optionally_create_child_watch(data, stat):
-            """Creates a ChildrenWatch object if appropriate.
+        # (Kazoo throws a NoNodeError otherwise). To prevent this NoNodeError
+        # from being thrown, we only register an additional ChildrenWatch
+        # in the event that 'stat' was not None.
+        if self._watch_children and stat and not self._current_children_watch:
+            log.debug('[%s] Registering ChildrenWatch' % self._path)
+            self._current_children_watch = watchers.ChildrenWatch(
+                client=self._zk,
+                path=self._path,
+                func=self._update_children)
 
-            In the event that a watch on the children is desired, and
-            we havn't already created one, then we create a new watch.
-            Otherwise we gracefully exit this function.
+        # Lastly, execute our callbacks
+        self._execute_callbacks()
 
-            args:
-                data: The current znode data
-                stat: The current znode stat
-            """
-            if self._watching_children:
-                return
+    def _update_children(self, children):
+        """Function executed by Kazoo upon children changes for a path.
 
-            if stat and self._watch_children:
-                log.debug('[%s] Registering watch on children' % self._path)
+        This function is registered by the _update() method during and is
+        executed by Kazoo upon any children changes to a path. Its responsible
+        for updating the local list of children for the path, and executing
+        the appropriate callbacks.
 
-                @self._zk.ChildrenWatch(self._path)
-                def _update_child_list(data):
-                    log.debug('[%s] New children: %s' %
-                              (self._path, sorted(data)))
-                    children = {}
-                    for child in data:
-                        fullpath = '%s/%s' % (self._path, child)
-                        data, stat = self._zk.retry(self._zk.get, fullpath)
-                        children[child] = funcs.decode(data)
-                    self._children = children
-                    self._execute_callbacks()
+        args:
+            children: The list of children returned by Kazoo
+        """
+        sorted_children = sorted(children)
+        log.debug('[%s] Children change detected: %s' %
+                  (self._path, sorted_children))
+        children_data = {}
 
-                    # Now mark that we're watching the children of this path
-                    # so that this method is never executed again.
-                    self._watching_children = True
+        # For backwards compatibility, we still return a hash with
+        # our list of children and the childrens individual data
+        # as the default behavior. However, we also allow the client
+        # to return just the array of children nodes. This is faster
+        # and requires no additinoal calls to Zookeeper. This will become
+        # the default behavior in the future.
+        if self._get_children_data:
+            for child in sorted_children:
+                fullpath = '%s/%s' % (self._path, child)
+                data, stat = self._zk.retry(self._zk.get, fullpath)
+                children_data[child] = funcs.decode(data)
+            self._children = children_data
+        else:
+            self._children = sorted_children
+
+        self._execute_callbacks()
 
     def _execute_callbacks(self):
         """Runs any callbacks that were passed to us for a given path.

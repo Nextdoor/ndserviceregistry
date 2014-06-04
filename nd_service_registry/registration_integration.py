@@ -271,8 +271,11 @@ class DataNodeTests(KazooTestHarness):
         def get_stat_from_watcher():
             return datanode._watcher.get()['stat']
 
+        # Get the original stat data, then delete the path, then wait
+        # for the get() method to not return the original stat data
+        orig_stat = datanode._watcher.get()['stat']
         self.zk.delete(path)
-        waituntil(get_stat_from_watcher, None, 5, mode=2)
+        waituntil(get_stat_from_watcher, orig_stat, 5, mode=1)
 
         # Ok now call the update() method and see if it re-registers
         datanode.update(data=data, state=True)
