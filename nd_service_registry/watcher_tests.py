@@ -33,7 +33,8 @@ class WatcherTests(unittest.TestCase):
     def test_init(self):
         # Ensure that the Watcher has been initialized properly
         self.assertTrue(self.callback_watcher.test in self.watch._callbacks)
-        self.assertEquals(self.watch._data_watch, self.data_watch.return_value)
+        self.assertEquals(self.watch._current_data_watch,
+                          self.data_watch.return_value)
 
     def test_update_with_stat_and_data(self):
         fake_data_str = 'unittest'
@@ -44,7 +45,7 @@ class WatcherTests(unittest.TestCase):
         self.watch._update(fake_data_str, fake_stat)
         self.assertEquals(self.watch._data, expected_decoded_fake_data)
         self.callback_watcher.test.assert_any_call
-        self.assertTrue(self.watch._children_watch is not None)
+        self.assertTrue(self.watch._current_children_watch is not None)
 
     def test_update_with_nonexistent_node(self):
         fake_data_str = None
@@ -55,7 +56,7 @@ class WatcherTests(unittest.TestCase):
         self.watch._update(fake_data_str, fake_stat)
         self.assertEquals(self.watch._data, expected_decoded_fake_data)
         self.callback_watcher.test.assert_any_call
-        self.assertTrue(self.watch._children_watch is None)
+        self.assertTrue(self.watch._current_children_watch is None)
 
     def test_update_children(self):
         # Mock the retry method to return back some fake data

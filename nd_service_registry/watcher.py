@@ -90,8 +90,8 @@ class Watcher(object):
         self._stat = None
 
         # Keep track of our Watcher objects in Kazoo with local references
-        self._data_watch = None
-        self._children_watch = None
+        self._current_data_watch = None
+        self._current_children_watch = None
 
         # Array to hold any callback functions we're supposed to notify when
         # anything changes on this path
@@ -107,12 +107,12 @@ class Watcher(object):
         # whether it exists or not. ChildrenWatch objects though must be
         # started on only existing-paths -- so we do not create that object
         # here, but instead do it from with the self._update() method.
-        self._data_watch = watchers.DataWatch(
+        log.debug('[%s] Registering DataWatch (%s)' %
+                  (self._path, self._current_data_watch))
+        self._current_data_watch = watchers.DataWatch(
             client=self._zk,
             path=self._path,
             func=self._update)
-        log.debug('[%s] Registered DataWatch (%s)' %
-                  (self._path, self._data_watch))
 
     def get(self):
         """Returns local data/children in specific dict format"""
@@ -173,9 +173,9 @@ class Watcher(object):
         # (Kazoo throws a NoNodeError otherwise). To prevent this NoNodeError
         # from being thrown, we only register an additional ChildrenWatch
         # in the event that 'stat' was not None.
-        if self._watch_children and stat and not self._children_watch:
+        if self._watch_children and stat and not self._current_children_watch:
             log.debug('[%s] Registering ChildrenWatch' % self._path)
-            self._children_watch = watchers.ChildrenWatch(
+            self._current_children_watch = watchers.ChildrenWatch(
                 client=self._zk,
                 path=self._path,
                 func=self._update_children)
