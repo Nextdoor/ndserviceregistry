@@ -282,3 +282,9 @@ workspace.  They can be executed like this
     Ran 19 tests in 3.360s
 
     OK
+
+## Apps using nd\_service\_registry
+
+ * [zk_monitor](http://github.com/nextdoor/zkmonitor): Zookeeper Path Monitoring Agent
+ * [zk_watcher](http://github.com/nextdoor/zkwatcher): Registers third-party (memcache/etc)
+   services in Zookeeper.
