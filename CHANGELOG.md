@@ -1,3 +1,6 @@
+## Version 0.3.2
+ * Bugfix: Ensure Kazoo is between 1.3 and 2.0.
+
 ## Version 0.3.1
  * Bugfix: Remove *nose* requirement from the setup.py.
 
