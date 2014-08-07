@@ -48,7 +48,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # We expect there to be valid data...
         self.assertEquals(None, watch.get()['data'])
         self.assertNotEquals(None, watch.get()['stat'])
-        self.assertEquals({}, watch.get()['children'])
+        self.assertEquals([], watch.get()['children'])
 
         # Now register a child node, and expect the data to change
         child_path = '%s/my_child_test' % path
@@ -59,7 +59,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         def get_children():
             print "got: %s" % watch.get()['children']
             return watch.get()['children']
-        waituntil(get_children, {}, timeout=5)
+        waituntil(get_children, [], timeout=5)
 
         # Now expect the watch to be kicked off
         self.assertTrue('my_child_test' in watch.get()['children'])
@@ -72,7 +72,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # to be None because the node doesn't exist.
         self.assertEquals(None, watch.get()['data'])
         self.assertEquals(None, watch.get()['stat'])
-        self.assertEquals({}, watch.get()['children'])
+        self.assertEquals([], watch.get()['children'])
 
         # Now, lets go and set the data path with something. We expect the
         # watcher now to actually register the change. Use the waituntil()
@@ -87,7 +87,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         self.assertEquals(
             {'string_value': "{'foo': 'bar'}"}, watch.get()['data'])
         self.assertNotEquals(None, watch.get()['stat'])
-        self.assertEquals({}, watch.get()['children'])
+        self.assertEquals([], watch.get()['children'])
 
     def test_watch_on_nonexistent_path_with_children_change(self):
         path = '%s/nonexistent-path-%s' % (self.sandbox, uuid.uuid4().hex)
@@ -97,7 +97,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # to be None because the node doesn't exist.
         self.assertEquals(None, watch.get()['data'])
         self.assertEquals(None, watch.get()['stat'])
-        self.assertEquals({}, watch.get()['children'])
+        self.assertEquals([], watch.get()['children'])
 
         # Now register a child node under the path, and expect the
         # data to change
@@ -107,7 +107,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # Wait until the children list changes
         def get_children():
             return watch.get()['children']
-        waituntil(get_children, {}, timeout=5)
+        waituntil(get_children, [], timeout=5)
 
         # Now verify that the data has been updated in our Watcher
         self.assertTrue('my_child_test' in watch.get()['children'])
@@ -126,7 +126,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # to be None because the node doesn't exist.
         self.assertEquals(None, watch.get()['data'])
         self.assertEquals(None, watch.get()['stat'])
-        self.assertEquals({}, watch.get()['children'])
+        self.assertEquals([], watch.get()['children'])
 
         # Now register a child node under the path, and expect the
         # data to change
@@ -136,7 +136,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # Wait until the children list changes
         def get_children():
             return watch.get()['children']
-        waituntil(get_children, {}, timeout=5)
+        waituntil(get_children, [], timeout=5)
 
         # Now verify that the data has been updated in our Watcher
         self.assertTrue('my_child_test' in watch.get()['children'])
@@ -173,7 +173,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # point, our Watcher object should cleanly update itself indicating
         # that the path no longer exists.
         expected_get_results = {
-            'path': path, 'stat': None, 'data': None, 'children': {}}
+            'path': path, 'stat': None, 'data': None, 'children': []}
         waituntil(watch.get, expected_get_results, 5, mode=2)
         self.assertEquals(expected_get_results, watch.get())
 

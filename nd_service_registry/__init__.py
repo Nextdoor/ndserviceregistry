@@ -48,12 +48,7 @@ Example usage to provide the above service list:
 Example of getting a static list of nodes from /production/ssh:
 
     >>> nd.get('/production/ssh')
-    {'children': {u'server1:22': {u'created': u'2012-12-15 01:15:09',
-                                  u'pid': 11137},
-                  u'server2:22': {u'created': u'2012-12-15 01:15:14',
-                                  u'pid': 11137},
-                  u'server3:22': {u'created': u'2012-12-15 01:15:18',
-                                  u'pid': 11137}},
+    {'children': [u'server1:22', u'server2:22', u'server3:22' ],
      'data': None,
      'path': '/production/ssh',
      'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452,
@@ -76,14 +71,7 @@ to the get() function.
     ...     pprint.pprint(nodes['children'])
     ...
     >>> nd.get('/production/ssh', callback=list)
-    {
-      u'server1:22': {u'pid': 12345,
-                      u'created': u'2012-12-12 15:26:24'}
-      u'server2:22': {u'pid': 12345,
-                      u'created': u'2012-12-12 15:26:24'}
-      u'server3:22': {u'pid': 12345,
-                      u'created': u'2012-12-12 15:26:24'}
-    }
+    [u'server1:22', u'server2:22', u'server3:22']
 
 Example of doing some work with a lock in place:
 

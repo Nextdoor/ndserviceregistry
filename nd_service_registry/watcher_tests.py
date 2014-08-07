@@ -86,34 +86,6 @@ class WatcherTests(unittest.TestCase):
         self.assertTrue(self.watch._current_children_watch is None)
 
     def test_update_children(self):
-        # Mock out the zk.retry() function to return some fake data
-        # because the _update_children() function optionally calls out
-        # to it for each of the children that are passed into the function.
-        #
-        # (NOTE: This behavior is being deprecated)
-        self.zk.retry.return_value = ('data', 'stat')
-
-        # Here is our list of fake children, and what we expect will be stored
-        # in the object once the function has completed. Notice it includes the
-        # 'data' return value above.
-        fake_children = ['child2', 'child1']
-        expected_children_dict = {
-            'child1': {'string_value': 'data'},
-            'child2': {'string_value': 'data'}
-        }
-
-        # Execute the _update_children() function with our fake_children above
-        self.watch._update_children(fake_children)
-
-        # Ensure that the hash returned has a sorted list of children
-        self.assertEquals((self.watch._children.keys()), sorted(fake_children))
-        self.assertEquals(self.watch._children, expected_children_dict)
-
-    def test_update_children_with_getdata_disabled(self):
-        # Explicitly disable the retrieval of 'data' information from each
-        # of the children when the _update_children() function is executed
-        self.watch._get_children_data = False
-
         # In this test, self.zk.retry() should never be called so we don't
         # hae to mock it out. Just supply a list of children, and this list
         # should be stored and then the callbacks should be executed.
