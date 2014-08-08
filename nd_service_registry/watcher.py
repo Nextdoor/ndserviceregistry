@@ -53,8 +53,7 @@ class Watcher(object):
             'path': '/services/foo',
         }
     """
-    def __init__(self, zk, path, callback=None, watch_children=True,
-                 get_children_data=True):
+    def __init__(self, zk, path, callback=None, watch_children=True):
         """Initialize the Watcher object and begin watching a path.
 
         The initialization of a Watcher object automatically registers a
@@ -72,20 +71,17 @@ class Watcher(object):
             path: The path in Zookeeper to watch
             callback: A function to call when the path data changes
             wach_children: Whether or not to watch the children
-            get_children_data: When watching the Children, whetheror not to
-                               'get' the individual child 'data' as well.
         """
         # Set our local variables
         self._zk = zk
         self._path = path
         self._watch_children = watch_children
-        self._get_children_data = get_children_data
 
         # Get a lock handler
         self._run_lock = self._zk.handler.lock_object()
 
         # Create local caches of the 'data' and the 'children' data
-        self._children = {}
+        self._children = []
         self._data = None
         self._stat = None
 
@@ -198,26 +194,9 @@ class Watcher(object):
         args:
             children: The list of children returned by Kazoo
         """
-        sorted_children = sorted(children)
+        self._children = sorted(children)
         log.debug('[%s] Children change detected: %s' %
-                  (self._path, sorted_children))
-        children_data = {}
-
-        # For backwards compatibility, we still return a hash with
-        # our list of children and the childrens individual data
-        # as the default behavior. However, we also allow the client
-        # to return just the array of children nodes. This is faster
-        # and requires no additinoal calls to Zookeeper. This will become
-        # the default behavior in the future.
-        if self._get_children_data:
-            for child in sorted_children:
-                fullpath = '%s/%s' % (self._path, child)
-                data, stat = self._zk.retry(self._zk.get, fullpath)
-                children_data[child] = funcs.decode(data)
-            self._children = children_data
-        else:
-            self._children = sorted_children
-
+                  (self._path, self._children))
         self._execute_callbacks()
 
     def _execute_callbacks(self):

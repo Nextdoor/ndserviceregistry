@@ -62,12 +62,7 @@ track of which servers are offering specific services.
     >>> nd.set_node('/production/web/server2:22',
                     data={'type': 'apache'})
     >>> nd.get('/production/ssh')
-    {'children': {u'server1:22': {u'created': u'2012-12-15 01:15:09',
-                                  u'pid': 11137},
-                  u'server2:22': {u'created': u'2012-12-15 01:15:14',
-                                  u'pid': 11137},
-                  u'server3:22': {u'created': u'2012-12-15 01:15:18',
-                                  u'pid': 11137}},
+    {'children': [u'server1:22', u'server2:22', u'server3:22' ],
      'data': None,
      'path': '/production/ssh',
      'stat': ZnodeStat(czxid=27, mzxid=27, ctime=1355533229452,
@@ -100,7 +95,7 @@ When you want to store arbitrary (but simple!) data objects in, its simple!
     >>> sr.set_data('/config/my_app', data={'state': 'enabled'})
     True
     >>> sr.get('/config/my_app')
-    {'children': {},
+    {'children': []
      'data': {u'created': u'2014-06-03 13:37:53',
               u'pid': 2546,
               u'state': u'enabled'},

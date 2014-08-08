@@ -66,7 +66,7 @@ class RegistrationBaseTests(KazooTestHarness):
         # registered the path.
         self.assertEquals(None, reg1.data())
         self.assertEquals({'path': path, 'stat': None,
-                           'data': None, 'children': {}}, reg1.get())
+                           'data': None, 'children': []}, reg1.get())
         self.assertFalse(reg1.state())
         self.assertEquals(None, self.zk.exists(path))
 
@@ -118,7 +118,7 @@ class RegistrationBaseTests(KazooTestHarness):
         waituntil(reg1.data, current_data, 5)
         self.assertFalse(reg1.state())
         self.assertEquals({'path': path, 'stat': None,
-                           'data': None, 'children': {}}, reg1.get())
+                           'data': None, 'children': []}, reg1.get())
         self.assertEquals(None, self.zk.exists(path))
 
     def test_stop(self):
