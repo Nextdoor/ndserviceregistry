@@ -4,8 +4,90 @@ import threading
 
 from mock import patch
 
+from kazoo import exceptions
+
 from nd_service_registry import registration
 from nd_service_registry import watcher
+
+
+class TestExc(Exception):
+    """Bogus exception"""
+
+
+class RegistrationBaseTests(unittest.TestCase):
+    # A flag for filtering nose tests
+    unit = True
+
+    @mock.patch('kazoo.recipe.watchers.DataWatch')
+    @mock.patch('kazoo.recipe.watchers.ChildrenWatch')
+    @patch.object(watcher.Watcher, 'add_callback')
+    def setUp(self, *args, **kwargs):
+        self.zk = mock.MagicMock()
+        self.reg = registration.RegistrationBase(self.zk, '/unittest/host:22')
+
+    def test_create_node(self):
+        self.reg._create_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.create,
+            '/unittest/host:22',
+            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+
+    def test_create_node_with_new_data(self):
+        self.reg._encoded_data = '1234'
+        self.reg._create_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.create,
+            '/unittest/host:22',
+            value='1234', ephemeral=False, makepath=True)
+
+    def test_create_node_exists_error(self):
+        self.zk.retry.side_effect = exceptions.NodeExistsError()
+        self.reg._create_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.create,
+            '/unittest/host:22',
+            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+
+    def test_create_node_noauth(self):
+        self.zk.retry.side_effect = exceptions.NoAuthError('Boom!')
+        self.reg._create_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.create,
+            '/unittest/host:22',
+            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+
+    def test_create_misc_exc(self):
+        self.zk.retry.side_effect = TestExc('Oh snap!')
+        self.reg._create_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.create,
+            '/unittest/host:22',
+            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+
+    def test_delete_node(self):
+        self.reg._delete_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.delete, '/unittest/host:22')
+
+    def test_delete_node_noauth(self):
+        self.zk.retry.side_effect = exceptions.NoAuthError('Boom!')
+        self.reg._delete_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.delete, '/unittest/host:22')
+
+    def test_delete_node_misc_exc(self, *args, **kwargs):
+        self.zk.retry.side_effect = TestExc('Oh snap!')
+        self.reg._delete_node()
+        self.zk.retry.assert_called_once_with(
+            self.zk.delete, '/unittest/host:22')
+
+    @patch.object(registration.RegistrationBase, '_create_node')
+    @patch.object(registration.RegistrationBase, '_delete_node')
+    def test_update_state(self, mock_delete, mock_create):
+        self.reg._update_state(True)
+        self.reg._update_state(False)
+        mock_create.assert_called_once_with()
+        mock_delete.assert_called_once_with()
 
 
 class DataNodeTests(unittest.TestCase):

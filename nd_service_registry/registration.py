@@ -158,38 +158,60 @@ class RegistrationBase(object):
             self.set_data(data)
 
     def _update_state(self, state):
-        if state is True:
-            # Register our connection with zookeeper
-            try:
-                log.debug('[%s] Registering...' % self._path)
-                self._zk.retry(self._zk.create, self._path,
-                               value=self._encoded_data,
-                               ephemeral=self._ephemeral, makepath=True)
-                log.info('[%s] Registered with data: %s' %
-                         (self._path, self._encoded_data))
-            except kazoo.exceptions.NodeExistsError, e:
-                # Node exists ... possible this callback got called multiple
-                # times
-                pass
-            except kazoo.exceptions.NoAuthError, e:
-                log.error('[%s] No authorization to create node.' % self._path)
-            except Exception, e:
-                log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                    self._path, e))
+        """Creates/Destroys a registered Zookeeper node.
 
+        If the underlying path does not exist, then the path is created. If
+        the path is multi-leveled (/foo/bar/baz/host:22), we only set the
+        ACL on the '/baz/' subdirectory. We do not set it on /foo/bar. This
+        leaves the ACL protection only at the final dangling endpoint, rather
+        than blocking out all of /foo for future use by other clients.
+
+        args:
+            state: Boolean True/False whether or not to register the path.
+        """
+        if state is True:
+            self._create_node()
         elif state is False:
-            # Try to delete the node
-            log.debug('[%s] Attempting de-registration...' % self._path)
-            try:
-                self._zk.retry(self._zk.delete, self._path)
-            except kazoo.exceptions.NoAuthError, e:
-                # The node exists, but we don't even have authorization to read
-                # it. We certainly will not have access then to change it below
-                # so return false. We'll retry again very soon.
-                log.error('[%s] No authorization to delete node.' % self._path)
-            except Exception, e:
-                log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                    self._path, e))
+            self._delete_node()
+
+    def _create_node(self):
+        """Creates the registered Zookeeper node endpoint.
+
+        If the path does not exist, recursively creates it.
+        """
+        try:
+            log.debug('[%s] Registering...' % self._path)
+            self._zk.retry(self._zk.create, self._path,
+                           value=self._encoded_data,
+                           ephemeral=self._ephemeral, makepath=True)
+            log.info('[%s] Registered with data: %s' %
+                     (self._path, self._encoded_data))
+        except kazoo.exceptions.NodeExistsError, e:
+            # Node exists ... possible this callback got called multiple
+            # times
+            pass
+        except kazoo.exceptions.NoAuthError, e:
+            log.error('[%s] No authorization to create node.' % self._path)
+        except Exception, e:
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
+
+    def _delete_node(self):
+        """Deletes a registered Zookeeper node endpoint.
+
+        args:
+            path: The fully qualified path to delete.
+        """
+        # Try to delete the node
+        log.debug('[%s] Attempting de-registration...' % self._path)
+        try:
+            self._zk.retry(self._zk.delete, self._path)
+        except kazoo.exceptions.NoAuthError, e:
+            # The node exists, but we don't even have authorization to read
+            # it. We certainly will not have access then to change it below
+            # so return false. We'll retry again very soon.
+            log.error('[%s] No authorization to delete node.' % self._path)
+        except Exception, e:
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _update_data(self):
         try:
