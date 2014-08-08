@@ -196,11 +196,7 @@ class RegistrationBase(object):
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _delete_node(self):
-        """Deletes a registered Zookeeper node endpoint.
-
-        args:
-            path: The fully qualified path to delete.
-        """
+        """Deletes a registered Zookeeper node endpoint."""
         # Try to delete the node
         log.debug('[%s] Attempting de-registration...' % self._path)
         try:
