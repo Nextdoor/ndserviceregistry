@@ -172,14 +172,31 @@ class RegistrationBase(object):
             state: Boolean True/False whether or not to register the path.
         """
         if state is True:
-            self._create_node()
+            try:
+                self._create_node()
+            except kazoo.exceptions.NoNodeError:
+                # The underlying path doesn't exist to put the node into.
+                # Create the path, and re-call ourselves. If the
+                # create_node_path method raises an exception, we break out and
+                # throw an alert rather than continueing this recursive call.
+                # If it returns cleanly, we call self._create_node()
+                # recursively.
+
+                # Try to create the root path for the node. If this raises
+                # an exception, we catch it, log it, and return.
+                self._create_node_path()
+
+                # If we got here, then the root path has been created and we
+                # recursively re-call ourselves to create the final path node.
+                self._create_node()
         elif state is False:
             self._delete_node()
 
     def _create_node(self):
         """Creates the registered Zookeeper node endpoint.
 
-        If the path does not exist, recursively creates it.
+        If the path does not exist, raise the exception and allow the
+        _update_state() method to handle it.
         """
         try:
             log.debug('[%s] Registering...' % self._path)
@@ -189,22 +206,9 @@ class RegistrationBase(object):
             log.info('[%s] Registered with data: %s' %
                      (self._path, self._encoded_data))
         except kazoo.exceptions.NoNodeError:
-            # The underlying path doesn't exist to put the node into. Create
-            # the path, and re-call ourselves. If the create_node_path method
-            # raises an exception, we break out and throw an alert rather than
-            # continueing this recursive call. If it returns cleanly, we call
-            # self._create_node() recursively.
-            try:
-                # Try to create the root path for the node. If this raises
-                # an exception, we catch it, log it, and return.
-                self._create_node_path()
-
-                # If we got here, then the root path has been created and we
-                # recursively re-call ourselves to create the final path node.
-                self._create_node()
-            except Exception, e:
-                log.error('[%s] Could not create path to contain node '
-                          'registration: %s' % (self._path, e))
+            # The underlying path does not exist. Raise this exception, and
+            # _update_state() handle it.
+            raise
         except kazoo.exceptions.NodeExistsError, e:
             # Node exists ... possible this callback got called multiple
             # times

@@ -65,42 +65,24 @@ class RegistrationBaseTests(unittest.TestCase):
             '/unittest/host:22',
             value=self.reg._encoded_data, ephemeral=False, makepath=False)
 
+    @patch.object(registration.RegistrationBase, '_create_node')
     @patch.object(registration.RegistrationBase, '_create_node_path')
-    def test_create_no_node_error(self, mock_create_node_path):
-        # The first time self.zk.retry is called, we raise the exception. After
-        # that we just return True so that we can pretent like the subsequent
-        # calls in _create() work fine.
-        self.zk.retry.side_effect = [
+    def test_update_no_node_error(self,
+                                  mock_create_node_path,
+                                  mock_create_node):
+        # The first time _create_node() is called, we raise the exception.
+        # After that we just return True so that we can pretent like the
+        # subsequent calls in _create() work fine.
+        mock_create_node.side_effect = [
             exceptions.NoNodeError('Snap'), True]
 
-        self.reg._create_node()
+        self.reg._update_state(True)
+
+        # The create_node_path method should be executed once.
         mock_create_node_path.assert_called_once_with()
 
-        calls = [
-            mock.call(self.zk.create, '/unittest/host:22', makepath=False,
-                      ephemeral=False, value=self.reg._encoded_data),
-            mock.call(self.zk.create, '/unittest/host:22', makepath=False,
-                      ephemeral=False, value=self.reg._encoded_data)
-        ]
-        self.zk.retry.assert_has_calls(calls)
-
-    @patch.object(registration.RegistrationBase, '_create_node_path')
-    def test_create_no_node_error_and_misc_exc(self, mock_create_node_path):
-        # The first time self.zk.retry is called, we raise the exception. After
-        # that we just return True so that we can pretent like the subsequent
-        # calls in _create() work fine.
-        self.zk.retry.side_effect = [
-            exceptions.NoNodeError('Snap'), True]
-
-        # Mock the _create_node_path and have it raise an exception
-        mock_create_node_path.side_effect = Exception('Whoa')
-
-        self.reg._create_node()
-        mock_create_node_path.assert_called_once_with()
-
-        self.zk.retry.assert_called_once_with(
-            self.zk.create, '/unittest/host:22', makepath=False,
-            ephemeral=False, value=self.reg._encoded_data)
+        # The create_node method should be executed twice.
+        mock_create_node.assert_called_twice_with()
 
     def test_create_node_path(self):
         self.reg._create_node_path()
