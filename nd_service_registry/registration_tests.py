@@ -5,6 +5,7 @@ import threading
 from mock import patch
 
 from kazoo import exceptions
+from kazoo import security
 
 from nd_service_registry import registration
 from nd_service_registry import watcher
@@ -30,7 +31,7 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.create,
             '/unittest/host:22',
-            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+            value=self.reg._encoded_data, ephemeral=False, makepath=False)
 
     def test_create_node_with_new_data(self):
         self.reg._encoded_data = '1234'
@@ -38,7 +39,7 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.create,
             '/unittest/host:22',
-            value='1234', ephemeral=False, makepath=True)
+            value='1234', ephemeral=False, makepath=False)
 
     def test_create_node_exists_error(self):
         self.zk.retry.side_effect = exceptions.NodeExistsError()
@@ -46,7 +47,7 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.create,
             '/unittest/host:22',
-            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+            value=self.reg._encoded_data, ephemeral=False, makepath=False)
 
     def test_create_node_noauth(self):
         self.zk.retry.side_effect = exceptions.NoAuthError('Boom!')
@@ -54,7 +55,7 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.create,
             '/unittest/host:22',
-            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+            value=self.reg._encoded_data, ephemeral=False, makepath=False)
 
     def test_create_misc_exc(self):
         self.zk.retry.side_effect = TestExc('Oh snap!')
@@ -62,7 +63,72 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.create,
             '/unittest/host:22',
-            value=self.reg._encoded_data, ephemeral=False, makepath=True)
+            value=self.reg._encoded_data, ephemeral=False, makepath=False)
+
+    @patch.object(registration.RegistrationBase, '_create_node_path')
+    def test_create_no_node_error(self, mock_create_node_path):
+        # The first time self.zk.retry is called, we raise the exception. After
+        # that we just return True so that we can pretent like the subsequent
+        # calls in _create() work fine.
+        self.zk.retry.side_effect = [
+            exceptions.NoNodeError('Snap'), True]
+
+        self.reg._create_node()
+        mock_create_node_path.assert_called_once_with()
+
+        calls = [
+            mock.call(self.zk.create, '/unittest/host:22', makepath=False,
+                      ephemeral=False, value=self.reg._encoded_data),
+            mock.call(self.zk.create, '/unittest/host:22', makepath=False,
+                      ephemeral=False, value=self.reg._encoded_data)
+        ]
+        self.zk.retry.assert_has_calls(calls)
+
+    @patch.object(registration.RegistrationBase, '_create_node_path')
+    def test_create_no_node_error_and_misc_exc(self, mock_create_node_path):
+        # The first time self.zk.retry is called, we raise the exception. After
+        # that we just return True so that we can pretent like the subsequent
+        # calls in _create() work fine.
+        self.zk.retry.side_effect = [
+            exceptions.NoNodeError('Snap'), True]
+
+        # Mock the _create_node_path and have it raise an exception
+        mock_create_node_path.side_effect = Exception('Whoa')
+
+        self.reg._create_node()
+        mock_create_node_path.assert_called_once_with()
+
+        self.zk.retry.assert_called_once_with(
+            self.zk.create, '/unittest/host:22', makepath=False,
+            ephemeral=False, value=self.reg._encoded_data)
+
+    def test_create_node_path(self):
+        self.reg._create_node_path()
+        self.zk.retry.assert_called_once_with(self.zk.ensure_path, '/unittest')
+
+        self.reg._path = '/foo/bar/host:22'
+        self.reg._create_node_path()
+        calls = [
+            mock.call(self.zk.ensure_path, '/foo',
+                      acl=security.OPEN_ACL_UNSAFE),
+            mock.call(self.zk.ensure_path, '/foo/bar')]
+        self.zk.retry.assert_has_calls(calls)
+
+        self.reg._path = '/foo/bar/baz/host:22'
+        self.reg._create_node_path()
+        calls = [
+            mock.call(self.zk.ensure_path, '/foo/bar',
+                      acl=security.OPEN_ACL_UNSAFE),
+            mock.call(self.zk.ensure_path, '/foo/bar/baz')]
+        self.zk.retry.assert_has_calls(calls)
+
+        self.reg._path = '/foo/bar/baz/abc/test/host:22'
+        self.reg._create_node_path()
+        calls = [
+            mock.call(self.zk.ensure_path, '/foo/bar/baz/abc',
+                      acl=security.OPEN_ACL_UNSAFE),
+            mock.call(self.zk.ensure_path, '/foo/bar/baz/abc/test')]
+        self.zk.retry.assert_has_calls(calls)
 
     def test_delete_node(self):
         self.reg._delete_node()
@@ -75,11 +141,28 @@ class RegistrationBaseTests(unittest.TestCase):
         self.zk.retry.assert_called_once_with(
             self.zk.delete, '/unittest/host:22')
 
-    def test_delete_node_misc_exc(self, *args, **kwargs):
+    def test_delete_node_misc_exc(self):
         self.zk.retry.side_effect = TestExc('Oh snap!')
         self.reg._delete_node()
         self.zk.retry.assert_called_once_with(
             self.zk.delete, '/unittest/host:22')
+
+    def test_update_data(self):
+        self.reg._update_data()
+        self.zk.retry.assert_called_once_with(
+            self.zk.set, '/unittest/host:22', value=self.reg._encoded_data)
+
+    def test_update_data_node_noauth(self):
+        self.zk.retry.side_effect = exceptions.NoAuthError('Boom!')
+        self.reg._update_data()
+        self.zk.retry.assert_called_once_with(
+            self.zk.set, '/unittest/host:22', value=self.reg._encoded_data)
+
+    def test_update_data_misc_exc(self):
+        self.zk.retry.side_effect = TestExc('Oh snap!')
+        self.reg._update_data()
+        self.zk.retry.assert_called_once_with(
+            self.zk.set, '/unittest/host:22', value=self.reg._encoded_data)
 
     @patch.object(registration.RegistrationBase, '_create_node')
     @patch.object(registration.RegistrationBase, '_delete_node')

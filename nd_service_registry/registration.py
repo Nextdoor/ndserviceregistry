@@ -53,12 +53,14 @@ Copyright 2014 Nextdoor Inc."""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
+from os.path import split
 import logging
 
 from nd_service_registry import funcs
 from nd_service_registry.watcher import Watcher
 
 # For KazooServiceRegistry Class
+from kazoo import security
 import kazoo.exceptions
 
 TIMEOUT = 30
@@ -183,9 +185,26 @@ class RegistrationBase(object):
             log.debug('[%s] Registering...' % self._path)
             self._zk.retry(self._zk.create, self._path,
                            value=self._encoded_data,
-                           ephemeral=self._ephemeral, makepath=True)
+                           ephemeral=self._ephemeral, makepath=False)
             log.info('[%s] Registered with data: %s' %
                      (self._path, self._encoded_data))
+        except kazoo.exceptions.NoNodeError:
+            # The underlying path doesn't exist to put the node into. Create
+            # the path, and re-call ourselves. If the create_node_path method
+            # raises an exception, we break out and throw an alert rather than
+            # continueing this recursive call. If it returns cleanly, we call
+            # self._create_node() recursively.
+            try:
+                # Try to create the root path for the node. If this raises
+                # an exception, we catch it, log it, and return.
+                self._create_node_path()
+
+                # If we got here, then the root path has been created and we
+                # recursively re-call ourselves to create the final path node.
+                self._create_node()
+            except Exception, e:
+                log.error('[%s] Could not create path to contain node '
+                          'registration: %s' % (self._path, e))
         except kazoo.exceptions.NodeExistsError, e:
             # Node exists ... possible this callback got called multiple
             # times
@@ -195,11 +214,38 @@ class RegistrationBase(object):
         except Exception, e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
+    def _create_node_path(self):
+        """Recursively creates the underlying path for our node registration.
+
+        Note, if the path is multi-levels, does not apply an ACL to anything
+        but the deepest level of the path. For example, on
+        /foo/bar/baz/host:22, the ACL would only be applied to /foo/bar/baz,
+        not /foo or /foo/bar.
+
+        Note, no exceptions are caught here. This method is really meant to be
+        called only by _create_node(), which handles the exceptions behavior.
+        """
+        # Strip the path down into a few components...
+        (path, node) = split(self._path)
+
+        # Count the number of levels in the path. If its >1, then we split
+        # the path into a 'root' path and a 'deep' path. We create the
+        # 'root' path with no ACL at all (the default OPEN acl). The
+        # final path that will hold our node registration will get created
+        # with whatever ACL settings were used when creating the Kazoo
+        # connection object.
+        if len(filter(None, path.split('/'))) > 1:
+            (root_path, deep_path) = split(path)
+            self._zk.retry(
+                self._zk.ensure_path, root_path,
+                acl=security.OPEN_ACL_UNSAFE)
+
+        # Create the final destination path folder that the node will be
+        # registered in -- and allow Kazoo to use the ACL if appropriate.
+        self._zk.retry(self._zk.ensure_path, path)
+
     def _delete_node(self):
         """Deletes a registered Zookeeper node endpoint.
-
-        args:
-            path: The fully qualified path to delete.
         """
         # Try to delete the node
         log.debug('[%s] Attempting de-registration...' % self._path)
@@ -214,6 +260,7 @@ class RegistrationBase(object):
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _update_data(self):
+        """Updates an existing node in Zookeeper with fresh data."""
         try:
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             log.debug('[%s] Updated with data: %s' %
@@ -221,8 +268,7 @@ class RegistrationBase(object):
         except kazoo.exceptions.NoAuthError, e:
             log.error('[%s] No authorization to set node.' % self._path)
         except Exception, e:
-            log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                      self._path, e))
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
 
 class EphemeralNode(RegistrationBase):
