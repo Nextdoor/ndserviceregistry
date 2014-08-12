@@ -818,13 +818,14 @@ class KazooServiceRegistry(nd_service_registry):
                 #
                 # Its highly recommended that you break up your server farms
                 # into different permission groups.
-                ACL = kazoo.security.make_digest_acl(self._username,
-                                                     self._password, all=True)
+                ACL = kazoo.security.make_digest_acl(u'%s' % self._username,
+                                                     u'%s' % self._password,
+                                                     all=True)
 
                 # This allows *all* users to read child nodes, but disallows
                 # them from reading, updating permissions, deleting child
                 # nodes, or writing to child nodes that they do not own.
-                READONLY_ACL = kazoo.security.make_acl('world', 'anyone',
+                READONLY_ACL = kazoo.security.make_acl(u'world', u'anyone',
                                                        create=False,
                                                        delete=False,
                                                        write=False,
@@ -832,7 +833,7 @@ class KazooServiceRegistry(nd_service_registry):
                                                        admin=False)
 
                 log.debug('Credentials were supplied, adding auth.')
-                self._zk.retry(self._zk.add_auth, 'digest', "%s:%s" %
+                self._zk.retry(self._zk.add_auth_async, 'digest', "%s:%s" %
                                (self._username, self._password))
 
                 if not self._acl:
@@ -841,7 +842,7 @@ class KazooServiceRegistry(nd_service_registry):
             # If an ACL was providfed, or we dynamically generated one with the
             # username/password, then set it.
             if self._acl:
-                self._zk.default_acl = (ACL, READONLY_ACL)
+                self._zk.default_acl = self._acl
 
     def _state_listener(self, state):
         """Listens for state changes about our connection.
