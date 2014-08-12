@@ -156,7 +156,6 @@ class nd_service_registry(object):
             node: (String) representing the node path to the object
             type: registration object type
         """
-        print self.set
         return self.set(node=node, data=None, state=False, type=type)
 
     def add_callback(self, path, callback):
