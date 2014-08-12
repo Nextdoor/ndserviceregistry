@@ -5,6 +5,7 @@ from kazoo.client import KazooState
 from kazoo.protocol.states import ZnodeStat
 
 from nd_service_registry import watcher
+from nd_service_registry import registration
 import nd_service_registry
 
 
@@ -112,6 +113,21 @@ class KazooServiceRegistryTests(unittest.TestCase):
         callback_checker.test.assert_called_with(expected_data)
         self.assertFalse(returned_data)
         self.assertTrue('/foo' in self.ndsr._watchers)
+
+    def test_unset(self):
+        # Default options
+        with mock.patch.object(self.ndsr, 'set') as mock_method:
+            self.ndsr.unset('/foobar')
+        mock_method.assert_called_with(
+            node='/foobar', data=None, state=False,
+            type=registration.DataNode)
+
+        # With custom node type set (though, this is rare)
+        with mock.patch.object(self.ndsr, 'set') as mock_method:
+            self.ndsr.unset('/foobar', type=registration.EphemeralNode)
+        mock_method.assert_called_with(
+            node='/foobar', data=None, state=False,
+            type=registration.EphemeralNode)
 
 
 class KazooServiceRegistryCachingTests(unittest.TestCase):
