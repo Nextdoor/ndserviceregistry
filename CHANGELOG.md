@@ -1,5 +1,6 @@
 ## Version 1.0.0-alpha
  * #39: Completely remove get_data() calls from the children of watched paths.
+ * #48: Fix compatibility with Kazoo 2.0
 
 ## Version 0.3.2
  * Bugfix: Ensure Kazoo is between 1.3 and 2.0.
