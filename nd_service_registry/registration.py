@@ -53,12 +53,14 @@ Copyright 2014 Nextdoor Inc."""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
+from os.path import split
 import logging
 
 from nd_service_registry import funcs
 from nd_service_registry.watcher import Watcher
 
 # For KazooServiceRegistry Class
+from kazoo import security
 import kazoo.exceptions
 
 TIMEOUT = 30
@@ -158,40 +160,111 @@ class RegistrationBase(object):
             self.set_data(data)
 
     def _update_state(self, state):
-        if state is True:
-            # Register our connection with zookeeper
-            try:
-                log.debug('[%s] Registering...' % self._path)
-                self._zk.retry(self._zk.create, self._path,
-                               value=self._encoded_data,
-                               ephemeral=self._ephemeral, makepath=True)
-                log.info('[%s] Registered with data: %s' %
-                         (self._path, self._encoded_data))
-            except kazoo.exceptions.NodeExistsError, e:
-                # Node exists ... possible this callback got called multiple
-                # times
-                pass
-            except kazoo.exceptions.NoAuthError, e:
-                log.error('[%s] No authorization to create node.' % self._path)
-            except Exception, e:
-                log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                    self._path, e))
+        """Creates/Destroys a registered Zookeeper node.
 
-        elif state is False:
-            # Try to delete the node
-            log.debug('[%s] Attempting de-registration...' % self._path)
+        If the underlying path does not exist, then the path is created. If
+        the path is multi-leveled (/foo/bar/baz/host:22), we only set the
+        ACL on the '/baz/' subdirectory. We do not set it on /foo/bar. This
+        leaves the ACL protection only at the final dangling endpoint, rather
+        than blocking out all of /foo for future use by other clients.
+
+        args:
+            state: Boolean True/False whether or not to register the path.
+        """
+        if state is True:
             try:
-                self._zk.retry(self._zk.delete, self._path)
-            except kazoo.exceptions.NoAuthError, e:
-                # The node exists, but we don't even have authorization to read
-                # it. We certainly will not have access then to change it below
-                # so return false. We'll retry again very soon.
-                log.error('[%s] No authorization to delete node.' % self._path)
-            except Exception, e:
-                log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                    self._path, e))
+                self._create_node()
+            except kazoo.exceptions.NoNodeError:
+                # The underlying path doesn't exist to put the node into.
+                # Create the path, and re-call ourselves. If the
+                # create_node_path method raises an exception, we break out and
+                # throw an alert rather than continueing this recursive call.
+                # If it returns cleanly, we call self._create_node()
+                # recursively.
+
+                # Try to create the root path for the node. If this raises
+                # an exception, we catch it, log it, and return.
+                self._create_node_path()
+
+                # If we got here, then the root path has been created and we
+                # recursively re-call ourselves to create the final path node.
+                self._create_node()
+        elif state is False:
+            self._delete_node()
+
+    def _create_node(self):
+        """Creates the registered Zookeeper node endpoint.
+
+        If the path does not exist, raise the exception and allow the
+        _update_state() method to handle it.
+        """
+        try:
+            log.debug('[%s] Registering...' % self._path)
+            self._zk.retry(self._zk.create, self._path,
+                           value=self._encoded_data,
+                           ephemeral=self._ephemeral, makepath=False)
+            log.info('[%s] Registered with data: %s' %
+                     (self._path, self._encoded_data))
+        except kazoo.exceptions.NoNodeError:
+            # The underlying path does not exist. Raise this exception, and
+            # _update_state() handle it.
+            raise
+        except kazoo.exceptions.NodeExistsError, e:
+            # Node exists ... possible this callback got called multiple
+            # times
+            pass
+        except kazoo.exceptions.NoAuthError, e:
+            log.error('[%s] No authorization to create node.' % self._path)
+        except Exception, e:
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
+
+    def _create_node_path(self):
+        """Recursively creates the underlying path for our node registration.
+
+        Note, if the path is multi-levels, does not apply an ACL to anything
+        but the deepest level of the path. For example, on
+        /foo/bar/baz/host:22, the ACL would only be applied to /foo/bar/baz,
+        not /foo or /foo/bar.
+
+        Note, no exceptions are caught here. This method is really meant to be
+        called only by _create_node(), which handles the exceptions behavior.
+        """
+        # Strip the path down into a few components...
+        (path, node) = split(self._path)
+
+        # Count the number of levels in the path. If its >1, then we split
+        # the path into a 'root' path and a 'deep' path. We create the
+        # 'root' path with no ACL at all (the default OPEN acl). The
+        # final path that will hold our node registration will get created
+        # with whatever ACL settings were used when creating the Kazoo
+        # connection object.
+        if len(filter(None, path.split('/'))) > 1:
+            (root_path, deep_path) = split(path)
+            self._zk.retry(
+                self._zk.ensure_path, root_path,
+                acl=security.OPEN_ACL_UNSAFE)
+
+        # Create the final destination path folder that the node will be
+        # registered in -- and allow Kazoo to use the ACL if appropriate.
+        self._zk.retry(self._zk.ensure_path, path)
+
+    def _delete_node(self):
+        """Deletes a registered Zookeeper node endpoint.
+        """
+        # Try to delete the node
+        log.debug('[%s] Attempting de-registration...' % self._path)
+        try:
+            self._zk.retry(self._zk.delete, self._path)
+        except kazoo.exceptions.NoAuthError, e:
+            # The node exists, but we don't even have authorization to read
+            # it. We certainly will not have access then to change it below
+            # so return false. We'll retry again very soon.
+            log.error('[%s] No authorization to delete node.' % self._path)
+        except Exception, e:
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _update_data(self):
+        """Updates an existing node in Zookeeper with fresh data."""
         try:
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             log.debug('[%s] Updated with data: %s' %
@@ -199,8 +272,7 @@ class RegistrationBase(object):
         except kazoo.exceptions.NoAuthError, e:
             log.error('[%s] No authorization to set node.' % self._path)
         except Exception, e:
-            log.error(RegistrationBase.GENERAL_EXC_MSG % (
-                      self._path, e))
+            log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
 
 class EphemeralNode(RegistrationBase):

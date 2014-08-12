@@ -1,6 +1,7 @@
 import uuid
 import time
 
+from kazoo import security
 from kazoo.testing import KazooTestHarness
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.registration import RegistrationBase
@@ -120,6 +121,30 @@ class RegistrationBaseTests(KazooTestHarness):
         self.assertEquals({'path': path, 'stat': None,
                            'data': None, 'children': []}, reg1.get())
         self.assertEquals(None, self.zk.exists(path))
+
+    def test_start_acl_behavior(self):
+        # Set up a username/password so an ACL is created
+        ACL = security.make_digest_acl('user', 'password', all=True)
+        self.zk.add_auth('digest', 'user:password')
+        self.zk.default_acl = [ACL]
+
+        # Test creating a nested path, and validate that the ACLs for
+        # that neseted path are setup properly
+        path = '%s/unit/test/host:22' % self.sandbox
+        data = {}
+        reg1 = RegistrationBase(zk=self.zk, path=path, data=data)
+
+        # Now registre the path and wait for it to finish
+        reg1.start()
+        waituntil(reg1.data, None, 5)
+
+        # Now, lets check the ACL for each path that would have
+        # been created.
+        self.assertEquals(
+            security.OPEN_ACL_UNSAFE,
+            self.zk.get_acls('%s/unit' % self.sandbox)[0])
+        self.assertEquals(
+            [ACL], self.zk.get_acls('%s/unit/test' % self.sandbox)[0])
 
     def test_stop(self):
         path = '%s/unittest-update' % self.sandbox

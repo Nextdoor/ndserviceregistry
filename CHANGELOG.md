@@ -1,4 +1,5 @@
 ## Version 1.0.0-alpha
+ * #49: Do not set ACLs on recursively created paths.
  * #39: Completely remove get_data() calls from the children of watched paths.
 
 ## Version 0.3.2
