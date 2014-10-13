@@ -149,9 +149,14 @@ class nd_service_registry(object):
         """Short-cut for creating an DataNode object."""
         return self.set(node=node, data=data, state=state, type=DataNode)
 
-    def unset(self, node):
-        """Disables a Registration object."""
-        raise NotImplementedError('Not implemented. Use one of my subclasses.')
+    def unset(self, node, type=DataNode):
+        """Short-cut for deleting a registered node in Zookeeper.
+
+        Args:
+            node: (String) representing the node path to the object
+            type: registration object type
+        """
+        return self.set(node=node, data=None, state=False, type=type)
 
     def add_callback(self, path, callback):
         """Registers a function callback for path"""
@@ -717,20 +722,6 @@ class KazooServiceRegistry(nd_service_registry):
         self._registrations[node] = type(zk=self._zk, path=node,
                                          data=data, state=state)
         return True
-
-    def unset(self, node):
-        """Destroys a particular Registration object.
-
-        Args:
-            node: (String) representing the node path to the object"""
-
-        try:
-            self._registrations[node].stop()
-        except:
-            log.warning('Node object for %s not found.' % node)
-            return
-
-        log.info('Registration for %s stopped.' % node)
 
     def _create_connection(self):
         """Create our 'zk' connection object.
