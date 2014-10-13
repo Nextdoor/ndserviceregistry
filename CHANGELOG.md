@@ -1,4 +1,5 @@
-## Version 1.0.0-alpha
+## Version 1.0.0
+ * Removed untested PyPY support from the Travis CI test framework.
  * #49: Do not set ACLs on recursively created paths.
  * #39: Completely remove get_data() calls from the children of watched paths.
  * #48: Fix compatibility with Kazoo 2.0
