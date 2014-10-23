@@ -97,3 +97,14 @@ class WatcherTests(unittest.TestCase):
 
         # Also ensure that we never called self.zk.retry()
         self.zk.retry.assert_has_calls([])
+
+    def test_update_children_with_unexpected_type(self):
+        # First, mock up some original children objects
+        fake_children = ['child2', 'child1']
+        self.watch._update_children(fake_children)
+        self.assertEquals(self.watch._children, sorted(fake_children))
+
+        # Now, send in an update with bogus data and make sure we dont
+        # fail, and that we keep the same children in our list
+        self.watch._update_children(True)
+        self.assertEquals(self.watch._children, sorted(fake_children))

@@ -29,7 +29,9 @@ log = logging.getLogger(__name__)
 
 
 class ZookeeperClient(KazooClient):
+
     """Shim-layer that provides some safety controls"""
+
     def __init__(self, *args, **kwargs):
         """Initialize the rate limiter code, then handle the default init"""
 
@@ -151,12 +153,14 @@ class ZookeeperClient(KazooClient):
 
 
 class KazooFilter(logging.Filter):
+
     """Filters out certain Kazoo messages that we do not want to see."""
+
     def filter(self, record):
         retval = True
 
         # Filter out the PING messages
-        if record.getMessage().lower().find('ping') > -1:
+        if record.getMessage().find('Ping') > -1:
             retval = False
 
         return retval

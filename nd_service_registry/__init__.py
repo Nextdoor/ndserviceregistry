@@ -114,6 +114,7 @@ log = logging.getLogger(__name__)
 
 
 class nd_service_registry(object):
+
     """Main Service Registry object.
 
     The ServiceRegistry object is a framework object, not meant to be
@@ -578,6 +579,7 @@ class KazooServiceRegistry(nd_service_registry):
         # Kazoo is very noisy by default. We quiet it down and only pay
         # attention to the most important messages.
         logging.getLogger('kazoo').setLevel(logging.WARNING)
+        logging.getLogger('kazoo.client').addFilter(shims.KazooFilter())
         logging.getLogger('kazoo.protocol.connection').addFilter(
             shims.KazooFilter())
 

@@ -1,3 +1,7 @@
+## Version 1.0.1 (in progress)
+ * Handle case where Kazoo watchers.ChildrenWatch calls _func() with a Bool.
+ * Ignore Ping messages from kazoo.client logger as well.
+
 ## Version 1.0.0
  * Removed untested PyPY support from the Travis CI test framework.
  * #49: Do not set ACLs on recursively created paths.

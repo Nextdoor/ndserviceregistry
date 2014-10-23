@@ -31,6 +31,7 @@ log = logging.getLogger(__name__)
 
 
 class Watcher(object):
+
     """Watches a Zookeeper path for children and data changes.
 
     This object provides a way to access and monitor all of the data on a
@@ -53,6 +54,7 @@ class Watcher(object):
             'path': '/services/foo',
         }
     """
+
     def __init__(self, zk, path, callback=None, watch_children=True):
         """Initialize the Watcher object and begin watching a path.
 
@@ -194,7 +196,15 @@ class Watcher(object):
         args:
             children: The list of children returned by Kazoo
         """
-        self._children = sorted(children)
+        try:
+            self._children = sorted(children)
+        except TypeError:
+            log.warning(
+                '[%s] Invalid value passed to us by Kazoo: %s '
+                '[see Kazoo issue #255]' %
+                (self._path, children))
+            return
+
         log.debug('[%s] Children change detected: %s' %
                   (self._path, self._children))
         self._execute_callbacks()
@@ -230,6 +240,7 @@ class Watcher(object):
 
 
 class DummyWatcher(Watcher):
+
     """Provides a Watcher-interface, without any actual Zookeeper connection.
 
     This object can store and return data just like a Watcher object, but
