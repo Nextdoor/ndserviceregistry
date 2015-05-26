@@ -1,17 +1,19 @@
-# Copyright 2012 Nextdoor.com, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""Copyright 2012 Nextdoor.com, Inc.
 
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+"""
+
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -23,8 +25,16 @@ from setuptools import setup
 from setuptools import find_packages
 
 PACKAGE = 'nd_service_registry'
+
+v = sys.version_info
+if v[:2] != (2, 7) and v < (3, 3):
+    print('Supported Python versions are 2.7 and >=3.3.', file=sys.stderr)
+    print('You are running Python {0}.{1}.{2}'.format(v[0], v[1], v[2]), file=sys.stderr)
+    sys.exit(1)
+
 __version__ = None
-execfile(os.path.join(PACKAGE, 'version.py'))  # set __version__
+exec(compile(open(os.path.join(PACKAGE, 'version.py')).read(),
+             os.path.join(PACKAGE, 'version.py'), 'exec'))  # set __version__
 
 
 def maybe_rm(path):
@@ -50,7 +60,7 @@ class Pep8Command(Command):
         # Don't import the pep8 module until now because setup.py needs to be
         # able to install Pep8 if its missing.
         import pep8
-        pep8style = pep8.StyleGuide(parse_argv=True, config_file='pep8.cfg')
+        pep8style = pep8.StyleGuide(ignore=pep8.DEFAULT_IGNORE + ',E402')
         report = pep8style.check_files([PACKAGE])
         if report.total_errors:
             sys.exit('ERROR: Pep8 failed with exit %d errors' %

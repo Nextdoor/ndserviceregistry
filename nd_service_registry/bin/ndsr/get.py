@@ -1,16 +1,18 @@
-# Copyright 2014 Nextdoor.com, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+""" Copyright 2014 Nextdoor.com, Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+"""
 
 __author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
@@ -59,8 +61,9 @@ class Get(object):
         if recursive:
             children = []
             if 'children' in node:
-                for key, val in node['children'].iteritems():
-                    child = self.__ndsr.get("%s/%s" % (node['path'], key))
+                for key, val in node['children'].items():
+                    child = self.__ndsr.get("{0}/{1}".format(node['path'],
+                                                             key))
                     children.append(
                         self.__process_node(child, data, recursive)
                     )
@@ -70,7 +73,7 @@ class Get(object):
 
     def __extract_paths(self, d, paths=[]):
         """Extract directory paths from the given nested dicts and lists"""
-        for key, val in d.iteritems():
+        for key, val in d.items():
             if key.startswith('/') and isinstance(val, dict):
                 paths = self.__extract_paths(val,
                                              paths + [key.replace('//', '/')])
@@ -80,33 +83,32 @@ class Get(object):
 
         return paths
 
-    def execute(self, argv, gflags):
+    def execute(self, flags):
         """Makes the appropriate nd_service_registry query for the provided
         path and returns a string in the
         requested format.
 
         Args:
-            argv: The CLI arguments, used to determine the path
-            gflags: A gflags object with parsed CLI flags
+            flags: A dict with parsed CLI flags
 
         Returns:
             A string in the specified format or "No output format selected"
         """
 
         path = '/'
-        if len(argv) > 2:
-            path = argv[2]
+        if len(flags.get('pos_args', [])) > 1:
+            path = flags['pos_args'][1]
 
-        log.info("Fetching %s from zookeeper" % path)
+        log.info("Fetching {0} from zookeeper".format(path))
         result = self.__ndsr.get(path)
-        output = self.__process_node(result, gflags.data, gflags.recursive)
+        output = self.__process_node(result, flags['data'], flags['recursive'])
 
-        if gflags.outputformat == 'yaml':
+        if flags['outputformat'] == 'yaml':
             return yaml.safe_dump(output, default_flow_style=False)
-        elif gflags.outputformat == 'json':
+        elif flags['outputformat'] == 'json':
             return json.dumps(output, sort_keys=True, indent=4,
                               separators=(',', ': '))
-        elif gflags.outputformat == 'dir':
+        elif flags['outputformat'] == 'dir':
             return '\n'.join(self.__extract_paths(output))
         else:
             return "No output format selected"

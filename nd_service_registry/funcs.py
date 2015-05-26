@@ -1,24 +1,24 @@
-# Copyright 2014 Nextdoor.com, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+""" Copyright 2014 Nextdoor.com, Inc.
 
-"""Commonly used functions for nd_service_registry
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-Copyright 2014 Nextdoor Inc."""
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+Commonly used functions for nd_service_registry
+"""
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-import cPickle as pickle
+from six.moves import cPickle as pickle
 import json
 import logging
 import os
@@ -49,7 +49,7 @@ def encode(data=None):
 
     # Add in the default data points that we generate internally
     if data:
-        data = dict(data.items() + default_data().items())
+        data = dict(list(data.items()) + list(default_data().items()))
     else:
         data = default_data()
 
@@ -133,7 +133,7 @@ def save_dict(data, path):
     cache = {}
     try:
         cache = pickle.load(open(path, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.warning('Could not load existing cache (%s): %s' %
                     (path, e))
 
@@ -149,7 +149,7 @@ def save_dict(data, path):
         pickle.dump(cache, fd)
         fd.close()
         os.rename(filename, path)
-    except Exception, e:
+    except Exception as e:
         log.warning('Could not save cache (%s): %s' % (path, e))
         return False
 
@@ -173,7 +173,7 @@ def load_dict(file):
     cache = {}
     try:
         cache = pickle.load(open(file, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.info('Could not load %s pickle file:' % file)
         log.info(e)
         raise e

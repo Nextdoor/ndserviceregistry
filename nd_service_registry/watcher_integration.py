@@ -1,3 +1,20 @@
+#!/usr/bin/env python
+""" Copyright 2014 Nextdoor.com, Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+"""
+
+from __future__ import print_function
 import uuid
 import mock
 import time
@@ -16,9 +33,9 @@ def waituntil(predicate, predicate_value, timeout, period=0.1, mode=1):
             comparison = predicate() == predicate_value
 
         if comparison:
-            print "Exiting timer, %s changed..." % predicate
+            print("Exiting timer, %s changed..." % predicate)
             return True
-        print "Sleeping, waiting for %s to change..." % predicate
+        print("Sleeping, waiting for %s to change..." % predicate)
         time.sleep(period)
     raise Exception('Failed waiting for %s to change...' % predicate)
 
@@ -57,7 +74,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # Before progressing, wait for Zookeeper to have kicked off
         # all of its notifications to the client.
         def get_children():
-            print "got: %s" % watch.get()['children']
+            print("got: %s" % watch.get()['children'])
             return watch.get()['children']
         waituntil(get_children, [], timeout=5)
 
@@ -145,7 +162,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # take effect before moving on to the next one.
         def get_data():
             return watch.get()['data']
-        for i in xrange(1, 5):
+        for i in range(1, 5):
             self.zk.set(path, value='%s' % i)
             waituntil(get_data, {'string_value': '%s' % i}, timeout=5, mode=2)
 
