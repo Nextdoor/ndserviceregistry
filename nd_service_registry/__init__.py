@@ -1,18 +1,19 @@
-# Copyright 2014 Nextdoor.com, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+""" Copyright 2014 Nextdoor.com, Inc.
 
-"""Simple service registration class for managing lists of servers.
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+Simple service registration class for managing lists of servers.
 
 The nd_service_registry model at Nextdoor is geared around simplicity and
 reliability. This model provides a few core features that allow you to
@@ -80,8 +81,6 @@ Example of doing some work with a lock in place:
     ...         print "I got a lock!"
     ...
     I got a lock!
-
-Copyright 2014 Nextdoor Inc.
 """
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
@@ -415,7 +414,7 @@ class nd_service_registry(object):
                 w = None
                 try:
                     w = self._get_watcher(path)
-                except Exception, e:
+                except Exception as e:
                     log.warning('Could not create Watcher '
                                 'object for %s: %s' % (path, e))
                 if w:
@@ -970,7 +969,7 @@ class KazooServiceRegistry(nd_service_registry):
             # Go get a Watcher object since one doesnt already exist
             self._watchers[path] = self._get_watcher(path, callback)
             return self._watchers[path].get()
-        except exceptions.NoConnection, e:
+        except exceptions.NoConnection as e:
             # Get a DummyWatcher cached object instead
             log.warning('Health Check failed: %s' % e)
 
@@ -979,7 +978,7 @@ class KazooServiceRegistry(nd_service_registry):
             watcher = self._get_dummywatcher_from_cache(path, callback)
             self._watchers[path] = watcher
             return self._watchers[path].get()
-        except exceptions.ServiceRegistryException, e:
+        except exceptions.ServiceRegistryException as e:
             # Failure getting the DummyWatcher from our cache, so now
             # create a blank DummyWatcher just to keep track of this
             # request. When the connection comes back, this DummyWatcher

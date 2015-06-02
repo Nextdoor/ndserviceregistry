@@ -1,8 +1,23 @@
+#!/usr/bin/env python
+""" Copyright 2014 Nextdoor.com, Inc.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+"""
+
 import os
 import json
 import mock
 import unittest
-
 from nd_service_registry import funcs
 
 
@@ -25,10 +40,11 @@ class FuncsTests(unittest.TestCase):
         result_dict = funcs.decode(
             '{"pid":1,"string_value":"String","created":"2013-11-18 19:37:04"}'
         )
-        self.assertEqual([u"pid", u"string_value", u"created"],
-                         result_dict.keys())
-        self.assertEqual([1, u"String", u"2013-11-18 19:37:04"],
-                         result_dict.values())
+        expected ={u"pid": 1,
+                   u"string_value": u"String",
+                   u"created": u"2013-11-18 19:37:04",
+        }
+        self.assertDictEqual(expected, result_dict)
 
     def test_decode_returns_none_on_empty_input(self):
         self.assertEqual(None, funcs.decode(''))
@@ -47,8 +63,8 @@ class FuncsTests(unittest.TestCase):
 
     def test_default_data_produces_expected_dict(self):
         default_data = funcs.default_data()
-        self.assertIn(u"pid", default_data.keys())
-        self.assertIn(u"created", default_data.keys())
+        self.assertTrue(u"pid" in default_data)
+        self.assertTrue(u"created" in default_data)
         self.assertEqual(os.getpid(), default_data['pid'])
         self.assertRegexpMatches(
             default_data['created'],
