@@ -1,3 +1,4 @@
+from __future__ import print_function
 import uuid
 import time
 
@@ -18,9 +19,9 @@ def waituntil(predicate, predicate_value, timeout, period=0.1, mode=1):
             comparison = predicate() == predicate_value
 
         if comparison:
-            print "Exiting timer, %s changed..." % predicate
+            print("Exiting timer, %s changed..." % predicate)
             return True
-        print "Sleeping, waiting for %s to change..." % predicate
+        print("Sleeping, waiting for %s to change..." % predicate)
         time.sleep(period)
     raise Exception('Failed waiting for %s to change...' % predicate)
 

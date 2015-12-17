@@ -415,7 +415,7 @@ class nd_service_registry(object):
                 w = None
                 try:
                     w = self._get_watcher(path)
-                except Exception, e:
+                except Exception as e:
                     log.warning('Could not create Watcher '
                                 'object for %s: %s' % (path, e))
                 if w:
@@ -970,7 +970,7 @@ class KazooServiceRegistry(nd_service_registry):
             # Go get a Watcher object since one doesnt already exist
             self._watchers[path] = self._get_watcher(path, callback)
             return self._watchers[path].get()
-        except exceptions.NoConnection, e:
+        except exceptions.NoConnection as e:
             # Get a DummyWatcher cached object instead
             log.warning('Health Check failed: %s' % e)
 
@@ -979,7 +979,7 @@ class KazooServiceRegistry(nd_service_registry):
             watcher = self._get_dummywatcher_from_cache(path, callback)
             self._watchers[path] = watcher
             return self._watchers[path].get()
-        except exceptions.ServiceRegistryException, e:
+        except exceptions.ServiceRegistryException as e:
             # Failure getting the DummyWatcher from our cache, so now
             # create a blank DummyWatcher just to keep track of this
             # request. When the connection comes back, this DummyWatcher

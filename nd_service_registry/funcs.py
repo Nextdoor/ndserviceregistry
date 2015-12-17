@@ -133,7 +133,7 @@ def save_dict(data, path):
     cache = {}
     try:
         cache = pickle.load(open(path, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.warning('Could not load existing cache (%s): %s' %
                     (path, e))
 
@@ -149,7 +149,7 @@ def save_dict(data, path):
         pickle.dump(cache, fd)
         fd.close()
         os.rename(filename, path)
-    except Exception, e:
+    except Exception as e:
         log.warning('Could not save cache (%s): %s' % (path, e))
         return False
 
@@ -173,7 +173,7 @@ def load_dict(file):
     cache = {}
     try:
         cache = pickle.load(open(file, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.info('Could not load %s pickle file:' % file)
         log.info(e)
         raise e

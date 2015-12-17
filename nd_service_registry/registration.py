@@ -209,13 +209,13 @@ class RegistrationBase(object):
             # The underlying path does not exist. Raise this exception, and
             # _update_state() handle it.
             raise
-        except kazoo.exceptions.NodeExistsError, e:
+        except kazoo.exceptions.NodeExistsError as e:
             # Node exists ... possible this callback got called multiple
             # times
             pass
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             log.error('[%s] No authorization to create node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _create_node_path(self):
@@ -255,12 +255,12 @@ class RegistrationBase(object):
         log.debug('[%s] Attempting de-registration...' % self._path)
         try:
             self._zk.retry(self._zk.delete, self._path)
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             # The node exists, but we don't even have authorization to read
             # it. We certainly will not have access then to change it below
             # so return false. We'll retry again very soon.
             log.error('[%s] No authorization to delete node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _update_data(self):
@@ -269,9 +269,9 @@ class RegistrationBase(object):
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             log.debug('[%s] Updated with data: %s' %
                       (self._path, self._encoded_data))
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             log.error('[%s] No authorization to set node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
 
