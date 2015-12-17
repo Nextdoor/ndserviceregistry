@@ -183,7 +183,7 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
 
         self.ndsr._cachefile = True
         self.ndsr._save_watcher_to_dict(fake_node_data)
-        self.assertItemsEqual(mocked_save_dict.mock_calls, [])
+        self.assertEqual(mocked_save_dict.mock_calls, [])
 
     @mock.patch('nd_service_registry.funcs.save_dict')
     def test_save_watcher_to_dict_with_bogus_node(self, mocked_save_dict):
@@ -199,7 +199,7 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
 
         self.ndsr._cachefile = True
         self.ndsr._save_watcher_to_dict(fake_node_data)
-        self.assertItemsEqual(mocked_save_dict.mock_calls, [])
+        self.assertEqual(mocked_save_dict.mock_calls, [])
 
     @mock.patch('nd_service_registry.funcs.save_dict')
     def test_save_watcher_to_dict_with_disabled_cache(self, mocked_save_dict):
@@ -216,4 +216,4 @@ class KazooServiceRegistryCachingTests(unittest.TestCase):
 
         self.ndsr._cachefile = False
         self.ndsr._save_watcher_to_dict(fake_node_data)
-        self.assertItemsEqual(mocked_save_dict.mock_calls, [])
+        self.assertEqual(mocked_save_dict.mock_calls, [])

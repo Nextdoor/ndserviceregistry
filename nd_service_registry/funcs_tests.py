@@ -1,8 +1,11 @@
 from __future__ import absolute_import
+
 import os
 import json
 import mock
 import unittest
+
+import six
 
 from nd_service_registry import funcs
 
@@ -26,10 +29,12 @@ class FuncsTests(unittest.TestCase):
         result_dict = funcs.decode(
             '{"pid":1,"string_value":"String","created":"2013-11-18 19:37:04"}'
         )
-        self.assertItemsEqual([u"pid", u"string_value", u"created"],
-                              result_dict.keys())
-        self.assertItemsEqual([1, u"String", u"2013-11-18 19:37:04"],
-                              result_dict.values())
+        six.assertCountEqual(self,
+                             [u"pid", u"string_value", u"created"],
+                             result_dict.keys())
+        six.assertCountEqual(self,
+                             [1, u"String", u"2013-11-18 19:37:04"],
+                             result_dict.values())
 
     def test_decode_returns_none_on_empty_input(self):
         self.assertEqual(None, funcs.decode(''))
