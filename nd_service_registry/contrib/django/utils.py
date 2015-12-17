@@ -35,12 +35,12 @@ The callback registration above will always pass a dict of nodes to
 whatever method was registered.
 """
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import logging
 import time
 
 import nd_service_registry
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 # Service Registry default settings. These are set as package level constants
 # (as opposed to being stored as Django settings) intentionally so that the

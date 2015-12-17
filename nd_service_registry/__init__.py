@@ -83,9 +83,6 @@ Example of doing some work with a lock in place:
 
 Copyright 2014 Nextdoor Inc.
 """
-
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 from functools import wraps
 import atexit
 import logging
@@ -104,6 +101,9 @@ from nd_service_registry.registration import DataNode
 from nd_service_registry.shims import ZookeeperClient
 from nd_service_registry.watcher import DummyWatcher
 from nd_service_registry.watcher import Watcher
+
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 # Defaults
 TIMEOUT = 5  # seconds
