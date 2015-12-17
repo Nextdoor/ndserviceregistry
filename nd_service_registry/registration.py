@@ -50,6 +50,7 @@ Example:
     {'stat': None, 'data': None, 'children': {}}
 
 Copyright 2014 Nextdoor Inc."""
+from __future__ import absolute_import
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
@@ -238,7 +239,7 @@ class RegistrationBase(object):
         # final path that will hold our node registration will get created
         # with whatever ACL settings were used when creating the Kazoo
         # connection object.
-        if len(filter(None, path.split('/'))) > 1:
+        if len([_f for _f in path.split('/') if _f]) > 1:
             (root_path, deep_path) = split(path)
             self._zk.retry(
                 self._zk.ensure_path, root_path,
@@ -395,5 +396,5 @@ class DataNode(RegistrationBase):
         # If the only key left in the self._data object is 'string_value',
         # then the supplied user data was actually in string format -- so
         # thats actually what we want to save.
-        if self._data.keys() == ['string_value']:
+        if list(self._data.keys()) == ['string_value']:
             self._data = self._data['string_value']

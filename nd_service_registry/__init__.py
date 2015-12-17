@@ -83,6 +83,7 @@ Example of doing some work with a lock in place:
 
 Copyright 2014 Nextdoor Inc.
 """
+from __future__ import absolute_import
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 

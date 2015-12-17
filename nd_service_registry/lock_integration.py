@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+
 import uuid
 import time
 
 from kazoo.testing import KazooTestHarness
+
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.lock import Lock
 

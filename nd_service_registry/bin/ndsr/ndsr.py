@@ -16,6 +16,7 @@
 """
 A CLI tool for interacting with ZooKeeper using ndserviceregistry.
 """
+from __future__ import absolute_import
 from __future__ import print_function
 
 __author__ = 'me@ryangeyer.com (Ryan J. Geyer)'

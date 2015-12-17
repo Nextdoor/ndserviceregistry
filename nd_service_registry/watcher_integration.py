@@ -1,9 +1,13 @@
 from __future__ import print_function
+from __future__ import absolute_import
+
 import uuid
 import mock
 import time
 
 from kazoo.testing import KazooTestHarness
+from six.moves import range
+
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.watcher import Watcher
 
@@ -146,7 +150,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # take effect before moving on to the next one.
         def get_data():
             return watch.get()['data']
-        for i in xrange(1, 5):
+        for i in range(1, 5):
             self.zk.set(path, value='%s' % i)
             waituntil(get_data, {'string_value': '%s' % i}, timeout=5, mode=2)
 

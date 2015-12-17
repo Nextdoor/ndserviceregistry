@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+
 import mock
 import uuid
 
 from kazoo import exceptions
 from kazoo.testing import KazooTestHarness
+
 from nd_service_registry import KazooServiceRegistry
 
 

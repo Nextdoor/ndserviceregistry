@@ -1,8 +1,9 @@
-import mock
-import unittest
-import threading
+from __future__ import absolute_import
 
 from mock import patch
+import mock
+import threading
+import unittest
 
 from kazoo import exceptions
 from kazoo import security

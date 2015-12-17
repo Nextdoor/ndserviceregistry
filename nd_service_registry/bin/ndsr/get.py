@@ -11,12 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
+from __future__ import absolute_import
 
 import json
-import yaml
 import logging
+
+import six
+import yaml
+
+__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +62,7 @@ class Get(object):
         if recursive:
             children = []
             if 'children' in node:
-                for key, val in node['children'].iteritems():
+                for key, val in six.iteritems(node['children']):
                     child = self.__ndsr.get("%s/%s" % (node['path'], key))
                     children.append(
                         self.__process_node(child, data, recursive)
@@ -70,7 +73,7 @@ class Get(object):
 
     def __extract_paths(self, d, paths=[]):
         """Extract directory paths from the given nested dicts and lists"""
-        for key, val in d.iteritems():
+        for key, val in six.iteritems(d):
             if key.startswith('/') and isinstance(val, dict):
                 paths = self.__extract_paths(val,
                                              paths + [key.replace('//', '/')])

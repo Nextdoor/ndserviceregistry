@@ -15,10 +15,12 @@
 """Commonly used functions for nd_service_registry
 
 Copyright 2014 Nextdoor Inc."""
+from __future__ import absolute_import
+import six
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import json
 import logging
 import os
@@ -42,25 +44,24 @@ def encode(data=None):
         A JSON string with the supplied data as well as some default data"""
 
     # Check if the data is a single string. If so, turn it into a dict
-    if isinstance(data, basestring):
+    if isinstance(data, six.string_types):
         new_data = {}
         new_data['string_value'] = data
         data = new_data
 
+    all_data = default_data()
     # Add in the default data points that we generate internally
     if data:
-        data = dict(data.items() + default_data().items())
-    else:
-        data = default_data()
+        all_data.update(data)
 
     # If default_data() returns nothing, and the user supplied either
     # a single string, or a dict where the only key is string_value,
     # then just pass the araw string_value key to back. No encoding necessary.
-    if len(data) == 1 and 'string_value' in data:
-        return data['string_value']
+    if len(all_data) == 1 and 'string_value' in all_data:
+        return all_data['string_value']
 
-    if data:
-        return json.dumps(data, separators=(',', ':'))
+    if all_data:
+        return json.dumps(all_data, separators=(',', ':'))
     else:
         return ''
 

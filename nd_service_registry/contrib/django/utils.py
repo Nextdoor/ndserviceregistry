@@ -34,6 +34,7 @@ Typical usage:
 The callback registration above will always pass a dict of nodes to
 whatever method was registered.
 """
+from __future__ import absolute_import
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
