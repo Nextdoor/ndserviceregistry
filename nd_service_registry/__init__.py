@@ -958,7 +958,7 @@ class KazooServiceRegistry(nd_service_registry):
         log.debug('[%s] Checking for existing object...' % path)
         if path in self._watchers:
             log.debug('Found [%s] in cache: %s' %
-                      (path, str(self._watchers[path].get())))
+                      (path, self._watchers[path].get()))
             # If a callback was suplied, but we already have a Watcher object,
             # add that callback to the existing object.
             if callback:
