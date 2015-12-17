@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
-
 import json
 import yaml
 import unittest
 
 from mock import patch
 from nd_service_registry.bin.ndsr.get import Get
+
+__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
 
 class GetTests(unittest.TestCase):

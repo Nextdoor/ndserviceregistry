@@ -16,14 +16,14 @@
 
 Copyright 2014 Nextdoor Inc."""
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import cPickle as pickle
 import json
 import logging
 import os
 import tempfile
 import time
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 log = logging.getLogger(__name__)
 

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
-
 import json
 import yaml
 import logging
+
+__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
 log = logging.getLogger(__name__)
 
