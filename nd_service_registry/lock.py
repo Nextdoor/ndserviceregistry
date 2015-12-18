@@ -17,12 +17,12 @@
 Copyright 2013 Nextdoor Inc."""
 from __future__ import absolute_import
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import logging
 import time
 
 from kazoo import exceptions
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 log = logging.getLogger(__name__)
 

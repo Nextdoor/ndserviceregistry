@@ -36,12 +36,12 @@ whatever method was registered.
 """
 from __future__ import absolute_import
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import logging
 import time
 
 import nd_service_registry
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 # Service Registry default settings. These are set as package level constants
 # (as opposed to being stored as Django settings) intentionally so that the

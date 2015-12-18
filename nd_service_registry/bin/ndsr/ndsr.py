@@ -19,8 +19,6 @@ A CLI tool for interacting with ZooKeeper using ndserviceregistry.
 from __future__ import absolute_import
 from __future__ import print_function
 
-__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
-
 import gflags
 import logging
 import sys
@@ -28,6 +26,8 @@ import sys
 from nd_service_registry.bin.ndsr import get
 from nd_service_registry import exceptions
 import nd_service_registry
+
+__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
 log = logging.getLogger(__name__)
 

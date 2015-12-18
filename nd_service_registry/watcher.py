@@ -17,13 +17,13 @@
 Copyright 2014 Nextdoor Inc."""
 from __future__ import absolute_import
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import logging
 
 from kazoo.recipe import watchers
 
 from nd_service_registry import funcs
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 
 TIMEOUT = 30

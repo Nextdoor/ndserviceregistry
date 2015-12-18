@@ -52,8 +52,6 @@ Example:
 Copyright 2014 Nextdoor Inc."""
 from __future__ import absolute_import
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 from os.path import split
 import logging
 
@@ -63,6 +61,8 @@ from nd_service_registry.watcher import Watcher
 # For KazooServiceRegistry Class
 from kazoo import security
 import kazoo.exceptions
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 TIMEOUT = 30
 
