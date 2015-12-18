@@ -1,8 +1,9 @@
-import mock
-import unittest
-import threading
+from __future__ import absolute_import
 
 from mock import patch
+import mock
+import threading
+import unittest
 
 from kazoo import exceptions
 from kazoo import security
@@ -82,7 +83,7 @@ class RegistrationBaseTests(unittest.TestCase):
         mock_create_node_path.assert_called_once_with()
 
         # The create_node method should be executed twice.
-        mock_create_node.assert_called_twice_with()
+        self.assertEqual(mock_create_node.call_count, 2)
 
     def test_create_node_path(self):
         self.reg._create_node_path()

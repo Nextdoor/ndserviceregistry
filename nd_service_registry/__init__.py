@@ -83,8 +83,7 @@ Example of doing some work with a lock in place:
 
 Copyright 2014 Nextdoor Inc.
 """
-
-__author__ = 'matt@nextdoor.com (Matt Wise)'
+from __future__ import absolute_import
 
 from functools import wraps
 import atexit
@@ -104,6 +103,8 @@ from nd_service_registry.registration import DataNode
 from nd_service_registry.shims import ZookeeperClient
 from nd_service_registry.watcher import DummyWatcher
 from nd_service_registry.watcher import Watcher
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 # Defaults
 TIMEOUT = 5  # seconds
@@ -415,7 +416,7 @@ class nd_service_registry(object):
                 w = None
                 try:
                     w = self._get_watcher(path)
-                except Exception, e:
+                except Exception as e:
                     log.warning('Could not create Watcher '
                                 'object for %s: %s' % (path, e))
                 if w:
@@ -957,7 +958,7 @@ class KazooServiceRegistry(nd_service_registry):
         log.debug('[%s] Checking for existing object...' % path)
         if path in self._watchers:
             log.debug('Found [%s] in cache: %s' %
-                      (path, str(self._watchers[path].get())))
+                      (path, self._watchers[path].get()))
             # If a callback was suplied, but we already have a Watcher object,
             # add that callback to the existing object.
             if callback:
@@ -970,7 +971,7 @@ class KazooServiceRegistry(nd_service_registry):
             # Go get a Watcher object since one doesnt already exist
             self._watchers[path] = self._get_watcher(path, callback)
             return self._watchers[path].get()
-        except exceptions.NoConnection, e:
+        except exceptions.NoConnection as e:
             # Get a DummyWatcher cached object instead
             log.warning('Health Check failed: %s' % e)
 
@@ -979,7 +980,7 @@ class KazooServiceRegistry(nd_service_registry):
             watcher = self._get_dummywatcher_from_cache(path, callback)
             self._watchers[path] = watcher
             return self._watchers[path].get()
-        except exceptions.ServiceRegistryException, e:
+        except exceptions.ServiceRegistryException as e:
             # Failure getting the DummyWatcher from our cache, so now
             # create a blank DummyWatcher just to keep track of this
             # request. When the connection comes back, this DummyWatcher

@@ -15,14 +15,15 @@
 """Kazoo Zookeeper znode watch object
 
 Copyright 2014 Nextdoor Inc."""
-
-__author__ = 'matt@nextdoor.com (Matt Wise)'
+from __future__ import absolute_import
 
 import logging
 
 from kazoo.recipe import watchers
 
 from nd_service_registry import funcs
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 
 TIMEOUT = 30

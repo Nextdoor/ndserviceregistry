@@ -50,8 +50,7 @@ Example:
     {'stat': None, 'data': None, 'children': {}}
 
 Copyright 2014 Nextdoor Inc."""
-
-__author__ = 'matt@nextdoor.com (Matt Wise)'
+from __future__ import absolute_import
 
 from os.path import split
 import logging
@@ -62,6 +61,8 @@ from nd_service_registry.watcher import Watcher
 # For KazooServiceRegistry Class
 from kazoo import security
 import kazoo.exceptions
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 TIMEOUT = 30
 
@@ -209,13 +210,13 @@ class RegistrationBase(object):
             # The underlying path does not exist. Raise this exception, and
             # _update_state() handle it.
             raise
-        except kazoo.exceptions.NodeExistsError, e:
+        except kazoo.exceptions.NodeExistsError as e:
             # Node exists ... possible this callback got called multiple
             # times
             pass
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             log.error('[%s] No authorization to create node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _create_node_path(self):
@@ -238,7 +239,7 @@ class RegistrationBase(object):
         # final path that will hold our node registration will get created
         # with whatever ACL settings were used when creating the Kazoo
         # connection object.
-        if len(filter(None, path.split('/'))) > 1:
+        if len([_f for _f in path.split('/') if _f]) > 1:
             (root_path, deep_path) = split(path)
             self._zk.retry(
                 self._zk.ensure_path, root_path,
@@ -255,12 +256,12 @@ class RegistrationBase(object):
         log.debug('[%s] Attempting de-registration...' % self._path)
         try:
             self._zk.retry(self._zk.delete, self._path)
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             # The node exists, but we don't even have authorization to read
             # it. We certainly will not have access then to change it below
             # so return false. We'll retry again very soon.
             log.error('[%s] No authorization to delete node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
     def _update_data(self):
@@ -269,9 +270,9 @@ class RegistrationBase(object):
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             log.debug('[%s] Updated with data: %s' %
                       (self._path, self._encoded_data))
-        except kazoo.exceptions.NoAuthError, e:
+        except kazoo.exceptions.NoAuthError as e:
             log.error('[%s] No authorization to set node.' % self._path)
-        except Exception, e:
+        except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
 
 
@@ -395,5 +396,5 @@ class DataNode(RegistrationBase):
         # If the only key left in the self._data object is 'string_value',
         # then the supplied user data was actually in string format -- so
         # thats actually what we want to save.
-        if self._data.keys() == ['string_value']:
+        if list(self._data.keys()) == ['string_value']:
             self._data = self._data['string_value']
