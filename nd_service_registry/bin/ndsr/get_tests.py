@@ -16,13 +16,14 @@ from __future__ import absolute_import
 
 import json
 import unittest
-
 from mock import patch
+
 import yaml
 
 from nd_service_registry.bin.ndsr.get import Get
 
 __author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
+
 
 class GetTests(unittest.TestCase):
     # A flag for filtering nose tests

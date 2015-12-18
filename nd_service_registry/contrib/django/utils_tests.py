@@ -13,14 +13,13 @@
 # limitations under the License.
 from __future__ import absolute_import
 
-__author__ = 'matt@nextdoor.com.com (Matt Wise)'
-
 import unittest
-
 from mock import patch
 import mock
 
 from nd_service_registry.contrib.django import utils
+
+__author__ = 'matt@nextdoor.com.com (Matt Wise)'
 
 
 class DjangoUtilsTests(unittest.TestCase):

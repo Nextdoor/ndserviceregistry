@@ -18,13 +18,13 @@ Copyright 2014 Nextdoor Inc."""
 from __future__ import absolute_import
 from __future__ import division
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
 import functools
 import time
 import logging
 
 from kazoo.client import KazooClient
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 # Get a default logger
 log = logging.getLogger(__name__)
