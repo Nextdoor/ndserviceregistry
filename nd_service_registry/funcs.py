@@ -15,10 +15,13 @@
 """Commonly used functions for nd_service_registry
 
 Copyright 2014 Nextdoor Inc."""
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
-import cPickle as pickle
+import pickle as pickle
 import json
 import logging
 import os
@@ -49,7 +52,7 @@ def encode(data=None):
 
     # Add in the default data points that we generate internally
     if data:
-        data = dict(data.items() + default_data().items())
+        data = dict(list(data.items()) + list(default_data().items()))
     else:
         data = default_data()
 
@@ -133,7 +136,7 @@ def save_dict(data, path):
     cache = {}
     try:
         cache = pickle.load(open(path, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.warning('Could not load existing cache (%s): %s' %
                     (path, e))
 
@@ -149,7 +152,7 @@ def save_dict(data, path):
         pickle.dump(cache, fd)
         fd.close()
         os.rename(filename, path)
-    except Exception, e:
+    except Exception as e:
         log.warning('Could not save cache (%s): %s' % (path, e))
         return False
 
@@ -173,7 +176,7 @@ def load_dict(file):
     cache = {}
     try:
         cache = pickle.load(open(file, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.info('Could not load %s pickle file:' % file)
         log.info(e)
         raise e

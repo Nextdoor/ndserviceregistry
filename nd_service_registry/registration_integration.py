@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 import uuid
 import time
 
@@ -18,9 +20,9 @@ def waituntil(predicate, predicate_value, timeout, period=0.1, mode=1):
             comparison = predicate() == predicate_value
 
         if comparison:
-            print "Exiting timer, %s changed..." % predicate
+            print("Exiting timer, %s changed..." % predicate)
             return True
-        print "Sleeping, waiting for %s to change..." % predicate
+        print("Sleeping, waiting for %s to change..." % predicate)
         time.sleep(period)
     raise Exception('Failed waiting for %s to change...' % predicate)
 
@@ -350,7 +352,7 @@ class DataNodeTests(KazooTestHarness):
         datanode.set_data('foo')
         waituntil(get_string_value_from_datanode, 'foo', 5, mode=2)
         (data, stat) = self.zk.get(path)
-        for i in xrange(1, 10):
+        for i in range(1, 10):
             datanode.set_data('foo')
         (data2, stat2) = self.zk.get(path)
         self.assertEquals(stat, stat2)

@@ -15,6 +15,8 @@
 """nd_service_registry Zookeeper Client Library
 
 Copyright 2014 Nextdoor Inc."""
+from __future__ import division
+from past.utils import old_div
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 
@@ -89,7 +91,7 @@ class ZookeeperClient(KazooClient):
                     self.previous_calls[-self.num_calls_to_average_over])
 
                 # Now get a rough average amount of time between the calls
-                avg_between_calls = elapsed / self.num_calls_to_average_over
+                avg_between_calls = old_div(elapsed, self.num_calls_to_average_over)
                 log.debug('[%s] Avg time between last %s calls: %s, target: %s'
                           % (func.__name__, self.num_calls_to_average_over,
                              avg_between_calls, self.target_avg_between_calls))

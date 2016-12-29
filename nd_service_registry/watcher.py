@@ -15,6 +15,7 @@
 """Kazoo Zookeeper znode watch object
 
 Copyright 2014 Nextdoor Inc."""
+from builtins import object
 
 __author__ = 'matt@nextdoor.com (Matt Wise)'
 

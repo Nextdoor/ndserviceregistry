@@ -18,6 +18,7 @@ import shutil
 
 from distutils.command.clean import clean
 from distutils.command.sdist import sdist
+from past.builtins import execfile
 from setuptools import Command
 from setuptools import setup
 from setuptools import find_packages
