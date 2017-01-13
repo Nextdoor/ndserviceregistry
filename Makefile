@@ -4,7 +4,7 @@ BIN = $(HERE)/bin
 BUILD_DIRS = bin build include lib lib64 man share
 
 ZOOKEEPER = $(BIN)/zookeeper
-ZOOKEEPER_VERSION ?= 3.4.7
+ZOOKEEPER_VERSION ?= 3.4.8
 ZOOKEEPER_PATH ?= $(ZOOKEEPER)
 ZOOKEEPER_URL = http://apache.osuosl.org/zookeeper/zookeeper-$(ZOOKEEPER_VERSION)/zookeeper-$(ZOOKEEPER_VERSION).tar.gz
 
