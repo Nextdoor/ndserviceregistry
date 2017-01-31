@@ -59,7 +59,7 @@ class RegistrationBaseTests(KazooTestHarness):
         self.assertFalse(reg1._state)
         self.assertEquals(path, reg1._path)
         self.assertEquals(data, reg1._data)
-        self.assertTrue('unittest' in reg1._encoded_data)
+        self.assertTrue(b'unittest' in reg1._encoded_data)
         self.assertTrue('unittest' in reg1._decoded_data)
 
         # The RegistrationBase object does not aggressively set the data
@@ -93,9 +93,9 @@ class RegistrationBaseTests(KazooTestHarness):
         # and in the Registration object.
         self.assertTrue(self.zk.exists(path))
         data = self.zk.get(path)[0]
-        self.assertTrue('created' in reg1.data() and 'created' in data)
-        self.assertTrue('pid' in reg1.data() and 'pid' in data)
-        self.assertTrue('unittest' in reg1.data() and 'unittest' in data)
+        self.assertTrue('created' in reg1.data() and b'created' in data)
+        self.assertTrue('pid' in reg1.data() and b'pid' in data)
+        self.assertTrue('unittest' in reg1.data() and b'unittest' in data)
         self.assertTrue(reg1.state())
 
         # Tear down the object
@@ -116,7 +116,7 @@ class RegistrationBaseTests(KazooTestHarness):
         reg1.set_data('foobar')
         waituntil(reg1.data, current_data, 5)
         self.assertEquals('foobar', reg1.data()['string_value'])
-        self.assertTrue('foobar' in self.zk.get(path)[0])
+        self.assertTrue(b'foobar' in self.zk.get(path)[0])
 
         # Test disabling the node through the update() method
         current_data = reg1.data()
@@ -199,7 +199,7 @@ class EphemeralNodeTests(KazooTestHarness):
         # right away.
         (data, stat) = self.zk.get(path)
         self.assertNotEquals(None, stat)
-        self.assertTrue('"unittest":"data"' in data)
+        self.assertTrue(b'"unittest":"data"' in data)
 
     def test_greedy_ownership_of_data(self):
         path = '%s/unittest-greedy-data' % self.sandbox
@@ -210,18 +210,18 @@ class EphemeralNodeTests(KazooTestHarness):
         # Lets intentionally change the data in Zookeeper directly,
         # the EphemeralNode should immediately re-set the data.
         current_stat = eph1.get()
-        self.zk.set(path, value='bogus')
+        self.zk.set(path, value=b'bogus')
         waituntil(eph1._watcher.get, current_stat, 5)
         (data, stat) = self.zk.get(path)
-        self.assertTrue('"unittest":"data"' in data)
-        self.assertFalse('bogus' in data)
+        self.assertTrue(b'"unittest":"data"' in data)
+        self.assertFalse(b'bogus' in data)
 
         # Now lets intentionally delete the node and see it get re-run
         current_stat = eph1.get()
         self.zk.delete(path)
         waituntil(eph1._watcher.get, current_stat, 5)
         (data, stat) = self.zk.get(path)
-        self.assertTrue('"unittest":"data"' in data)
+        self.assertTrue(b'"unittest":"data"' in data)
         self.assertTrue(self.zk.exists(path))
 
     def test_greedy_ownership_of_state(self):
@@ -272,7 +272,7 @@ class DataNodeTests(KazooTestHarness):
         # right away.
         (data, stat) = self.zk.get(path)
         self.assertNotEquals(None, stat)
-        self.assertTrue('"unittest":"data"' in data)
+        self.assertTrue(b'"unittest":"data"' in data)
 
     def test_delete_of_data_in_zk(self):
         path = '%s/unittest-delete' % self.sandbox
@@ -328,7 +328,7 @@ class DataNodeTests(KazooTestHarness):
 
             return False
 
-        self.zk.set(path, 'foobar')
+        self.zk.set(path, b'foobar')
         waituntil(get_string_value_from_watcher, 'foobar', 5, mode=2)
         self.assertEquals('foobar',
                           datanode._watcher.get()['data']['string_value'])
@@ -370,7 +370,7 @@ class DataNodeTests(KazooTestHarness):
 
         datanode.set_data('foo')
         (data, stat) = self.zk.get(path)
-        self.zk.set(path, 'foobar')
+        self.zk.set(path, b'foobar')
         waituntil(get_string_value_from_watcher, 'foobar', 5, mode=2)
         datanode.set_data('foo')
         (data2, stat2) = self.zk.get(path)

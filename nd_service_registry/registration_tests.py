@@ -196,8 +196,8 @@ class DataNodeTests(unittest.TestCase):
                     'stat': None}
         node._update(new_data)
         self.assertEquals({"foo": "bar"}, node._data)
-        self.assertTrue('pid' in node._encoded_data)
-        self.assertTrue('created' in node._encoded_data)
+        self.assertTrue(b'pid' in node._encoded_data)
+        self.assertTrue(b'created' in node._encoded_data)
         self.assertEquals(new_data['data'], node._decoded_data)
 
 

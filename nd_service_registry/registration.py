@@ -86,7 +86,7 @@ class RegistrationBase(object):
         self._path = path
         self._state = state
 
-        # Store both encdoed-string and decoded-dict versions of our 'data'
+        # Store both encoded-string and decoded-dict versions of our 'data'
         # for comparison purposes later.
         self._data = data
         self._encoded_data = funcs.encode(data)
@@ -179,7 +179,7 @@ class RegistrationBase(object):
                 # The underlying path doesn't exist to put the node into.
                 # Create the path, and re-call ourselves. If the
                 # create_node_path method raises an exception, we break out and
-                # throw an alert rather than continueing this recursive call.
+                # throw an alert rather than continuing this recursive call.
                 # If it returns cleanly, we call self._create_node()
                 # recursively.
 

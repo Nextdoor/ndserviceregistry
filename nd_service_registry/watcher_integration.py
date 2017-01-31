@@ -85,7 +85,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         def get_data():
             return watch.get()['data']
 
-        self.zk.create(path, value="{'foo': 'bar'}", makepath=True)
+        self.zk.create(path, value=b"{'foo': 'bar'}", makepath=True)
         waituntil(get_data, None, timeout=5, mode=1)
 
         # Now verify that the data has been updated in our Watcher
@@ -151,7 +151,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         def get_data():
             return watch.get()['data']
         for i in range(1, 5):
-            self.zk.set(path, value='%s' % i)
+            self.zk.set(path, value=('%s' % i).encode('UTF-8'))
             waituntil(get_data, {'string_value': '%s' % i}, timeout=5, mode=2)
 
         # The right number of calls is 6. There are a few upfront calls when

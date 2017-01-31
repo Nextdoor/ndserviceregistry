@@ -56,14 +56,15 @@ def encode(data=None):
 
     # If default_data() returns nothing, and the user supplied either
     # a single string, or a dict where the only key is string_value,
-    # then just pass the araw string_value key to back. No encoding necessary.
+    # then just pass the raw string_value key to back. No encoding necessary.
     if len(all_data) == 1 and 'string_value' in all_data:
-        return all_data['string_value']
+        return all_data['string_value'].encode(encoding='UTF-8')
 
     if all_data:
-        return json.dumps(all_data, separators=(',', ':'))
+        dumped = json.dumps(all_data, separators=(',', ':'))
+        return dumped.encode(encoding='UTF-8')
     else:
-        return ''
+        return b''
 
 
 def decode(data):
@@ -85,6 +86,8 @@ def decode(data):
 
     # Strip incoming data of new lines
     s = data.strip()
+    if isinstance(s, six.binary_type):
+        s = s.decode('UTF-8')
 
     if not s:
         data = {}
@@ -93,9 +96,9 @@ def decode(data):
             data = json.loads(s)
         except Exception:
             # TODO(mwise): Change this to catch the expected exception only.
-            data = dict(string_value=data)
+            data = dict(string_value=s)
     else:
-        data = dict(string_value=data)
+        data = dict(string_value=s)
     return data
 
 

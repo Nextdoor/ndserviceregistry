@@ -17,13 +17,13 @@ class FuncsTests(unittest.TestCase):
 
     def test_encode_adds_extra_properties(self):
         json_data = funcs.encode({"foo": "bar", "baz": "foo"})
-        self.assertIn('"pid":', json_data)
-        self.assertIn('"created":"', json_data)
+        self.assertIn(b'"pid":', json_data)
+        self.assertIn(b'"created":"', json_data)
 
     def test_encode_creates_dict_from_single_string(self):
         to_encode = "String"
         json_data = funcs.encode(to_encode)
-        self.assertIn('"string_value":"String"', json_data)
+        self.assertIn(b'"string_value":"String"', json_data)
 
     def test_decode_converts_json_to_dict(self):
         result_dict = funcs.decode(
