@@ -1,5 +1,5 @@
 future
-kazoo>=2.2.1
+kazoo==2.2
 pyyaml
 setuptools
 six
