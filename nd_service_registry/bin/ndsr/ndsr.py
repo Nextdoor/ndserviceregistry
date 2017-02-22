@@ -16,8 +16,8 @@
 """
 A CLI tool for interacting with ZooKeeper using ndserviceregistry.
 """
-
-__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
+from __future__ import absolute_import
+from __future__ import print_function
 
 import gflags
 import logging
@@ -26,6 +26,8 @@ import sys
 from nd_service_registry.bin.ndsr import get
 from nd_service_registry import exceptions
 import nd_service_registry
+
+__author__ = 'me@ryangeyer.com (Ryan J. Geyer)'
 
 log = logging.getLogger(__name__)
 
@@ -85,7 +87,7 @@ def main(argv):
         # This works because we've already imported the class above.
         command_class = COMMANDS[command]
         instance = command_class(nd)
-        print instance.execute(argv, FLAGS)
+        print(instance.execute(argv, FLAGS))
     else:
         sys.stderr.write("Unknown command %s" % command)
         exit(1)
@@ -98,8 +100,10 @@ def console_entry_point():
     try:
         FLAGS.UseGnuGetOpt(True)
         argv = FLAGS(sys.argv)
-    except gflags.FlagsError, e:
-        print "%s\nUsage: %s [get] [<path>] ARGS\n%s" % (e, sys.argv[0], FLAGS)
+    except gflags.FlagsError as e:
+        print("%s\nUsage: %s [get] [<path>] ARGS\n%s" % (e,
+                                                         sys.argv[0],
+                                                         FLAGS))
         sys.exit(1)
 
     try:
@@ -114,7 +118,7 @@ def console_entry_point():
             root_logger.addHandler(stdout_handler)
 
         main(argv)
-    except exceptions.ServiceRegistryException, e:
+    except exceptions.ServiceRegistryException as e:
         # Would recommend that Zookeeper/Kazoo specific error codes be passed
         # through so the exit code could be better evaluated by tools consuming
         # ndsr

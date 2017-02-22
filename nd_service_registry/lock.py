@@ -15,13 +15,14 @@
 """Kazoo Zookeeper Lock Object
 
 Copyright 2013 Nextdoor Inc."""
-
-__author__ = 'matt@nextdoor.com (Matt Wise)'
+from __future__ import absolute_import
 
 import logging
 import time
 
 from kazoo import exceptions
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 log = logging.getLogger(__name__)
 

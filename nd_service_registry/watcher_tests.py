@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+
 import mock
 import unittest
+
+from six.moves import range
 
 from nd_service_registry import watcher
 
@@ -43,7 +47,7 @@ class WatcherTests(unittest.TestCase):
 
         # Execute the callback method several times. It sohuld only fire off
         # once
-        for i in xrange(0, 5):
+        for i in range(0, 5):
             self.watch._execute_callbacks()
 
         # Executing the callbacks should happen only when the data changes.

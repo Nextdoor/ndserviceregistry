@@ -11,15 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-__author__ = 'matt@nextdoor.com.com (Matt Wise)'
+from __future__ import absolute_import
 
 import unittest
-
 from mock import patch
 import mock
 
 from nd_service_registry.contrib.django import utils
+
+__author__ = 'matt@nextdoor.com.com (Matt Wise)'
 
 
 class DjangoUtilsTests(unittest.TestCase):

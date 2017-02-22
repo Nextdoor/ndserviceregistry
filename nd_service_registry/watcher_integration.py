@@ -1,8 +1,13 @@
+from __future__ import print_function
+from __future__ import absolute_import
+
 import uuid
 import mock
 import time
 
 from kazoo.testing import KazooTestHarness
+from six.moves import range
+
 from nd_service_registry import KazooServiceRegistry
 from nd_service_registry.watcher import Watcher
 
@@ -16,9 +21,9 @@ def waituntil(predicate, predicate_value, timeout, period=0.1, mode=1):
             comparison = predicate() == predicate_value
 
         if comparison:
-            print "Exiting timer, %s changed..." % predicate
+            print("Exiting timer, %s changed..." % predicate)
             return True
-        print "Sleeping, waiting for %s to change..." % predicate
+        print("Sleeping, waiting for %s to change..." % predicate)
         time.sleep(period)
     raise Exception('Failed waiting for %s to change...' % predicate)
 
@@ -57,7 +62,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         # Before progressing, wait for Zookeeper to have kicked off
         # all of its notifications to the client.
         def get_children():
-            print "got: %s" % watch.get()['children']
+            print("got: %s" % watch.get()['children'])
             return watch.get()['children']
         waituntil(get_children, [], timeout=5)
 
@@ -80,7 +85,7 @@ class WatcherIntegrationTests(KazooTestHarness):
         def get_data():
             return watch.get()['data']
 
-        self.zk.create(path, value="{'foo': 'bar'}", makepath=True)
+        self.zk.create(path, value=b"{'foo': 'bar'}", makepath=True)
         waituntil(get_data, None, timeout=5, mode=1)
 
         # Now verify that the data has been updated in our Watcher
@@ -145,8 +150,8 @@ class WatcherIntegrationTests(KazooTestHarness):
         # take effect before moving on to the next one.
         def get_data():
             return watch.get()['data']
-        for i in xrange(1, 5):
-            self.zk.set(path, value='%s' % i)
+        for i in range(1, 5):
+            self.zk.set(path, value=('%s' % i).encode('UTF-8'))
             waituntil(get_data, {'string_value': '%s' % i}, timeout=5, mode=2)
 
         # The right number of calls is 6. There are a few upfront calls when

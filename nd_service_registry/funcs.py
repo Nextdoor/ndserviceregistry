@@ -15,15 +15,17 @@
 """Commonly used functions for nd_service_registry
 
 Copyright 2014 Nextdoor Inc."""
+from __future__ import absolute_import
+import six
 
-__author__ = 'matt@nextdoor.com (Matt Wise)'
-
-import cPickle as pickle
+import six.moves.cPickle as pickle
 import json
 import logging
 import os
 import tempfile
 import time
+
+__author__ = 'matt@nextdoor.com (Matt Wise)'
 
 log = logging.getLogger(__name__)
 
@@ -42,27 +44,27 @@ def encode(data=None):
         A JSON string with the supplied data as well as some default data"""
 
     # Check if the data is a single string. If so, turn it into a dict
-    if isinstance(data, basestring):
+    if isinstance(data, six.string_types):
         new_data = {}
         new_data['string_value'] = data
         data = new_data
 
+    all_data = default_data()
     # Add in the default data points that we generate internally
     if data:
-        data = dict(data.items() + default_data().items())
-    else:
-        data = default_data()
+        all_data.update(data)
 
     # If default_data() returns nothing, and the user supplied either
     # a single string, or a dict where the only key is string_value,
-    # then just pass the araw string_value key to back. No encoding necessary.
-    if len(data) == 1 and 'string_value' in data:
-        return data['string_value']
+    # then just pass the raw string_value key to back. No encoding necessary.
+    if len(all_data) == 1 and 'string_value' in all_data:
+        return all_data['string_value'].encode(encoding='UTF-8')
 
-    if data:
-        return json.dumps(data, separators=(',', ':'))
+    if all_data:
+        dumped = json.dumps(all_data, separators=(',', ':'))
+        return dumped.encode(encoding='UTF-8')
     else:
-        return ''
+        return b''
 
 
 def decode(data):
@@ -84,6 +86,8 @@ def decode(data):
 
     # Strip incoming data of new lines
     s = data.strip()
+    if isinstance(s, six.binary_type):
+        s = s.decode('UTF-8')
 
     if not s:
         data = {}
@@ -92,9 +96,9 @@ def decode(data):
             data = json.loads(s)
         except Exception:
             # TODO(mwise): Change this to catch the expected exception only.
-            data = dict(string_value=data)
+            data = dict(string_value=s)
     else:
-        data = dict(string_value=data)
+        data = dict(string_value=s)
     return data
 
 
@@ -133,7 +137,7 @@ def save_dict(data, path):
     cache = {}
     try:
         cache = pickle.load(open(path, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.warning('Could not load existing cache (%s): %s' %
                     (path, e))
 
@@ -149,7 +153,7 @@ def save_dict(data, path):
         pickle.dump(cache, fd)
         fd.close()
         os.rename(filename, path)
-    except Exception, e:
+    except Exception as e:
         log.warning('Could not save cache (%s): %s' % (path, e))
         return False
 
@@ -173,7 +177,7 @@ def load_dict(file):
     cache = {}
     try:
         cache = pickle.load(open(file, 'rb'))
-    except (IOError, EOFError), e:
+    except (IOError, EOFError) as e:
         log.info('Could not load %s pickle file:' % file)
         log.info(e)
         raise e

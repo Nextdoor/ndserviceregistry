@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # Copyright 2012 Nextdoor.com, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +25,10 @@ from setuptools import find_packages
 
 PACKAGE = 'nd_service_registry'
 __version__ = None
-execfile(os.path.join(PACKAGE, 'version.py'))  # set __version__
+with open(os.path.join(PACKAGE, 'version.py')) as f:
+    src = f.read()
+code = compile(src, os.path.join(PACKAGE, 'version.py'), 'exec')
+exec(code)  # set __version__
 
 
 def maybe_rm(path):
