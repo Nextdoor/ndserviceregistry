@@ -213,8 +213,8 @@ class EphemeralNodeTests(KazooTestHarness):
         self.zk.set(path, value=b'bogus')
         waituntil(eph1._watcher.get, current_stat, 5)
         (data, stat) = self.zk.get(path)
-        self.assertTrue(b'"unittest":"data"' in data)
-        self.assertFalse(b'bogus' in data)
+        self.assertIn(b'"unittest":"data"', data)
+        self.assertNotIn(b'bogus', data)
 
         # Now lets intentionally delete the node and see it get re-run
         current_stat = eph1.get()
