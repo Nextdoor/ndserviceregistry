@@ -210,11 +210,11 @@ class RegistrationBase(object):
             # The underlying path does not exist. Raise this exception, and
             # _update_state() handle it.
             raise
-        except kazoo.exceptions.NodeExistsError as e:
+        except kazoo.exceptions.NodeExistsError:
             # Node exists ... possible this callback got called multiple
             # times
             pass
-        except kazoo.exceptions.NoAuthError as e:
+        except kazoo.exceptions.NoAuthError:
             log.error('[%s] No authorization to create node.' % self._path)
         except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
@@ -256,7 +256,7 @@ class RegistrationBase(object):
         log.debug('[%s] Attempting de-registration...' % self._path)
         try:
             self._zk.retry(self._zk.delete, self._path)
-        except kazoo.exceptions.NoAuthError as e:
+        except kazoo.exceptions.NoAuthError:
             # The node exists, but we don't even have authorization to read
             # it. We certainly will not have access then to change it below
             # so return false. We'll retry again very soon.
@@ -270,7 +270,7 @@ class RegistrationBase(object):
             self._zk.retry(self._zk.set, self._path, value=self._encoded_data)
             log.debug('[%s] Updated with data: %s' %
                       (self._path, self._encoded_data))
-        except kazoo.exceptions.NoAuthError as e:
+        except kazoo.exceptions.NoAuthError:
             log.error('[%s] No authorization to set node.' % self._path)
         except Exception as e:
             log.error(RegistrationBase.GENERAL_EXC_MSG % (self._path, e))
