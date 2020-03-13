@@ -6,7 +6,7 @@ BUILD_DIRS = bin build include lib lib64 man share
 ZOOKEEPER = $(BIN)/zookeeper
 ZOOKEEPER_VERSION ?= 3.4.8
 ZOOKEEPER_PATH ?= $(ZOOKEEPER)
-ZOOKEEPER_URL = http://apache.osuosl.org/zookeeper/zookeeper-$(ZOOKEEPER_VERSION)/zookeeper-$(ZOOKEEPER_VERSION).tar.gz
+ZOOKEEPER_URL = https://archive.apache.org/dist/zookeeper/zookeeper-$(ZOOKEEPER_VERSION)/zookeeper-$(ZOOKEEPER_VERSION).tar.gz
 
 .PHONY: all build clean test zookeeper clean-zookeeper
 
