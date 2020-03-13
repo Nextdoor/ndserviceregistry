@@ -297,19 +297,24 @@ class DataNodeTests(KazooTestHarness):
         data = {'unittest': 'data'}
         datanode = DataNode(zk=self.zk, path=path, data=data)
 
-        # First, delete the path
         def get_stat_from_watcher():
-            return datanode._watcher.get()['stat']
+            val = datanode._watcher.get()['stat']
+            return val
 
-        # Get the original stat data, then delete the path, then wait
-        # for the get() method to not return the original stat data
-        orig_stat = datanode._watcher.get()['stat']
+        def get_data_from_node():
+            return datanode._data
+
+        # Wait for the data to be set.
+        waituntil(get_stat_from_watcher, None, 5, mode=1)
+
+        # Then, delete the path
         self.zk.delete(path)
-        waituntil(get_stat_from_watcher, orig_stat, 5, mode=1)
+        waituntil(get_stat_from_watcher, None, 5, mode=0)
 
         # Ok now call the update() method and see if it re-registers
         datanode.update(data=data, state=True)
         waituntil(get_stat_from_watcher, None, 5, mode=1)
+        waituntil(get_data_from_node, data, 5, mode=0)
         self.assertEquals(data, datanode._data)
 
     def test_updating_of_local_cache(self):
