@@ -8,6 +8,7 @@ env:
   - KAZOO_VERSION=2.0
   - KAZOO_VERSION=2.2
   - KAZOO_VERSION=2.5.0
+  - KAZOO_VERSION=2.6.1
 jobs:
   exclude:
     - python: "3.6"
